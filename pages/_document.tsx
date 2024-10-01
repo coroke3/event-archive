@@ -14,7 +14,7 @@ export default class Document extends NextDocument {
           <meta name="msapplication-TileColor" content="#ffffff" />
           <meta name="msapplication-config" content="/favicons/browserconfig.xml" />
           <meta name="theme-color" content="#ffffff" />
-
+          <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "3845b92434ec4243880bac1fcd4e6bdf"}'></script>
         </Head>
         <body>
            
