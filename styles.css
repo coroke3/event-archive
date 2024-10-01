@@ -47,10 +47,9 @@ h2 {
 h3 {
   font-weight: 500;
   font-style: normal;
-  font-size: 1.7rem;
+  font-size: 1.1rem;
   margin: 35px auto 22px auto;
-  padding: 3px 2px 6px 8px;
-  border-left: solid 13px var(--foreground);
+  letter-spacing: 1px;
 }
 h4 {
   font-weight: 500;
@@ -64,6 +63,7 @@ td,
 th {
   font-weight: 500;
   font-style: normal;
+  font-size: 0.8rem;
   line-height: 1.4rem;
   margin: 10px 0;
 }

@@ -16,13 +16,7 @@ export default class Document extends NextDocument {
           <meta name="theme-color" content="#ffffff" />
           <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "3845b92434ec4243880bac1fcd4e6bdf"}'></script>
           <script async src="https://www.googletagmanager.com/gtag/js?id=G-SY2KZEZJBK"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
 
-  gtag('config', 'G-SY2KZEZJBK');
-</script>
         </Head>
         <body>
            

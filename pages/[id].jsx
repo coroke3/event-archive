@@ -178,7 +178,6 @@ export default function WorkId({ work, previousWorks, nextWorks }) {
             </div>
           </div>
         </div>
-        <Footer />
       </div>
     </div>
   );
