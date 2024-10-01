@@ -9,17 +9,26 @@
 	}
 	.works{
 		width: 24%;
+		margin: 20px auto;
 	}
 
 	.icon{
-		width: 30px;
-		height: 30px;
+		width: 25px;
+		height: 25px;
 		border-radius: 20px;
 	}
 	.samune{
 		width: 100%;
 		aspect-ratio: 16/9;
 		height: auto;
+	}
+	.works p {
+		margin: auto 10px;
+	}
+	.subtitle{
+		margin: auto 5px;
+		display: flex;
+		justify-self: start;
 	}
 	@media screen and (max-width:1550px) {
 

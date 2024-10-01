@@ -50,9 +50,9 @@ export default function Home({ work }) {
                     height={360} 
                   /> 
                 </Link> 
-                <h3>{work.title}</h3> 
-                <p> 
-                  {showIcon && ( 
+                <h3>{work.title}</h3>
+                <div className={styles.subtitle}>
+                {showIcon && ( 
                     <Image 
                       src={`https://lh3.googleusercontent.com/d/${work.icon.slice(33)}`} 
                       className={styles.icon} 
@@ -61,8 +61,11 @@ export default function Home({ work }) {
                       height={50} 
  
                     /> 
-                  )} {work.creator} | {subtractNineHours(work.time)} 
+                  )}
+                <p> 
+            {work.creator} 
                 </p> 
+                </div>
               </div> 
             ); 
           })} 
