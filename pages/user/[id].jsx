@@ -8,7 +8,6 @@ import Header from "../../components/Header";
 import Footer from "../../components/Footer";         
 import styles from "../../styles/works.module.css";   
 
-export const runtime = 'experimental-edge';
 // YouTube Data APIを使って公開状態とサムネイルURLを取得する関数    
 const getVideoData = async (videoId) => {    
   const apiKey = process.env.YOUTUBE_API_KEY; // 環境変数からAPIキーを取得    
@@ -16,7 +15,7 @@ const getVideoData = async (videoId) => {
   const videoRes = await fetch(apiUrl);    
   
   if (!videoRes.ok) {    
-    console.error(`動画データの取得に失敗しました: ${videoRes.statusText}`);    
+    console.error(`Failed to fetch video data: ${videoRes.statusText}`);    
     return { status: "unknown", thumbnailUrl: "/default-thumbnail.jpg" }; // エラー時は'unknown'を返す    
   }    
   
@@ -48,7 +47,7 @@ const fetchUserData = async (username) => {
   );         
 
   if (!res.ok) {         
-    console.error(`ユーザーデータの取得に失敗しました: ${res.statusText}`);         
+    console.error(`Failed to fetch user data: ${res.statusText}`);         
     return null; // エラー時は null を返す         
   }         
 
@@ -63,7 +62,7 @@ const fetchWorksData = async () => {
   );         
 
   if (!res.ok) {         
-    console.error(`作品データの取得に失敗しました: ${res.statusText}`);         
+    console.error(`Failed to fetch works data: ${res.statusText}`);         
     return [];         
   }         
 
@@ -176,8 +175,8 @@ export const getStaticProps = async ({ params }) => {
   
   return {         
     props: {         
-      user: userData || {}, // ユーザーデータ         
+      user: userData || {}, // ユーザーデータ（エラー時は空オブジェクト）         
       works: userWorks, // ユーザーの作品データ         
     },         
   };         
-};  
+};    
