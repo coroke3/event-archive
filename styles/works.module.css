@@ -30,6 +30,18 @@
 		display: flex;
 		justify-self: start;
 	}
+	.private {
+		opacity: 0.5; /* 薄く表示する */
+		 /* 非公開作品をクリックできないようにする */
+	  }
+	@keyframes scroll {
+		0% {
+		  transform: translateX(100%);
+		}
+		100% {
+		  transform: translateX(-100%); 
+		}
+	  }
 	@media screen and (max-width:1550px) {
 
 	}
