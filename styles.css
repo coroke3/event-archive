@@ -1,0 +1,130 @@
+@charset "utf-8";
+
+
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap');
+
+
+:root {
+  --background: #ececec;
+  --foreground: rgb(12, 12, 12);
+}
+
+[data-theme='dark'] {
+  --background: rgb(20, 20, 20);
+  --foreground: white;
+}
+
+body {
+  margin: 0;
+  background-color: var(--background);
+  font-family: "Noto Sans JP", system-ui;
+  font-weight: 400;
+  font-style: normal;
+}
+html {
+  scroll-behavior: smooth;
+}
+a:hover {
+  opacity: 0.7;
+  filter: alpha(opacity=70);
+  -ms-filter: "alpha(opacity=70)";
+}
+
+h1 {
+  font-weight: 700;
+  font-style: normal;
+  margin: auto 0px;
+}
+h2 {
+  font-weight: 500;
+  font-style: normal;
+  font-size: 2rem;
+  margin: 60px auto 10px auto;
+  border-bottom: solid 2px var(--foreground);
+  padding: 8px 0;
+}
+h3 {
+  font-weight: 500;
+  font-style: normal;
+  font-size: 1.7rem;
+  margin: 35px auto 22px auto;
+  padding: 3px 2px 6px 8px;
+  border-left: solid 13px var(--foreground);
+}
+h4 {
+  font-weight: 500;
+  font-style: normal;
+  font-size: 1.3rem;
+  margin: 30px auto 3px auto;
+}
+p,
+li,
+td,
+th {
+  font-weight: 500;
+  font-style: normal;
+  line-height: 1.4rem;
+  margin: 10px 0;
+}
+
+@media screen and (min-width: 1150px) {
+  @media (min-aspect-ratio: 16 / 9) {
+    
+  }
+}
+@media screen and (max-width: 1150px) {
+
+
+}
+@media screen and (max-width: 900px) {
+
+
+
+  @keyframes fadeIn {
+    0% {
+      display: none;
+      opacity: 0;
+    }
+
+    1% {
+      display: block;
+      opacity: 0;
+    }
+
+    100% {
+      display: block;
+      opacity: 1;
+    }
+  }
+  @keyframes fadeOut {
+    0% {
+      display: block;
+      opacity: 1;
+    }
+
+    99% {
+      display: block;
+      opacity: 0;
+    }
+
+    100% {
+      display: none;
+      opacity: 0;
+    }
+  }
+  .justify-end {
+    display: block;
+    position: fixed;
+    z-index: 9999;
+    top: 26px;
+    right: 85px;
+  }
+}
+@media screen and (max-width: 700px) {
+
+}
+
+@media screen and (max-width: 600px) {
+
+}
