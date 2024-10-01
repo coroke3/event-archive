@@ -10,36 +10,36 @@ import styles from "../../styles/works.module.css";
 
 export const runtime = 'experimental-edge';
 // YouTube Data APIを使って公開状態とサムネイルURLを取得する関数    
-const getVideoData = async (videoId) => {
-  const apiKey = process.env.YOUTUBE_API_KEY;
-  const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${apiKey}&part=snippet,status`;
-  const videoRes = await fetch(apiUrl);
-
-  if (!videoRes.ok) {
-    console.error(`Failed to fetch video data: ${videoRes.statusText}`);
-    return { status: "unknown", thumbnailUrl: "/default-thumbnail.jpg" }; // デフォルトのサムネイルURLを返す
-  }
-
-  const videoData = await videoRes.json();
-  if (videoData.items.length > 0) {
-    const videoItem = videoData.items[0];
-    const status = videoItem.status.privacyStatus;
-    const thumbnails = videoItem.snippet.thumbnails;
-
-    const defaultThumbnailUrl = "/default-thumbnail.jpg"; // デフォルト画像のパス
-    const thumbnailUrl =
-      thumbnails?.maxres?.url ||
-      thumbnails?.high?.url ||
-      thumbnails?.medium?.url ||
-      thumbnails?.default?.url ||
-      defaultThumbnailUrl; // デフォルトのURLをここで設定
-
-    return { status, thumbnailUrl };
-  }
-
-  return { status: "unknown", thumbnailUrl: "/default-thumbnail.jpg" };
-};
+const getVideoData = async (videoId) => {    
+  const apiKey = process.env.YOUTUBE_API_KEY; // 環境変数からAPIキーを取得    
+  const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${apiKey}&part=snippet,status`; // snippetとstatusを取得    
+  const videoRes = await fetch(apiUrl);    
   
+  if (!videoRes.ok) {    
+    console.error(`動画データの取得に失敗しました: ${videoRes.statusText}`);    
+    return { status: "unknown", thumbnailUrl: "/default-thumbnail.jpg" }; // エラー時は'unknown'を返す    
+  }    
+  
+  const videoData = await videoRes.json();    
+  if (videoData.items.length > 0) {    
+    const videoItem = videoData.items[0];    
+    const status = videoItem.status.privacyStatus;    
+    const thumbnails = videoItem.snippet.thumbnails;    
+
+    // サムネイルが存在しない場合にデフォルトのURLを設定    
+    const defaultThumbnailUrl = "/default-thumbnail.jpg"; // デフォルト画像のパス    
+    const thumbnailUrl =    
+      thumbnails?.maxres?.url ||    
+      thumbnails?.high?.url ||    
+      thumbnails?.medium?.url ||    
+      thumbnails?.default?.url ||    
+      defaultThumbnailUrl;    
+
+    return { status, thumbnailUrl };    
+  }    
+
+  return { status: "unknown", thumbnailUrl: "/default-thumbnail.jpg" };    
+};    
 
 // ユーザー情報を取得する関数         
 const fetchUserData = async (username) => {         
@@ -157,35 +157,27 @@ export const getStaticPaths = async () => {
 };         
 
 // 静的にプロパティを取得         
-export const getStaticProps = async ({ params }) => {
-  const { id } = params; // URL パラメータからユーザー名を取得
+export const getStaticProps = async ({ params }) => {         
+  const { id } = params; // URL パラメータからユーザー名を取得         
+  
+  const userData = await fetchUserData(id);         
+  const worksData = await fetchWorksData();         
+    
+  // ユーザーの作品データをフィルタリングし、サムネイルとステータスを取得         
+  const userWorks = await Promise.all(worksData.filter(work => work.tlink && work.tlink.toLowerCase() === id.toLowerCase()).map(async (work) => {         
+    const videoId = work.ylink.slice(17, 28);    
+    const { status, thumbnailUrl } = await getVideoData(videoId); // ステータスとサムネイルURLを取得    
 
-  const userData = await fetchUserData(id);
-  const worksData = await fetchWorksData();
+    // 'unlisted'を'public'として扱う 
+    const adjustedStatus = status === "unlisted" ? "public" : status; 
 
-  // ユーザーの作品データをフィルタリングし、サムネイルとステータスを取得
-  const userWorks = await Promise.all(worksData
-    .filter(work => work.tlink && work.tlink.toLowerCase() === id.toLowerCase())
-    .map(async (work) => {
-      const videoId = work.ylink.slice(17, 28);
-      const { status, thumbnailUrl } = await getVideoData(videoId); // ステータスとサムネイルURLを取得
-
-      // 'unlisted'を'public'として扱う
-      const adjustedStatus = status === "unlisted" ? "public" : status;
-
-      // thumbnailUrlがundefinedの場合はnullに設定
-      return {
-        ...work,
-        status: adjustedStatus,
-        thumbnailUrl: thumbnailUrl || null // undefinedの場合はnullにする
-      };
-    })
-  );
-
-  return {
-    props: {
-      user: userData || {}, // ユーザーデータ
-      works: userWorks.filter(work => work.thumbnailUrl !== undefined), // undefinedを含まないようにフィルタリング
-    },
-  };
-};
+    return { ...work, status: adjustedStatus, thumbnailUrl }; // サムネイルURLも含める    
+  }));  
+  
+  return {         
+    props: {         
+      user: userData || {}, // ユーザーデータ         
+      works: userWorks, // ユーザーの作品データ         
+    },         
+  };         
+};  
