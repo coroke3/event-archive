@@ -1,41 +1,58 @@
-import { useState } from "react"; // useStateをインポート 
-import Link from "next/link"; 
-import Image from "next/image"; 
-import Header from "../components/Header"; 
-import Footer from "../components/Footer"; 
-import styles from "../styles/works.module.css"; 
-import Head from "next/head"; 
+import { useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
+import styles from "../styles/works.module.css";
+import Head from "next/head";
 
-// YouTube Data APIを使って公開状態を取得する関数 
-const getVideoPrivacyStatus = async (videoId) => { 
+// YouTube Data APIを使って公開状態とサムネイルURLを取得する関数 
+const getVideoData = async (videoId) => { 
   const apiKey = process.env.YOUTUBE_API_KEY; // 環境変数からAPIキーを取得 
-  const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${apiKey}&part=status`; 
+  const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${apiKey}&part=snippet,status`; // snippetとstatusを取得 
   const videoRes = await fetch(apiUrl); 
 
   if (!videoRes.ok) { 
-    console.error(`Failed to fetch video status: ${videoRes.statusText}`); 
-    return "unknown"; // エラー時は'unknown'を返す 
+    console.error(`Failed to fetch video data: ${videoRes.statusText}`); 
+    return { status: "unknown", thumbnails: {} }; // エラー時は'unknown'を返す 
   } 
 
   const videoData = await videoRes.json(); 
-  return videoData.items.length > 0 
-    ? videoData.items[0].status.privacyStatus 
-    : "unknown"; 
+  if (videoData.items.length > 0) { 
+    const videoItem = videoData.items[0]; 
+    const status = videoItem.status.privacyStatus; 
+    const thumbnails = videoItem.snippet.thumbnails; 
+
+    // サムネイルが存在しない場合にデフォルトのURLを設定 
+    const defaultThumbnailUrl = "/default-thumbnail.jpg"; // デフォルト画像のパス 
+    const thumbnailUrl = 
+      thumbnails?.maxres?.url || 
+      thumbnails?.high?.url || 
+      thumbnails?.medium?.url || 
+      thumbnails?.default?.url || 
+      defaultThumbnailUrl; 
+
+    return { status, thumbnailUrl }; 
+  } 
+
+  return { status: "unknown", thumbnailUrl: "/default-thumbnail.jpg" }; 
 }; 
 
 export default function Home({ work }) { 
-  // 非公開作品の表示・非表示の状態を管理 
-  const [showPrivate, setShowPrivate] = useState(false); 
+  const [filter, setFilter] = useState({ public: true, unlisted: true, private: false }); 
 
-  // 非公開作品の表示・非表示を切り替える関数 
-  const togglePrivateWorks = () => { 
-    setShowPrivate(!showPrivate); 
+  // チェックボックスの変更をハンドルする関数 
+  const handleFilterChange = (event) => { 
+    const { name, checked } = event.target; 
+    setFilter((prev) => ({ ...prev, [name]: checked })); 
   }; 
 
   // 表示する作品をフィルタリング 
-  const displayedWorks = showPrivate 
-    ? work 
-    : work.filter((item) => item.status === "public" || item.status === "unlisted"); // 公開と限定公開を表示 
+  const displayedWorks = work.filter((item) => 
+    (filter.public && item.status === "public") || 
+    (filter.unlisted && item.status === "unlisted") || 
+    (filter.private && (item.status === "private" || item.status === "unknown"))
+  ); 
 
   return ( 
     <div> 
@@ -52,25 +69,53 @@ export default function Home({ work }) {
       </Head> 
       <Header /> 
 
-      {/* 非公開作品の表示・非表示切替ボタン */} 
-      <div className="toggle-button"> 
-        <button onClick={togglePrivateWorks}> 
-          {showPrivate ? "非公開作品を非表示" : "非公開作品を表示"} 
-        </button> 
-      </div> 
+      {/* チェックボックスによるフィルタリング */}
+      <div className="filter-options">
+        <label>
+          <input 
+            type="checkbox" 
+            name="public" 
+            checked={filter.public} 
+            onChange={handleFilterChange} 
+          />
+          公開作品
+        </label>
+        <label>
+          <input 
+            type="checkbox" 
+            name="unlisted" 
+            checked={filter.unlisted} 
+            onChange={handleFilterChange} 
+          />
+          限定公開作品
+        </label>
+        <label>
+          <input 
+            type="checkbox" 
+            name="private" 
+            checked={filter.private} 
+            onChange={handleFilterChange} 
+          />
+          非公開作品
+        </label>
+      </div>
 
       <div className="content"> 
         <div className={styles.work}> 
           {displayedWorks.length > 0 ? ( 
             displayedWorks.map((work) => { 
               const showIcon = work.icon !== undefined && work.icon !== ""; 
-              const isPrivate = work.status === "private" || work.status === "unknown"; // 非公開かどうかを判定 
+              const isPrivate = 
+                work.status === "private" || work.status === "unknown"; // 非公開かどうかを判定 
 
               return ( 
-                <div className={`${styles.works} ${isPrivate ? styles.private : ""}`} key={work.ylink}> 
+                <div 
+                  className={`${styles.works} ${isPrivate ? styles.private : ""}`} 
+                  key={work.ylink} 
+                > 
                   <Link href={`../${work.ylink.slice(17, 28)}`}> 
                     <Image 
-                      src={`https://i.ytimg.com/vi/${work.ylink.slice(17, 28)}/maxresdefault.jpg`} 
+                      src={work.thumbnailUrl} // 動的に取得したサムネイルURLを使用 
                       alt={`${work.title} - ${work.creator} | PVSF archive`} 
                       className={styles.samune} 
                       width={640} 
@@ -81,7 +126,9 @@ export default function Home({ work }) {
                   <div className={styles.subtitle}> 
                     {showIcon && ( 
                       <Image 
-                        src={`https://lh3.googleusercontent.com/d/${work.icon.slice(33)}`} 
+                        src={`https://lh3.googleusercontent.com/d/${work.icon.slice( 
+                          33 
+                        )}`} 
                         className={styles.icon} 
                         alt={`${work.creator} アイコン`} 
                         width={50} 
@@ -89,12 +136,12 @@ export default function Home({ work }) {
                       /> 
                     )} 
                     <p>{work.creator}</p> 
-                    <p>
+                    <p> 
                       {work.status === "public" 
                         ? "公開中" 
                         : work.status === "unlisted" 
                         ? "限定公開" 
-                        : "非公開"}
+                        : "非公開"} 
                     </p> 
                   </div> 
                 </div> 
@@ -110,6 +157,7 @@ export default function Home({ work }) {
   ); 
 } 
 
+// YouTube APIからステータスとサムネイルを取得し、作品データに付加する 
 export const getStaticProps = async () => { 
   const res = await fetch( 
     "https://script.google.com/macros/s/AKfycbyEph6zXb1IWFRLpTRLNLtxU4Kj7oe10bt2ifiyK09a6nM13PASsaBYFe9YpDj9OEkKTw/exec" 
@@ -125,8 +173,8 @@ export const getStaticProps = async () => {
   const workWithStatus = await Promise.all( 
     work.map(async (item) => { 
       const videoId = item.ylink.slice(17, 28); 
-      const status = await getVideoPrivacyStatus(videoId); 
-      return { ...item, status }; 
+      const { status, thumbnailUrl } = await getVideoData(videoId); // ステータスとサムネイルURLを取得 
+      return { ...item, status, thumbnailUrl }; // サムネイルURLも含める 
     }) 
   ); 
 
