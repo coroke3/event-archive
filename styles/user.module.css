@@ -1,0 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300&display=swap');
+
+	.userlist{
+		width: 90%;
+		margin: auto;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-around;
+	}
+	.users{
+		width: 24%;
+		margin: 20px auto;
+	}
+
+	.icon{
+		width: 25px;
+		height: 25px;
+		border-radius: 20px;
+	}
+	.samune{
+		width: 100%;
+		aspect-ratio: 16/9;
+		height: auto;
+	}
+	.works p {
+		margin: auto 10px;
+	}
+	.subtitle{
+		margin: auto 5px;
+		display: flex;
+		justify-self: start;
+	}
+	.private {
+		opacity: 0.5; /* 薄く表示する */
+		 /* 非公開作品をクリックできないようにする */
+	  }
+	@keyframes scroll {
+		0% {
+		  transform: translateX(100%);
+		}
+		100% {
+		  transform: translateX(-100%); 
+		}
+	  }
+	@media screen and (max-width:1550px) {
+
+	}
+	@media screen and (max-width:1230px) {
+
+	}
+	@media screen and (max-width:900px) {
+
+	}
+	@media screen and (max-width:800px) {
+
+	}
+	@media screen and (min-width: 1150px) {
+		@media (min-aspect-ratio: 16 / 9){
+
+	}	}
