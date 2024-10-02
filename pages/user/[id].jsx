@@ -6,7 +6,7 @@ import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import styles from "../../styles/works.module.css";
 
-export const runtime = 'edge'; // Edge Runtimeを指定
+export const runtime = 'experimental-edge'; // Edge Runtimeを指定
 
 const getVideoData = async (videoId) => {
   const apiKey = process.env.YOUTUBE_API_KEY;
