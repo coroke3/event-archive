@@ -60,35 +60,45 @@ const getVideoData = async (videoId, fallbackUrl) => {
 };
 
 const fetchUserData = async (username) => {
-  const res = await fetch(
-    "https://script.google.com/macros/s/AKfycbzXvxOyXNXF6dUjsw0vbJxb_mLvWKhvk8l14YEOyBHsGOn25X-T4LnYcvTpvwxrqq5Xvw/exec",
-    {
-      headers: {
-        "Cache-Control": "public, max-age=172800", // 2日間キャッシュ
-      },
-    }
-  );
+  try {
+    const res = await fetch(
+      "https://script.google.com/macros/s/AKfycbzXvxOyXNXF6dUjsw0vbJxb_mLvWKhvk8l14YEOyBHsGOn25X-T4LnYcvTpvwxrqq5Xvw/exec",
+      {
+        headers: {
+          "Cache-Control": "public, max-age=172800", // 2日間キャッシュ
+        },
+      }
+    );
 
-  if (!res.ok) {
-    console.error(`Failed to fetch user data: ${res.statusText}`);
+    if (!res.ok) {
+      console.error(`Failed to fetch user data: ${res.statusText}`);
+      return null;
+    }
+
+    const usersData = await res.json();
+    return usersData.find((user) => user.username === username) || null;
+  } catch (error) {
+    console.error(`Fetch error: ${error.message}`);
     return null;
   }
-
-  const usersData = await res.json();
-  return usersData.find((user) => user.username === username);
 };
 
 const fetchWorksData = async () => {
-  const res = await fetch(
-    "https://script.google.com/macros/s/AKfycbyEph6zXb1IWFRLpTRLNLtxU4Kj7oe10bt2ifiyK09a6nM13PASsaBYFe9YpDj9OEkKTw/exec"
-  );
+  try {
+    const res = await fetch(
+      "https://script.google.com/macros/s/AKfycbyEph6zXb1IWFRLpTRLNLtxU4Kj7oe10bt2ifiyK09a6nM13PASsaBYFe9YpDj9OEkKTw/exec"
+    );
 
-  if (!res.ok) {
-    console.error(`Failed to fetch works data: ${res.statusText}`);
+    if (!res.ok) {
+      console.error(`Failed to fetch works data: ${res.statusText}`);
+      return [];
+    }
+
+    return await res.json();
+  } catch (error) {
+    console.error(`Fetch error: ${error.message}`);
     return [];
   }
-
-  return await res.json();
 };
 
 const fetchCollaborationWorksData = async (worksData, id) => {
@@ -126,6 +136,10 @@ const fetchCollaborationWorksData = async (worksData, id) => {
 export default function UserWorksPage({ user, works, collaborationWorks }) {
   const router = useRouter();
 
+  if (!user) {
+    return <p>ユーザーが見つかりませんでした。</p>;
+  }
+
   const firstWork = works.length > 0 ? works[0] : null;
   const firstCreator = firstWork ? firstWork.creator : "";
   const firstYchlink = firstWork ? firstWork.ychlink : "";
@@ -136,23 +150,17 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
   return (
     <div>
       <Head>
-        <title>
-          {user ? `${user.username}の作品 - PVSF Archive` : "作品一覧"}
-        </title>
-        <meta
-          name="description"
-          content={user ? `${user.username}の作品一覧です。` : "作品一覧です。"}
-        />
+        <title>{user ? `${user.username}の作品 - PVSF Archive` : "作品一覧"}</title>
+        <meta name="description" content={user ? `${user.username}の作品一覧です。` : "作品一覧です。"} />
       </Head>
       <Header />
       <div className="content">
+        {/* Render first work */}
         {firstWork && (
           <div className={styles.first}>
             {firstIcon && (
               <Image
-                src={`https://lh3.googleusercontent.com/d/${firstIcon.slice(
-                  33
-                )}`} // アイコンの URL
+                src={`https://lh3.googleusercontent.com/d/${firstIcon.slice(33)}`} // アイコンの URL
                 className={styles.uicon}
                 alt={`${firstCreator}のアイコン`}
                 width={150}
@@ -168,13 +176,7 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
             />
             <div className={styles.textblock}>
               <h2>{firstCreator}</h2>
-
-              <a
-                className={styles.username}
-                href={`${firstYchlink}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a className={styles.username} href={`${firstYchlink}`} target="_blank" rel="noopener noreferrer">
                 <FontAwesomeIcon icon={faYoutube} />
               </a>
 
@@ -192,18 +194,15 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
           </div>
         )}
 
+        {/* Render works */}
         <div className="work">
           {Array.isArray(works) && works.length > 0 ? (
             works.map((work) => {
               const showIcon = work.icon !== undefined && work.icon !== "";
-              const isPrivate =
-                work.status === "private" || work.status === "unknown";
+              const isPrivate = work.status === "private" || work.status === "unknown";
 
               return (
-                <div
-                  className={`works ${isPrivate ? styles.private : ""}`}
-                  key={work.ylink}
-                >
+                <div className={`works ${isPrivate ? styles.private : ""}`} key={work.ylink}>
                   <Link href={`../${work.ylink.slice(17, 28)}`}>
                     <Image
                       src={work.thumbnailUrl}
@@ -217,9 +216,7 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
                   <div className="subtitle">
                     {showIcon && work.icon ? (
                       <Image
-                        src={`https://lh3.googleusercontent.com/d/${work.icon.slice(
-                          33
-                        )}`}
+                        src={`https://lh3.googleusercontent.com/d/${work.icon.slice(33)}`}
                         className="icon"
                         alt={`${work.creator}のアイコン`}
                         width={50}
@@ -236,53 +233,55 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
                     )}
                     <p>{work.creator}</p>
                   </div>
-                  {isPrivate && <p className={styles.privateMsg}>非公開</p>}
+                  {isPrivate && <span className={styles.privateLabel}>非公開</span>}
                 </div>
               );
             })
           ) : (
-            <p>このユーザーは作品を持っていません。</p>
+            <p>作品が見つかりませんでした。</p>
           )}
         </div>
-        <div className="work">
-          <h2>参加合作</h2>
-          {collaborationWorks.map((work) => (
-            <div key={work.ylink} className="works">
-              <Link href={`../${work.ylink.slice(17, 28)}`}>
-                <Image
-                  src={work.thumbnailUrl}
-                  alt={`${work.title} - ${work.creator} | PVSF archive`}
-                  className="samune"
-                  width={640}
-                  height={360}
-                />
-              </Link>
-              <h3>{work.title}</h3>
-              <div className="subtitle">
-                {work.creatorIcon ? (
-                  <Image
-                    src={`https://lh3.googleusercontent.com/d/${work.creatorIcon.slice(
-                      33
-                    )}`}
-                    className="icon"
-                    alt={`${work.creator}のアイコン`}
-                    width={50}
-                    height={50}
-                  />
-                ) : (
-                  <Image
-                    src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
-                    alt={`アイコン`}
-                    className="icon"
-                    width={50}
-                    height={50}
-                  />
-                )}
 
-                <p>{work.creator}</p>
+        {/* Render collaboration works */}
+        <div className="collaboration">
+          {Array.isArray(collaborationWorks) && collaborationWorks.length > 0 ? (
+            collaborationWorks.map((work) => (
+              <div className={`collab ${styles.collab}`} key={work.ylink}>
+                <Link href={`../${work.ylink.slice(17, 28)}`}>
+                  <Image
+                    src={work.thumbnailUrl}
+                    alt={`${work.title} - ${work.creator} | PVSF archive`}
+                    className="collab-samune"
+                    width={640}
+                    height={360}
+                  />
+                </Link>
+                <h3>{work.title}</h3>
+                <div className="subtitle">
+                  <p>{work.creator}</p>
+                  {work.creatorIcon ? (
+                    <Image
+                      src={`https://lh3.googleusercontent.com/d/${work.creatorIcon.slice(33)}`}
+                      className="collab-icon"
+                      alt={`${work.creator}のアイコン`}
+                      width={50}
+                      height={50}
+                    />
+                  ) : (
+                    <Image
+                      src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
+                      alt={`アイコン`}
+                      className="collab-icon"
+                      width={50}
+                      height={50}
+                    />
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p>コラボレーション作品が見つかりませんでした。</p>
+          )}
         </div>
       </div>
       <Footer />
@@ -290,50 +289,24 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
   );
 }
 
-export const getStaticPaths = async () => {
-  const worksData = await fetchWorksData(); // 作品データを取得
-  const paths = worksData
-    .filter((work) => work.tlink) // tlinkがある作品のみ
-    .map((work) => ({ params: { id: work.tlink.toLowerCase() } })); // tlinkを小文字にしてパスを生成
-
-  return {
-    paths,
-    fallback: "blocking", // ページが見つからない場合はビルドを待つ
-  };
-};
-
-export const getStaticProps = async ({ params }) => {
-  const { id } = params;
-
-  const userData = await fetchUserData(id);
+export async function getServerSideProps(context) {
+  const { id } = context.query;
+  const user = await fetchUserData(id);
   const worksData = await fetchWorksData();
+  const works = worksData.filter((work) => work.creator === id);
+  const collaborationWorks = await fetchCollaborationWorksData(worksData, id);
 
-  const userWorks = await Promise.all(
-    worksData
-      .filter(
-        (work) => work.tlink && work.tlink.toLowerCase() === id.toLowerCase()
-      )
-      .map(async (work) => {
-        const videoId = work.ylink.slice(17, 28);
-        const fallbackUrl = work.thumbnailUrl; // ここでサムネイルURLを設定
-        const { status, thumbnailUrl } = await getVideoData(
-          videoId,
-          fallbackUrl
-        );
-
-        return { ...work, status, thumbnailUrl };
-      })
-  );
-
-  // 参加合作を取得
-  const collaborationWorks = await fetchCollaborationWorksData(worksData, id); // 修正
+  if (!user) {
+    return {
+      notFound: true,
+    };
+  }
 
   return {
     props: {
-      user: userData,
-      works: userWorks,
-      collaborationWorks, // 追加
+      user,
+      works,
+      collaborationWorks,
     },
-    revalidate: 172800, // 2日 (172800秒) ごとに再生成
   };
-};
+}
