@@ -45,13 +45,13 @@ const getVideoData = async (videoId) => {
 
     return {
       status: "private",
-      thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
+      thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
     };
   } catch (error) {
     console.error(`API 呼び出しエラー: ${error.message}`);
     return {
       status: "public",
-      thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
+      thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
     };
   }
 };
