@@ -1,16 +1,13 @@
 @charset "utf-8";
 
-
-
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap');
-
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap");
 
 :root {
   --background: #ececec;
   --foreground: rgb(12, 12, 12);
 }
 
-[data-theme='dark'] {
+[data-theme="dark"] {
   --background: rgb(20, 20, 20);
   --foreground: white;
 }
@@ -69,20 +66,51 @@ th {
   line-height: 1.4rem;
   margin: 10px 0;
 }
+.work {
+  width: 90%;
+  margin: auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+}
+.works {
+  width: 24%;
+  margin: 20px auto;
+}
 
+.icon {
+  width: 25px;
+  height: 25px;
+  border-radius: 20px;
+  margin-right: 8px;
+}
+
+.samune {
+  width: 100%;
+  aspect-ratio: 16/9;
+  height: auto;
+}
+.subtitle {
+  margin: auto 5px;
+  display: flex;
+  justify-self: start;
+}
+.works p {
+  margin: auto 10px auto 0px;
+
+}
+
+.private {
+  opacity: 0.5; /* 薄く表示する */
+   /* 非公開作品をクリックできないようにする */
+  }
 @media screen and (min-width: 1150px) {
   @media (min-aspect-ratio: 16 / 9) {
-    
   }
 }
 @media screen and (max-width: 1150px) {
-
-
 }
 @media screen and (max-width: 900px) {
-
-
-
   @keyframes fadeIn {
     0% {
       display: none;
@@ -124,9 +152,7 @@ th {
   }
 }
 @media screen and (max-width: 700px) {
-
 }
 
 @media screen and (max-width: 600px) {
-
 }

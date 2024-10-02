@@ -91,29 +91,29 @@ export default function UserWorksPage({ user, works }) {
       <Header /> 
       <div className="content"> 
         <h1>{user ? `${user.username}の作品` : "ユーザー情報を取得中..."}</h1> 
-        <div className={styles.work}> 
+        <div className="work"> 
           {Array.isArray(works) && works.length > 0 ? ( 
             works.map((work) => { 
               const showIcon = work.icon !== undefined && work.icon !== ""; 
               const isPrivate = work.status === "private" || work.status === "unknown"; 
 
               return ( 
-                <div className={`${styles.works} ${isPrivate ? styles.private : ""}`} key={work.ylink}> 
+                <div className={`works ${isPrivate ? styles.private : ""}`} key={work.ylink}> 
                   <Link href={`../${work.ylink.slice(17, 28)}`}> 
                     <Image 
                       src={work.thumbnailUrl} 
                       alt={`${work.title} - ${work.creator} | PVSF archive`} 
-                      className={styles.samune} 
+                      className="samune"
                       width={640} 
                       height={360} 
                     /> 
                   </Link> 
                   <h3>{work.title}</h3> 
-                  <div className={styles.subtitle}> 
+                  <div className="subtitle"> 
                     {showIcon && ( 
                       <Image 
                         src={`https://lh3.googleusercontent.com/d/${work.icon.slice(33)}`} 
-                        className={styles.icon} 
+                        className="icon"
                         alt={`${work.creator} アイコン`} 
                         width={50} 
                         height={50} 

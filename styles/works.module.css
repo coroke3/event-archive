@@ -1,27 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300&display=swap');
 
-	.work{
-		width: 90%;
-		margin: auto;
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: space-around;
-	}
-	.works{
-		width: 24%;
-		margin: 20px auto;
-	}
 
-	.icon{
-		width: 25px;
-		height: 25px;
-		border-radius: 20px;
-	}
-	.samune{
-		width: 100%;
-		aspect-ratio: 16/9;
-		height: auto;
-	}
 	.works p {
 		margin: auto 10px;
 	}
