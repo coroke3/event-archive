@@ -91,33 +91,37 @@ const fetchWorksData = async () => {
   return await res.json();
 };
 
-// fetchCollaborationWorksData関数内でアイコンを取得
-const fetchCollaborationWorksData = async (worksData, id) => { 
-  const collaborationWorks = worksData.filter((work) => { 
-    if (work.memberid) { 
-      const memberIds = work.memberid.split(','); // カンマで分割 
-      return memberIds.some(memberId => memberId.trim() === id); // id と一致するかチェック 
-    } 
-    return false; // memberid が存在しない場合は false 
-  }); 
+const fetchCollaborationWorksData = async (worksData, id) => {
+  const collaborationWorks = worksData.filter((work) => {
+    if (work.memberid) {
+      const memberIds = work.memberid.split(","); // カンマで分割
+      return memberIds.some((memberId) => memberId.trim() === id); // id と一致するかチェック
+    }
+    return false; // memberid が存在しない場合は false
+  });
 
-  // 動画IDとサムネイルURLを取得 
-  const updatedCollaborationWorks = await Promise.all( 
-    collaborationWorks.map(async (work) => { 
-      const videoId = work.ylink.slice(17, 28); // ylinkから動画IDを取得 
-      const fallbackUrl = work.thumbnailUrl; // ここでサムネイルURLを設定 
-      const { status, thumbnailUrl } = await getVideoData(videoId, fallbackUrl); 
+  // 動画IDとサムネイルURLを取得
+  const updatedCollaborationWorks = await Promise.all(
+    collaborationWorks.map(async (work) => {
+      const videoId = work.ylink.slice(17, 28); // ylinkから動画IDを取得
+      const fallbackUrl = work.thumbnailUrl; // ここでサムネイルURLを設定
+      const { status, thumbnailUrl } = await getVideoData(videoId, fallbackUrl);
 
       // アイコンの取得
       const creatorUserData = await fetchUserData(work.creator); // creatorからユーザー情報を取得
-      const creatorIcon = creatorUserData ? creatorUserData.icon : ""; // アイコンを取得
+      const creatorIcon = creatorUserData ? creatorUserData.icon : null; // undefined を null に置き換える
 
-      return { ...work, status, thumbnailUrl, creatorIcon }; // 作品データにステータスとサムネイル、アイコンを追加 
-    }) 
-  ); 
+      return {
+        ...work,
+        status,
+        thumbnailUrl,
+        creatorIcon: creatorIcon || null, // null に設定
+      }; // 作品データにステータスとサムネイル、アイコンを追加
+    })
+  );
 
-  return updatedCollaborationWorks; 
-}; 
+  return updatedCollaborationWorks;
+};
 
 export default function UserWorksPage({ user, works, collaborationWorks }) {
   const router = useRouter();
@@ -240,48 +244,46 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
             <p>このユーザーは作品を持っていません。</p>
           )}
         </div>
-
-        {collaborationWorks.length > 0 && (
-          <div className="work">
-            <h2>参加合作作品</h2>
-            {collaborationWorks.map((work) => (
-              <div key={work.ylink} className="works">
-                <Link href={`../${work.ylink.slice(17, 28)}`}>
+        <div className="work">
+          <h2>参加合作</h2>
+          {collaborationWorks.map((work) => (
+            <div key={work.ylink} className="works">
+              <Link href={`../${work.ylink.slice(17, 28)}`}>
+                <Image
+                  src={work.thumbnailUrl}
+                  alt={`${work.title} - ${work.creator} | PVSF archive`}
+                  className="samune"
+                  width={640}
+                  height={360}
+                />
+              </Link>
+              <h3>{work.title}</h3>
+              <div className="subtitle">
+                {work.creatorIcon ? (
                   <Image
-                    src={work.thumbnailUrl}
-                    alt={`${work.title} - ${work.creator} | PVSF archive`}
-                    className="samune"
-                    width={640}
-                    height={360}
+                    src={`https://lh3.googleusercontent.com/d/${work.creatorIcon.slice(
+                      33
+                    )}`}
+                    className="icon"
+                    alt={`${work.creator}のアイコン`}
+                    width={50}
+                    height={50}
                   />
-                </Link>
-                <h3>{work.title}</h3>
-                <div className="subtitle">
-                  {work.creatorIcon ? (
-                    <Image
-                      src={`https://lh3.googleusercontent.com/d/${work.creatorIcon.slice(
-                        33
-                      )}`}
-                      className="icon"
-                      alt={`${work.creator}のアイコン`}
-                      width={50}
-                      height={50}
-                    />
-                  ) : (
-                    <Image
-                      src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
-                      alt={`アイコン`}
-                      className="icon"
-                      width={50}
-                      height={50}
-                    />
-                  )}
-                  <p>{work.creator}</p>
-                </div>
+                ) : (
+                  <Image
+                    src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
+                    alt={`アイコン`}
+                    className="icon"
+                    width={50}
+                    height={50}
+                  />
+                )}
+
+                <p>{work.creator}</p>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          ))}
+        </div>
       </div>
       <Footer />
     </div>
