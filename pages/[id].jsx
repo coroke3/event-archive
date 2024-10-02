@@ -1,13 +1,10 @@
-// pages/work/[id].jsx
 import Link from "next/link";
 import Head from "next/head";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import styles from "../styles/work.module.css";
-import { css } from "@emotion/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faXTwitter } from "@fortawesome/free-brands-svg-icons";
-import { faYoutube } from "@fortawesome/free-brands-svg-icons";
+import { faXTwitter, faYoutube } from "@fortawesome/free-brands-svg-icons";
 
 export default function WorkId({ work, previousWorks, nextWorks }) {
   const showComment = work.comment !== undefined && work.comment !== "";
@@ -16,51 +13,39 @@ export default function WorkId({ work, previousWorks, nextWorks }) {
   const showTwitter = work.tlink !== undefined && work.tlink !== "";
   const showYoutube = work.ylink !== undefined && work.ylink !== "";
   const showMenber = work.member !== undefined && work.member !== "";
-  const showMusic = work.music !== undefined && work.music !== ""  && work.credit !== undefined && work.credit !== "";
+  const showMusic = work.music !== undefined && work.music !== "" && work.credit !== undefined && work.credit !== "";
   const originalDate = new Date(work.time);
   const modifiedDate = new Date(originalDate.getTime() - 9 * 60 * 60 * 1000);
   const formattedDate = modifiedDate.toLocaleString();
   const showTime = work.time !== undefined && work.time !== "";
 
+  // サムネイルが存在しない場合のエラーハンドリング
+  const getThumbnailUrl = (ylink) => {
+    if (!ylink) {
+      return "/error-thumbnail.jpg"; // デフォルトのエラー画像
+    }
+    return `https://i.ytimg.com/vi/${ylink.slice(17, 28)}/maxresdefault.jpg`; // YouTube URLからサムネイル取得
+  };
+
   return (
     <div>
       <Head>
-        <title>
-          {work.title} - {work.creator} - オンライン映像イベント / PVSF archive
-        </title>
-        <meta
-          name="description"
-          content={`PVSFへの出展作品です。  ${work.title} - ${work.creator}`}
-        />
+        <title>{work.title} - {work.creator} - オンライン映像イベント / PVSF archive</title>
+        <meta name="description" content={`PVSFへの出展作品です。  ${work.title} - ${work.creator}`} />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@pvscreeningfes" />
         <meta name="twitter:creator" content="@coroke3" />
         <meta property="og:url" content="pvsf.jp" />
-        <meta
-          property="og:title"
-          content={`${work.title} - ${work.creator} / PVSF archive`}
-        />
-        <meta
-          property="og:description"
-          content={`PVSF 出展作品  ${work.title} - ${work.creator}  music:${work.music} - ${work.credit}`}
-        />
-        <meta
-          property="og:image"
-          content={`https://i.ytimg.com/vi/${work.ylink.slice(
-            17,
-            28
-          )}/maxresdefault.jpg`}
-        />
+        <meta property="og:title" content={`${work.title} - ${work.creator} / PVSF archive`} />
+        <meta property="og:description" content={`PVSF 出展作品  ${work.title} - ${work.creator}  music:${work.music} - ${work.credit}`} />
+        <meta property="og:image" content={getThumbnailUrl(work.ylink)} />
       </Head>
       <Header />
       <div className={styles.contentr}>
         <div className={styles.bf}>
           <div className={styles.s1f}>
             <iframe
-              src={`https://www.youtube.com/embed/${work.ylink.slice(
-                17,
-                28
-              )}?autoplay=1`}
+              src={`https://www.youtube.com/embed/${work.ylink.slice(17, 28)}?autoplay=1`}
               title="YouTube video player"
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -80,20 +65,12 @@ export default function WorkId({ work, previousWorks, nextWorks }) {
                 <h3 className={styles.creator}>
                   {work.creator}
                   {showYoutube && (
-                    <a
-                      href={`${work.ylink}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
+                    <a href={`${work.ylink}`} target="_blank" rel="noopener noreferrer">
                       <FontAwesomeIcon icon={faYoutube} />
                     </a>
                   )}
                   {showTwitter && (
-                    <a
-                      href={`https://twitter.com/${work.tlink}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
+                    <a href={`https://twitter.com/${work.tlink}`} target="_blank" rel="noopener noreferrer">
                       <FontAwesomeIcon icon={faXTwitter} />
                     </a>
                   )}
@@ -103,11 +80,7 @@ export default function WorkId({ work, previousWorks, nextWorks }) {
             </div>
             {showMusic && (
               <p>
-                <div
-                  dangerouslySetInnerHTML={{
-                    __html: `楽曲:${work.music} - ${work.credit}<br> `,
-                  }}
-                />
+                <div dangerouslySetInnerHTML={{ __html: `楽曲:${work.music} - ${work.credit}<br>` }} />
               </p>
             )}
             {showComment && (
@@ -124,22 +97,13 @@ export default function WorkId({ work, previousWorks, nextWorks }) {
           <div className={styles.s2f}>
             <div className={styles.navLinks}>
               {previousWorks.map((prevWork) => (
-                <div className={styles.ss1} key={prevWork.ylink.slice(
-                  17,
-                  28
-                )}>
+                <div className={styles.ss1} key={prevWork.ylink.slice(17, 28)}>
                   <div className={styles.ss12}>
-                    <Link href={`/${prevWork.ylink.slice(
-                          17,
-                          28
-                        )}`}>
+                    <Link href={`/${prevWork.ylink.slice(17, 28)}`}>
                       <img
-                        src={`https://i.ytimg.com/vi/${prevWork.ylink.slice(
-                          17,
-                          28
-                        )}/mqdefault.jpg`}
+                        src={getThumbnailUrl(prevWork.ylink)}
                         width={`100%`}
-                        alt={`${prevWork.title} - ${prevWork.creater} | PVSF archive`}
+                        alt={`${prevWork.title} - ${prevWork.creator} | PVSF archive`}
                       />
                     </Link>
                   </div>
@@ -150,22 +114,13 @@ export default function WorkId({ work, previousWorks, nextWorks }) {
                 </div>
               ))}
               {nextWorks.map((nextWork) => (
-                <div className={styles.ss1} key={nextWork.ylink.slice(
-                  17,
-                  28
-                )}>
+                <div className={styles.ss1} key={nextWork.ylink.slice(17, 28)}>
                   <div className={styles.ss12}>
-                    <Link href={`/${nextWork.ylink.slice(
-                          17,
-                          28
-                        )}`}>
+                    <Link href={`/${nextWork.ylink.slice(17, 28)}`}>
                       <img
-                        src={`https://i.ytimg.com/vi/${nextWork.ylink.slice(
-                          17,
-                          28
-                        )}/mqdefault.jpg`}
+                        src={getThumbnailUrl(nextWork.ylink)}
                         width={`100%`}
-                        alt={`${nextWork.title} - ${nextWork.creater} | PVSF archive`}
+                        alt={`${nextWork.title} - ${nextWork.creator} | PVSF archive`}
                       />
                     </Link>
                   </div>
@@ -183,38 +138,38 @@ export default function WorkId({ work, previousWorks, nextWorks }) {
   );
 }
 
-
 export async function getStaticPaths() {
   const res = await fetch(
-    "https://script.google.com/macros/s/AKfycbyEph6zXb1IWFRLpTRLNLtxU4Kj7oe10bt2ifiyK09a6nM13PASsaBYFe9YpDj9OEkKTw/exec"  // JSON ファイルのURLを指定
+    "https://script.google.com/macros/s/AKfycbyEph6zXb1IWFRLpTRLNLtxU4Kj7oe10bt2ifiyK09a6nM13PASsaBYFe9YpDj9OEkKTw/exec"
   );
   const data = await res.json();
 
   const paths = data.map((content) => `/${content.ylink.slice(17, 28)}`);
-  
+
   return { paths, fallback: false };
 }
 
 export async function getStaticProps(context) {
   const id = context.params.id;
 
-  const res = await fetch(
-    "https://script.google.com/macros/s/AKfycbyEph6zXb1IWFRLpTRLNLtxU4Kj7oe10bt2ifiyK09a6nM13PASsaBYFe9YpDj9OEkKTw/exec"  // JSON ファイルのURLを指定
-  );
-  const allWork = await res.json();
+  let allWork;
+  try {
+    const res = await fetch(
+      "https://script.google.com/macros/s/AKfycbyEph6zXb1IWFRLpTRLNLtxU4Kj7oe10bt2ifiyK09a6nM13PASsaBYFe9YpDj9OEkKTw/exec"
+    );
+    allWork = await res.json();
+  } catch (error) {
+    console.error("Failed to fetch data from API:", error);
+    allWork = []; // フォールバックとして空の配列を設定
+  }
 
-  const currentIndex = allWork.findIndex(
-    (content) => content.ylink.slice(17, 28).toString() === id
-  );
-  const previousWorks = allWork.slice(
-    Math.max(currentIndex - 5, 0),
-    currentIndex
-  );
+  const currentIndex = allWork.findIndex((content) => content.ylink.slice(17, 28).toString() === id);
+  const previousWorks = allWork.slice(Math.max(currentIndex - 5, 0), currentIndex);
   const nextWorks = allWork.slice(currentIndex + 1, currentIndex + 6);
 
   return {
     props: {
-      work: allWork.find(content => content.ylink.slice(17, 28) === id),
+      work: allWork.find((content) => content.ylink.slice(17, 28) === id) || {}, // フォールバックで空オブジェクト
       previousWorks,
       nextWorks,
     },

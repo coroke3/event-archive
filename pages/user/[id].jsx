@@ -6,37 +6,54 @@ import Header from "../../components/Header";
 import Footer from "../../components/Footer";       
 import styles from "../../styles/works.module.css"; 
 
-// YouTube Data APIを使って公開状態とサムネイルURLを取得する関数  
-const getVideoData = async (videoId) => {  
-  const apiKey = process.env.YOUTUBE_API_KEY; // 環境変数からAPIキーを取得  
-  const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${apiKey}&part=snippet,status`; // snippetとstatusを取得  
-  const videoRes = await fetch(apiUrl);  
 
-  if (!videoRes.ok) {  
-    console.error(`Failed to fetch video data: ${videoRes.statusText}`);  
-    return { status: "unknown", thumbnails: {} }; // エラー時は'unknown'を返す  
-  }  
+// YouTube Data APIを使って公開状態とサムネイルURLを取得する関数   
+const getVideoData = async (videoId) => {
+  const apiKey = process.env.YOUTUBE_API_KEY; // 環境変数からAPIキーを取得
+  const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${apiKey}&part=snippet,status`; // snippetとstatusを取得
 
-  const videoData = await videoRes.json();  
-  if (videoData.items.length > 0) {  
-    const videoItem = videoData.items[0];  
-    const status = videoItem.status.privacyStatus;  
-    const thumbnails = videoItem.snippet.thumbnails;  
+  try {
+    const videoRes = await fetch(apiUrl);
 
-    // サムネイルが存在しない場合にデフォルトのURLを設定  
-    const defaultThumbnailUrl = "/default-thumbnail.jpg"; // デフォルト画像のパス  
-    const thumbnailUrl =  
-      thumbnails?.maxres?.url ||  
-      thumbnails?.high?.url ||  
-      thumbnails?.medium?.url ||  
-      thumbnails?.default?.url ||  
-      defaultThumbnailUrl;  
+    // API 呼び出しが成功したかチェック
+    if (!videoRes.ok) {
+      console.warn(`YouTube API の取得に失敗しました: ${videoRes.statusText}`);
+      return {
+        status: "public", // API が失敗した場合でも公開扱いにする
+        thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`, // URL準拠でサムネイルを取得
+      };
+    }
 
-    return { status, thumbnailUrl };  
-  }  
+    const videoData = await videoRes.json();
 
-  return { status: "unknown", thumbnailUrl: "/default-thumbnail.jpg" };  
-};  
+    // API のレスポンスに動画データが含まれているかを確認
+    if (videoData.items.length > 0) {
+      const videoItem = videoData.items[0];
+      const status = videoItem.status.privacyStatus || "public"; // ステータスが不明なら公開扱いにする
+      const thumbnails = videoItem.snippet.thumbnails;
+
+      // サムネイルが存在しない場合はデフォルトのエラー画像を設定
+      const defaultThumbnailUrl = "/default-thumbnail.jpg";
+      const thumbnailUrl = thumbnails?.maxres?.url || thumbnails?.high?.url || thumbnails?.medium?.url || thumbnails?.default?.url || defaultThumbnailUrl;
+
+      return { status, thumbnailUrl };
+    }
+
+    return {
+      status: "public", // API データが空でも公開扱いにする
+      thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`, // デフォルトで YouTube URL 準拠のサムネイルを使用
+    };
+
+  } catch (error) {
+    // API 呼び出しにエラーが発生した場合
+    console.error(`API 呼び出しエラー: ${error.message}`);
+    return {
+      status: "public", // エラー時も公開扱い
+      thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`, // URL 準拠でサムネイルを取得
+    };
+  }
+};
+
 
 // ユーザー情報を取得する関数       
 const fetchUserData = async (username) => {       

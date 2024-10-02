@@ -6,37 +6,44 @@ import Footer from "../components/Footer";
 import styles from "../styles/works.module.css";
 import Head from "next/head";
 
-// YouTube Data APIを使って公開状態とサムネイルURLを取得する関数 
-const getVideoData = async (videoId) => { 
-  const apiKey = process.env.YOUTUBE_API_KEY; // 環境変数からAPIキーを取得 
-  const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${apiKey}&part=snippet,status`; // snippetとstatusを取得 
-  const videoRes = await fetch(apiUrl); 
+// YouTube Data APIを使って公開状態とサムネイルURLを取得する関数  
+const getVideoData = async (videoId) => {  
+  const apiKey = process.env.YOUTUBE_API_KEY; // 環境変数からAPIキーを取得  
+  const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${apiKey}&part=snippet,status`; // snippetとstatusを取得  
+  const videoRes = await fetch(apiUrl);  
+ 
+  if (!videoRes.ok) {  
+    console.error(`Failed to fetch video data: ${videoRes.statusText}`);  
+    
+    // APIが正常に動作していない場合、YouTubeのURLからとりあえずサムネイルを取得
+    const fallbackThumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;  
+    return { status: "public", thumbnailUrl: fallbackThumbnailUrl };  
+  }  
+ 
+  const videoData = await videoRes.json();  
+  if (videoData.items.length > 0) {  
+    const videoItem = videoData.items[0];  
+    const status = videoItem.status.privacyStatus;  
+    const thumbnails = videoItem.snippet.thumbnails;  
+ 
+    // サムネイルが存在しない場合にデフォルトのエラー画像を設定  
+    const errorThumbnailUrl = "/error-thumbnail.jpg"; // エラー画像のパス  
+    const thumbnailUrl =  
+      thumbnails?.maxres?.url ||  // maxresを最優先に使用  
+      thumbnails?.high?.url ||  
+      thumbnails?.medium?.url ||  
+      thumbnails?.default?.url ||  
+      errorThumbnailUrl; // サムネイルが存在しない場合はエラー画像を使用
+ 
+    return { status, thumbnailUrl };  
+  }  
+ 
+  // アイテムが無い場合もYouTubeのURLからサムネイルを取得
+  const fallbackThumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;  
+  return { status: "public", thumbnailUrl: fallbackThumbnailUrl };  
+};  
 
-  if (!videoRes.ok) { 
-    console.error(`Failed to fetch video data: ${videoRes.statusText}`); 
-    return { status: "unknown", thumbnails: {} }; // エラー時は'unknown'を返す 
-  } 
 
-  const videoData = await videoRes.json(); 
-  if (videoData.items.length > 0) { 
-    const videoItem = videoData.items[0]; 
-    const status = videoItem.status.privacyStatus; 
-    const thumbnails = videoItem.snippet.thumbnails; 
-
-    // サムネイルが存在しない場合にデフォルトのURLを設定 
-    const defaultThumbnailUrl = "/default-thumbnail.jpg"; // デフォルト画像のパス 
-    const thumbnailUrl = 
-      thumbnails?.maxres?.url || 
-      thumbnails?.high?.url || 
-      thumbnails?.medium?.url || 
-      thumbnails?.default?.url || 
-      defaultThumbnailUrl; 
-
-    return { status, thumbnailUrl }; 
-  } 
-
-  return { status: "unknown", thumbnailUrl: "/default-thumbnail.jpg" }; 
-}; 
 
 export default function Home({ work }) { 
   const [filter, setFilter] = useState({ public: true, unlisted: true, private: false }); 
@@ -157,28 +164,34 @@ export default function Home({ work }) {
   ); 
 } 
 
-// YouTube APIからステータスとサムネイルを取得し、作品データに付加する 
-export const getStaticProps = async () => { 
-  const res = await fetch( 
-    "https://script.google.com/macros/s/AKfycbyEph6zXb1IWFRLpTRLNLtxU4Kj7oe10bt2ifiyK09a6nM13PASsaBYFe9YpDj9OEkKTw/exec" 
-  ); 
+// YouTube APIからステータスとサムネイルを取得し、作品データに付加する
+export const getStaticProps = async () => {
+  const res = await fetch(
+    "https://script.google.com/macros/s/AKfycbyEph6zXb1IWFRLpTRLNLtxU4Kj7oe10bt2ifiyK09a6nM13PASsaBYFe9YpDj9OEkKTw/exec"
+  );
 
-  if (!res.ok) { 
-    console.error(`Failed to fetch work data: ${res.statusText}`); 
-    return { props: { work: [] } }; // エラー時は空の配列を返す 
-  } 
+  if (!res.ok) {
+    console.error(`Failed to fetch work data: ${res.statusText}`);
+    return { props: { work: [] } }; // エラー時は空の配列を返す
+  }
 
-  const work = await res.json(); 
+  const work = await res.json();
 
-  const workWithStatus = await Promise.all( 
-    work.map(async (item) => { 
-      const videoId = item.ylink.slice(17, 28); 
-      const { status, thumbnailUrl } = await getVideoData(videoId); // ステータスとサムネイルURLを取得 
-      return { ...item, status, thumbnailUrl }; // サムネイルURLも含める 
-    }) 
-  ); 
+  const workWithStatus = await Promise.all(
+    work.map(async (item) => {
+      const videoId = item.ylink.slice(17, 28);
+      const { status, thumbnailUrl } = await getVideoData(videoId);
 
-  return { 
-    props: { work: workWithStatus }, 
-  }; 
-}; 
+      // thumbnailUrlがundefinedの場合にデフォルト画像を設定
+      return { 
+        ...item, 
+        status, 
+        thumbnailUrl: thumbnailUrl || '/default-thumbnail.jpg' 
+      };
+    })
+  );
+
+  return {
+    props: { work: workWithStatus },
+  };
+};
