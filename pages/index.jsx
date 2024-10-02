@@ -180,17 +180,24 @@ export default function Home({ work }) {
                   </Link>
                   <h3>{work.title}</h3>
                   <div className="subtitle">
-                    {showIcon && (
-                      <Image
-                        src={`https://lh3.googleusercontent.com/d/${work.icon.slice(
-                          33
-                        )}`}
-                        className="icon"
-                        alt={`${work.creator} アイコン`}
-                        width={50}
-                        height={50}
-                      />
-                    )}
+
+                    {showIcon && work.icon ? (        
+                    <Image        
+                      src={`https://lh3.googleusercontent.com/d/${work.icon.slice(33)}`}       
+                      className="icon"        
+                      alt={`${work.creator}のアイコン`}        
+                      width={50}        
+                      height={50}        
+                    />        
+                  ) : (        
+                    <Image        
+                      src='https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg'   
+                      alt={`アイコン`}    
+                      className="icon"      
+                      width={50}        
+                      height={50}        
+                    />        
+                  )}        
                     <p>{work.creator}</p>
                     <p>
                       {work.status === "public"

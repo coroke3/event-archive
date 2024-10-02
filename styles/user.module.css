@@ -11,7 +11,13 @@
 		width: 24%;
 		margin: 20px auto;
 	}
-
+	.users a{
+		text-decoration: none;
+		color: #000;
+	}
+	.users p{
+		margin: 0;
+	}
 	.icon{
 		width: 25px;
 		height: 25px;
@@ -33,7 +39,8 @@
 	.private {
 		opacity: 0.5; /* 薄く表示する */
 		 /* 非公開作品をクリックできないようにする */
-	  }
+	}
+
 	@keyframes scroll {
 		0% {
 		  transform: translateX(100%);

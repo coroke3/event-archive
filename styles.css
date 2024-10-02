@@ -53,8 +53,8 @@ h3 {
 h4 {
   font-weight: 500;
   font-style: normal;
-  font-size: 1.3rem;
-  margin: 30px auto 3px auto;
+  font-size: 1.1rem;
+  margin: auto;
 }
 p,
 li,
@@ -103,7 +103,11 @@ th {
 .private {
   opacity: 0.5; /* 薄く表示する */
    /* 非公開作品をクリックできないようにする */
-  }
+}
+.id{
+  color: #666666;
+  font-size: 0.6rem;
+}
 @media screen and (min-width: 1150px) {
   @media (min-aspect-ratio: 16 / 9) {
   }
