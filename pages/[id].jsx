@@ -98,7 +98,7 @@ export default function WorkId({
               src={`https://www.youtube.com/embed/${work.ylink.slice(
                 17,
                 28
-              )}?autoplay=1`}
+              )}?vq=hd1080&autoplay=1`}
               title="YouTube video player"
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -170,9 +170,39 @@ export default function WorkId({
               </p>
             )}
             {showMenber && (
-              <p>
-                <div dangerouslySetInnerHTML={{ __html: `${work.member}` }} />
-              </p>
+              <div>
+                {work.member.split(/[,、，]/).map((username, index) => {
+                  const memberId = work.memberid
+                    .split(/[,、，]/)
+                    [index]?.trim();
+                  return (
+                    <span key={index} style={{ marginRight: "10px" }}>
+                      {memberId ? (
+                        <a
+                          href={`https://twitter.com/${memberId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {username.trim()}
+                        </a>
+                      ) : (
+                        username.trim()
+                      )}
+                      {memberId && (
+                        <span
+                          style={{
+                            fontSize: "0.8em",
+                            color: "#555",
+                            marginLeft: "5px",
+                          }}
+                        >
+                          @{memberId}
+                        </span>
+                      )}
+                    </span>
+                  );
+                })}
+              </div>
             )}
           </div>
           <div className={styles.s2f}>

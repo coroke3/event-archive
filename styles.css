@@ -74,6 +74,10 @@ th {
   flex-wrap: wrap;
   justify-content: space-around;
 }
+.work h2 {
+  width: 100%;
+  text-align: center;
+}
 .works {
   width: 24%;
   margin: 20px auto;

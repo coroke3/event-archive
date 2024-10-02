@@ -79,9 +79,9 @@ export default function UserPage({ users = [], icons = [] }) {
                       height={50}        
                     />        
                   )}        
-                  <Link href={`/user/${user.username}`} passHref>  
+                  <Link href={`/user/${user.username}`} passHref> 
+                  <h4>{creatorName}</h4>  
                   <p className="id">@{user.username}</p>   
-                  <h4>{creatorName}</h4> 
                   </Link>   
                    {/* creator名を表示 */}        
                 </div>        
