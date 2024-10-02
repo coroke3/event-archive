@@ -60,7 +60,7 @@ function Header() {
           </div>
           <div className="menubar">
           <div className="menubars ms2">
-              <Link href="../../../../user">user</Link>
+              <Link href="../../../../user">クリエイターから探す</Link>
             </div>
 
 

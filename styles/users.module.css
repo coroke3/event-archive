@@ -1,0 +1,71 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300&display=swap");
+
+.uback {
+  z-index: -100;
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  position: absolute;
+  top: 75px;
+  left: 0;
+}
+.first::before {
+  content: "";
+  background-color: var(--background);
+  opacity: 0.4;
+  position: absolute;
+  width: 100%;
+  height: 300px;
+  top: 75px;
+  left: 0;
+  z-index: -99;
+}
+.first {
+  height: 150px;
+  display: flex;
+  padding: 75px;
+}
+.uicon {
+  border-radius: 50%;
+}
+.username {
+  font-size: 0.6rem;
+  letter-spacing: 0.3px;
+  border: solid var(--foreground) 1px;
+  border-radius: 20px;
+  padding: 1px 5px;
+}
+.textblock {
+  margin: auto 10px 10px 10px;
+}
+.textblock h2 {
+  border: 0;
+  padding: 0;
+  margin: auto 0;
+}
+.textblock a {
+  color: var(--foreground);
+  margin-right: 10px;
+  text-decoration: none;
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+@media screen and (max-width: 1550px) {
+}
+@media screen and (max-width: 1230px) {
+}
+@media screen and (max-width: 900px) {
+}
+@media screen and (max-width: 800px) {
+}
+@media screen and (min-width: 1150px) {
+  @media (min-aspect-ratio: 16 / 9) {
+  }
+}
