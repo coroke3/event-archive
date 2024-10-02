@@ -31,7 +31,8 @@
   margin: auto 0px auto 5px;
 }
 .title {
-  font-weight: 600;
+  font-family: "Inter", "Zen Kaku Gothic New", sans-serif;
+  font-weight: 300;
   font-style: normal;
   font-size: 2rem;
   margin: 6px auto 10px auto;
