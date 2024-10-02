@@ -6,7 +6,5 @@ module.exports = {
     domains: ["i.gyazo.com", "lh3.googleusercontent.com","i.ytimg.com","img.youtube.com"], 
     
   }, 
-  experimental: { 
-    edge: true, 
-  }, 
+
 }; 

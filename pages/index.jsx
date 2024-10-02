@@ -10,70 +10,67 @@ import path from "path";
 
 // キャッシュファイルのパス 
 const cacheFilePath = path.join(process.cwd(), "cache", "youtubeCache.json"); 
+// キャッシュを取得する関数
+const getCache = () => {
+  if (fs.existsSync(cacheFilePath)) {
+    const cacheData = JSON.parse(fs.readFileSync(cacheFilePath, "utf-8"));
+    const now = new Date();
+    const cacheTime = new Date(cacheData.timestamp);
 
-// YouTube Data APIを使って公開状態とサムネイルURLを取得する関数    
-// YouTube Data APIを使って公開状態とサムネイルURLを取得する関数     
-const getVideoData = async (videoId) => {     
-  const apiKey = process.env.YOUTUBE_API_KEY; // 環境変数からAPIキーを取得     
-  const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${apiKey}&part=snippet,status`; // snippetとstatusを取得     
- 
-  try {   
-    const videoRes = await fetch(apiUrl);     
- 
-    if (!videoRes.ok) {     
-      console.error(`Failed to fetch video data: ${videoRes.statusText}`);     
-      return { status: "public", thumbnailUrl: `/default-thumbnail.jpg` }; // APIエラー時には全て公開とする     
-    }     
- 
-    const videoData = await videoRes.json();     
-    if (videoData.items.length > 0) {     
-      const videoItem = videoData.items[0];     
-      const status = videoItem.status.privacyStatus;     
-      console.log(`Video ID: ${videoId}, Status: ${status}`); // デバッグ用 
-      const thumbnails = videoItem.snippet.thumbnails;     
- 
-      const errorThumbnailUrl = "/error-thumbnail.jpg"; // エラー画像のパス     
-      const thumbnailUrl =     
-        thumbnails?.maxres?.url ||  // maxresを最優先に使用     
-        thumbnails?.high?.url ||     
-        thumbnails?.medium?.url ||     
-        thumbnails?.default?.url ||     
-        errorThumbnailUrl; // サムネイルが存在しない場合はエラー画像を使用   
- 
-      saveCache(videoId, { status, thumbnailUrl }); // キャッシュを保存  
-      return { status, thumbnailUrl };     
-    }     
- 
+    // キャッシュが2日以内であればそのまま返す
+    if (now - cacheTime < 2 * 24 * 60 * 60 * 1000) {
+      return cacheData.data;
+    }
+  }
+  return null; // キャッシュが存在しないか古い場合
+};
+
+// キャッシュを保存する関数
+const saveCache = (videoId, data) => {
+  const cache = getCache() || {};
+  cache[videoId] = data;
+  fs.writeFileSync(cacheFilePath, JSON.stringify({ timestamp: new Date(), data: cache }, null, 2));
+};
+
+// YouTube APIを使用して公開状態とサムネイルURLを取得する関数
+const getVideoData = async (videoId) => {
+  const apiKey = process.env.YOUTUBE_API_KEY; // 環境変数からAPIキーを取得
+  const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${apiKey}&part=snippet,status`;
+
+  try {
+    const videoRes = await fetch(apiUrl);
+
+    if (!videoRes.ok) {
+      console.error(`Failed to fetch video data: ${videoRes.statusText}`);
+      return { status: "public", thumbnailUrl: `/default-thumbnail.jpg` }; // APIエラー時には全て公開とする
+    }
+
+    const videoData = await videoRes.json();
+    if (videoData.items.length > 0) {
+      const videoItem = videoData.items[0];
+      const status = videoItem.status.privacyStatus;
+      console.log(`Video ID: ${videoId}, Status: ${status}`); // デバッグ用
+      const thumbnails = videoItem.snippet.thumbnails;
+
+      const errorThumbnailUrl = "/error-thumbnail.jpg"; // エラー画像のパス
+      const thumbnailUrl =
+        thumbnails?.maxres?.url ||  // maxresを最優先に使用
+        thumbnails?.high?.url ||
+        thumbnails?.medium?.url ||
+        thumbnails?.default?.url ||
+        errorThumbnailUrl; // サムネイルが存在しない場合はエラー画像を使用
+
+      saveCache(videoId, { status, thumbnailUrl }); // キャッシュを保存
+      return { status, thumbnailUrl };
+    }
+
     // もしデータが無い場合はデフォルトのサムネイルを返し、公開と扱う
-    return { status: "public", thumbnailUrl: `/default-thumbnail.jpg` };     
-  } catch (error) {   
-    console.error(`API 呼び出しエラー: ${error.message}`);   
+    return { status: "public", thumbnailUrl: `/default-thumbnail.jpg` };
+  } catch (error) {
+    console.error(`API 呼び出しエラー: ${error.message}`);
     return { status: "public", thumbnailUrl: `/default-thumbnail.jpg` }; // APIエラー時には全て公開とする
-  }   
-}; 
-
-
-// キャッシュを取得する関数 
-const getCache = () => { 
-  if (fs.existsSync(cacheFilePath)) { 
-    const cacheData = JSON.parse(fs.readFileSync(cacheFilePath, "utf-8")); 
-    const now = new Date(); 
-    const cacheTime = new Date(cacheData.timestamp); 
-
-    // キャッシュが2日以内であればそのまま返す 
-    if (now - cacheTime < 2 * 24 * 60 * 60 * 1000) { 
-      return cacheData.data; 
-    } 
-  } 
-  return null; // キャッシュが存在しないか古い場合 
-}; 
-
-// キャッシュを保存する関数 
-const saveCache = (videoId, data) => { 
-  const cache = getCache() || {}; 
-  cache[videoId] = data; 
-  fs.writeFileSync(cacheFilePath, JSON.stringify({ timestamp: new Date(), data: cache }, null, 2)); 
-}; 
+  }
+};
 
 // メインコンポーネント 
 export default function Home({ work }) {   
@@ -192,36 +189,42 @@ export default function Home({ work }) {
   );   
 }   
 
-// YouTube APIからステータスとサムネイルを取得し、作品データに付加する  
-export const getStaticProps = async () => {  
-  const res = await fetch(  
-    "https://script.google.com/macros/s/AKfycbyEph6zXb1IWFRLpTRLNLtxU4Kj7oe10bt2ifiyK09a6nM13PASsaBYFe9YpDj9OEkKTw/exec"  
-  );  
+// YouTube APIからステータスとサムネイルを取得し、作品データに付加する
+export const getStaticProps = async () => {
+  const res = await fetch(
+    "https://script.google.com/macros/s/AKfycbyEph6zXb1IWFRLpTRLNLtxU4Kj7oe10bt2ifiyK09a6nM13PASsaBYFe9YpDj9OEkKTw/exec",
+    {
+      headers: {
+        'Cache-Control': 'public, max-age=172800' // 2日間キャッシュ
+      }
+    }
+  );
 
-  if (!res.ok) {  
-    console.error(`Failed to fetch work data: ${res.statusText}`);  
-    return { props: { work: [] } }; // エラー時は空の配列を返す  
-  }  
+  if (!res.ok) {
+    console.error(`Failed to fetch work data: ${res.statusText}`);
+    return { props: { work: [] } }; // エラー時は空の配列を返す
+  }
 
-  const work = await res.json();  
+  const work = await res.json();
 
-  const workWithStatus = await Promise.all(  
-    work.map(async (item) => {  
-      const videoId = item.ylink.slice(17, 28);  
-      const cachedData = getCache(); // キャッシュを取得 
+  const workWithStatus = await Promise.all(
+    work.map(async (item) => {
+      const videoId = item.ylink.slice(17, 28);
+      const cachedData = getCache(); // キャッシュを取得
 
-      // キャッシュからデータを取得、無ければAPIから取得 
-      const { status, thumbnailUrl } = cachedData?.[videoId] || await getVideoData(videoId);  
+      // キャッシュからデータを取得、無ければAPIから取得
+      const { status, thumbnailUrl } = cachedData?.[videoId] || await getVideoData(videoId);
 
-      return {   
-        ...item,   
-        status,   
-        thumbnailUrl: thumbnailUrl || '/default-thumbnail.jpg'   
-      };  
-    })  
-  );  
+      return {
+        ...item,
+        status,
+        thumbnailUrl: thumbnailUrl || '/default-thumbnail.jpg'
+      };
+    })
+  );
 
-  return {  
-    props: { work: workWithStatus },  
-  };  
+  return {
+    props: { work: workWithStatus },
+    revalidate: 172800 // 2日ごとに再生成
+  };
 };

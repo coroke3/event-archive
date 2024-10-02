@@ -50,10 +50,14 @@ const getVideoData = async (videoId) => {
   }  
 }; 
 
-const fetchUserData = async (username) => {         
-  const res = await fetch(         
-    "https://script.google.com/macros/s/AKfycbzXvxOyXNXF6dUjsw0vbJxb_mLvWKhvk8l14YEOyBHsGOn25X-T4LnYcvTpvwxrqq5Xvw/exec"         
-  );         
+const fetchUserData = async (username) => {
+  const res = await fetch("https://script.google.com/macros/s/AKfycbzXvxOyXNXF6dUjsw0vbJxb_mLvWKhvk8l14YEOyBHsGOn25X-T4LnYcvTpvwxrqq5Xvw/exec", {
+    headers: {
+      'Cache-Control': 'public, max-age=172800' // 2日間キャッシュ
+    }
+  });
+
+
    
   if (!res.ok) {         
     console.error(`Failed to fetch user data: ${res.statusText}`);         
@@ -150,23 +154,25 @@ export const getStaticPaths = async () => {
   return { paths, fallback: false };         
 };         
 
-export const getStaticProps = async ({ params }) => {         
-  const { id } = params; 
-  
-  const userData = await fetchUserData(id);         
-  const worksData = await fetchWorksData();     
-  
-  const userWorks = await Promise.all(worksData.filter(work => work.tlink && work.tlink.toLowerCase() === id.toLowerCase()).map(async (work) => {         
-    const videoId = work.ylink.slice(17, 28);    
-    const { status, thumbnailUrl } = await getVideoData(videoId); 
-    
-    return { ...work, status, thumbnailUrl };    
-  }));  
-  
-  return {         
-    props: {         
-      user: userData,         
-      works: userWorks,         
-    },         
-  };         
-};    
+export const getStaticProps = async ({ params }) => {
+  const { id } = params;
+
+  const userData = await fetchUserData(id);
+  const worksData = await fetchWorksData();
+
+  const userWorks = await Promise.all(worksData.filter(work => work.tlink && work.tlink.toLowerCase() === id.toLowerCase()).map(async (work) => {
+    const videoId = work.ylink.slice(17, 28);
+    const { status, thumbnailUrl } = await getVideoData(videoId);
+
+    return { ...work, status, thumbnailUrl };
+  }));
+
+  return {
+    props: {
+      user: userData,
+      works: userWorks,
+    },
+    revalidate: 172800, // 2日 (172800秒) ごとに再生成
+  };
+};
+ 
