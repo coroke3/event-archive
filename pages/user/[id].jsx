@@ -244,45 +244,46 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
             <p>このユーザーは作品を持っていません。</p>
           )}
         </div>
-        
-        {collaborationWorks.map((work) => (
-    
-          <div key={work.ylink} className="works">
-            <Link href={`../${work.ylink.slice(17, 28)}`}>
-              <Image
-                src={work.thumbnailUrl}
-                alt={`${work.title} - ${work.creator} | PVSF archive`}
-                className="samune"
-                width={640}
-                height={360}
-              />
-            </Link>
-            <h3>{work.title}</h3>
-            <div className="subtitle">
-              {work.creatorIcon ? (
+        <div className="work">
+          <h2>参加した合作</h2>
+          {collaborationWorks.map((work) => (
+            <div key={work.ylink} className="works">
+              <Link href={`../${work.ylink.slice(17, 28)}`}>
                 <Image
-                  src={`https://lh3.googleusercontent.com/d/${work.creatorIcon.slice(
-                    33
-                  )}`}
-                  className="icon"
-                  alt={`${work.creator}のアイコン`}
-                  width={50}
-                  height={50}
+                  src={work.thumbnailUrl}
+                  alt={`${work.title} - ${work.creator} | PVSF archive`}
+                  className="samune"
+                  width={640}
+                  height={360}
                 />
-              ) : (
-                <Image
-                  src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
-                  alt={`アイコン`}
-                  className="icon"
-                  width={50}
-                  height={50}
-                />
-              )}
+              </Link>
+              <h3>{work.title}</h3>
+              <div className="subtitle">
+                {work.creatorIcon ? (
+                  <Image
+                    src={`https://lh3.googleusercontent.com/d/${work.creatorIcon.slice(
+                      33
+                    )}`}
+                    className="icon"
+                    alt={`${work.creator}のアイコン`}
+                    width={50}
+                    height={50}
+                  />
+                ) : (
+                  <Image
+                    src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
+                    alt={`アイコン`}
+                    className="icon"
+                    width={50}
+                    height={50}
+                  />
+                )}
 
-              <p>{work.creator}</p>
+                <p>{work.creator}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
       <Footer />
     </div>
@@ -300,13 +301,13 @@ export const getStaticPaths = async () => {
     fallback: "blocking", // ページが見つからない場合はビルドを待つ
   };
 };
-
 export const getStaticProps = async ({ params }) => {
   const { id } = params;
 
-  const userData = await fetchUserData(id);
+  const userData = await fetchUserData(id); // ビルド時にデータを取得
   const worksData = await fetchWorksData();
 
+  // ここでビルド時にデータを取得し、ビルド後にキャッシュを使用する
   const userWorks = await Promise.all(
     worksData
       .filter(
@@ -314,7 +315,7 @@ export const getStaticProps = async ({ params }) => {
       )
       .map(async (work) => {
         const videoId = work.ylink.slice(17, 28);
-        const fallbackUrl = work.thumbnailUrl; // ここでサムネイルURLを設定
+        const fallbackUrl = work.thumbnailUrl;
         const { status, thumbnailUrl } = await getVideoData(
           videoId,
           fallbackUrl
@@ -324,15 +325,14 @@ export const getStaticProps = async ({ params }) => {
       })
   );
 
-  // 参加合作を取得
-  const collaborationWorks = await fetchCollaborationWorksData(worksData, id); // 修正
+  const collaborationWorks = await fetchCollaborationWorksData(worksData, id);
 
   return {
     props: {
       user: userData,
       works: userWorks,
-      collaborationWorks, // 追加
+      collaborationWorks,
     },
-    revalidate: 172800, // 2日 (172800秒) ごとに再生成
+    revalidate: 172800, // 2日間ごとに再生成
   };
 };
