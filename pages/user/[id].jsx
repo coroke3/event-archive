@@ -291,17 +291,27 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
   );
 }
 
-export const getStaticPaths = async () => {
-  const worksData = await fetchWorksData(); // 作品データを取得
+export const getStaticPaths = async () => { 
+  const worksData = await fetchWorksData(); // 作品データを取得 
+  const usernames = new Set(); // 重複を排除するためのSetを作成
   const paths = worksData
-    .filter((work) => work.tlink) // tlinkがある作品のみ
-    .map((work) => ({ params: { id: work.tlink.toLowerCase() } })); // tlinkを小文字にしてパスを生成
+    .filter((work) => work.tlink && work.username) // tlinkがあり、usernameが存在する作品のみ 
+    .map((work) => {
+      const username = work.username.toLowerCase(); // usernameを小文字にする
+      if (!usernames.has(username)) { // 重複チェック
+        usernames.add(username); // Setに追加
+        return { params: { id: username } }; // 重複しなければパスを生成
+      }
+      return null; // 重複する場合はnullを返す
+    })
+    .filter(Boolean); // nullを除外
 
-  return {
-    paths,
-    fallback: "blocking", // ページが見つからない場合はビルドを待つ
-  };
+  return { 
+    paths, 
+    fallback: "blocking", // ページが見つからない場合はビルドを待つ 
+  }; 
 };
+
 export const getStaticProps = async ({ params }) => {
   const { id } = params;
 
