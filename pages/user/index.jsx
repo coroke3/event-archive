@@ -7,9 +7,15 @@ import styles from "../../styles/user.module.css";
 
 // ユーザー情報を取得する関数        
 const fetchUsersData = async () => {        
-  const res = await fetch(        
-    "https://script.google.com/macros/s/AKfycbzXvxOyXNXF6dUjsw0vbJxb_mLvWKhvk8l14YEOyBHsGOn25X-T4LnYcvTpvwxrqq5Xvw/exec"        
-  );        
+  const res = await fetch(
+    "https://script.google.com/macros/s/AKfycbzXvxOyXNXF6dUjsw0vbJxb_mLvWKhvk8l14YEOyBHsGOn25X-T4LnYcvTpvwxrqq5Xvw/exec", 
+    {
+      headers: {
+        "Cache-Control": "no-cache", // キャッシュを無効化
+      },
+    }
+  );
+        
 
   if (!res.ok) {        
     console.error(`Failed to fetch user data: ${res.statusText}`);        

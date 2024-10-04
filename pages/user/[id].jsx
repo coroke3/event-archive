@@ -64,7 +64,8 @@ const fetchUserData = async (username) => {
     "https://script.google.com/macros/s/AKfycbzXvxOyXNXF6dUjsw0vbJxb_mLvWKhvk8l14YEOyBHsGOn25X-T4LnYcvTpvwxrqq5Xvw/exec",
     {
       headers: {
-        "Cache-Control": "public, max-age=172800", // 2日間キャッシュ
+       // "Cache-Control": "public, max-age=172800", // キャッシュを切るため削除
+       "Cache-Control": "no-cache",
       },
     }
   );
