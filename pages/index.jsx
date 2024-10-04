@@ -5,75 +5,6 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import styles from "../styles/works.module.css";
 import Head from "next/head";
-import fs from "fs";
-import path from "path";
-
-// キャッシュファイルのパス
-const cacheFilePath = path.join(process.cwd(), "cache", "youtubeCache.json");
-// キャッシュを取得する関数
-const getCache = () => {
-  if (fs.existsSync(cacheFilePath)) {
-    const cacheData = JSON.parse(fs.readFileSync(cacheFilePath, "utf-8"));
-    const now = new Date();
-    const cacheTime = new Date(cacheData.timestamp);
-
-    // キャッシュが2日以内であればそのまま返す
-    if (now - cacheTime < 2 * 24 * 60 * 60 * 1000) {
-      return cacheData.data;
-    }
-  }
-  return null; // キャッシュが存在しないか古い場合
-};
-
-// キャッシュを保存する関数
-const saveCache = (videoId, data) => {
-  const cache = getCache() || {};
-  cache[videoId] = data;
-  fs.writeFileSync(
-    cacheFilePath,
-    JSON.stringify({ timestamp: new Date(), data: cache }, null, 2)
-  );
-};
-
-// YouTube APIを使用して公開状態とサムネイルURLを取得する関数
-const getVideoData = async (videoId) => {
-  const apiKey = process.env.YOUTUBE_API_KEY; // 環境変数からAPIキーを取得
-  const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${apiKey}&part=snippet,status`;
-
-  try {
-    const videoRes = await fetch(apiUrl);
-
-    if (!videoRes.ok) {
-      console.error(`Failed to fetch video data: ${videoRes.statusText}`);
-      return { status: "public", thumbnailUrl: `/default-thumbnail.jpg` }; // APIエラー時には全て公開とする
-    }
-
-    const videoData = await videoRes.json();
-    if (videoData.items.length > 0) {
-      const videoItem = videoData.items[0];
-      const status = videoItem.status.privacyStatus;
-      console.log(`Video ID: ${videoId}, Status: ${status}`); // デバッグ用
-      const thumbnails = videoItem.snippet.thumbnails;
-
-      const errorThumbnailUrl = "/error-thumbnail.jpg"; // エラー画像のパス
-      const thumbnailUrl =
-        thumbnails?.maxres?.url || // maxresを最優先に使用
-        thumbnails?.high?.url ||
-        thumbnails?.medium?.url ||
-        thumbnails?.default?.url ||
-        errorThumbnailUrl; // サムネイルが存在しない場合はエラー画像を使用
-
-      saveCache(videoId, { status, thumbnailUrl }); // キャッシュを保存
-      return { status, thumbnailUrl };
-    }
-
-    // もしデータが無い場合はデフォルトのサムネイルを返し、公開と扱う
-    return { status: "private", thumbnailUrl: `/default-thumbnail.jpg` };
-  } catch (error) {
-    console.error(`API 呼び出しエラー: ${error.message}`);
-    return { status: "public", thumbnailUrl: `/default-thumbnail.jpg` }; // APIエラー時には全て公開とする
-  }
-};
 
 // メインコンポーネント
 export default function Home({ work }) {
@@ -94,34 +25,21 @@ export default function Home({ work }) {
     (item) =>
       (filter.public && item.status === "public") ||
       (filter.unlisted && item.status === "unlisted") ||
-      (filter.private &&
-        (item.status === "private" || item.status === "unknown"))
+      (filter.private && (item.status === "private" || item.status === "unknown"))
   );
 
   return (
     <div>
       <Head>
         <title>過去の投稿作品 - オンライン映像イベント / PVSF archive</title>
-        <meta
-          name="description"
-          content={`過去の投稿作品です。ぜひご覧ください。`}
-        />
+        <meta name="description" content={`過去の投稿作品です。ぜひご覧ください。`} />
         <meta name="twitter:card" content="summary" />
         <meta name="twitter:site" content="@pvscreeningfes" />
         <meta name="twitter:creator" content="@coroke3" />
         <meta property="og:url" content="pvsf.jp/work" />
-        <meta
-          property="og:title"
-          content="過去の投稿作品 - オンライン映像イベント / PVSF archive"
-        />
-        <meta
-          property="og:description"
-          content="過去の投稿作品です。ぜひご覧ください。"
-        />
-        <meta
-          property="og:image"
-          content="https://i.gyazo.com/35170e03ec321fb94276ca1c918efabc.jpg"
-        />
+        <meta property="og:title" content="過去の投稿作品 - オンライン映像イベント / PVSF archive" />
+        <meta property="og:description" content="過去の投稿作品です。ぜひご覧ください。" />
+        <meta property="og:image" content="https://i.gyazo.com/35170e03ec321fb94276ca1c918efabc.jpg" />
       </Head>
       <Header />
 
@@ -160,18 +78,14 @@ export default function Home({ work }) {
         <div className="work">
           {displayedWorks.length > 0 ? (
             displayedWorks.map((work) => {
-              const showIcon = work.icon !== undefined && work.icon !== "";
-              const isPrivate =
-                work.status === "private" || work.status === "unknown"; // 非公開かどうかを判定
+              const showIcon = work.icon && work.icon !== "";
+              const isPrivate = work.status === "private" || work.status === "unknown"; // 非公開かどうかを判定
 
               return (
-                <div
-                className={`works ${isPrivate ? 'private' : ''}`} 
-                key={work.ylink}
-              >
+                <div className={`works ${isPrivate ? 'private' : ''}`} key={work.ylink}>
                   <Link href={`../${work.ylink.slice(17, 28)}`}>
                     <Image
-                      src={work.thumbnailUrl} // 動的に取得したサムネイルURLを使用
+                      src={work.smallThumbnail || `https://img.youtube.com/vi/${extractVideoId(work.ylink)}/mqdefault.jpg`} // smallThumbnailが無い場合はデフォルトサムネイル
                       alt={`${work.title} - ${work.creator} | PVSF archive`}
                       className="samune"
                       width={640}
@@ -180,24 +94,23 @@ export default function Home({ work }) {
                   </Link>
                   <h3>{work.title}</h3>
                   <div className="subtitle">
-
-                    {showIcon && work.icon ? (        
-                    <Image        
-                      src={`https://lh3.googleusercontent.com/d/${work.icon.slice(33)}`}       
-                      className="icon"        
-                      alt={`${work.creator}のアイコン`}        
-                      width={50}        
-                      height={50}        
-                    />        
-                  ) : (        
-                    <Image        
-                      src='https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg'   
-                      alt={`アイコン`}    
-                      className="icon"      
-                      width={50}        
-                      height={50}        
-                    />        
-                  )}        
+                    {showIcon ? (
+                      <Image
+                        src={`https://lh3.googleusercontent.com/d/${work.icon.slice(33)}`}
+                        className="icon"
+                        alt={`${work.creator}のアイコン`}
+                        width={50}
+                        height={50}
+                      />
+                    ) : (
+                      <Image
+                        src='https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg'
+                        alt={`アイコン`}
+                        className="icon"
+                        width={50}
+                        height={50}
+                      />
+                    )}
                     <p>{work.creator}</p>
                     <p>
                       {work.status === "public"
@@ -220,16 +133,13 @@ export default function Home({ work }) {
   );
 }
 
-// YouTube APIからステータスとサムネイルを取得し、作品データに付加する
+// 新しいエンドポイントからデータを取得
 export const getStaticProps = async () => {
-  const res = await fetch(
-    "https://script.google.com/macros/s/AKfycbyEph6zXb1IWFRLpTRLNLtxU4Kj7oe10bt2ifiyK09a6nM13PASsaBYFe9YpDj9OEkKTw/exec",
-    {
-      headers: {
-        "Cache-Control": "public, max-age=172800", // 2日間キャッシュ
-      },
-    }
-  );
+  const res = await fetch("https://youtubeapi.beeyugo55.workers.dev", {
+    headers: {
+      "Cache-Control": "no-cache", // キャッシュを使用しない
+    },
+  });
 
   if (!res.ok) {
     console.error(`Failed to fetch work data: ${res.statusText}`);
@@ -238,25 +148,14 @@ export const getStaticProps = async () => {
 
   const work = await res.json();
 
-  const workWithStatus = await Promise.all(
-    work.map(async (item) => {
-      const videoId = item.ylink.slice(17, 28);
-      const cachedData = getCache(); // キャッシュを取得
-
-      // キャッシュからデータを取得、無ければAPIから取得
-      const { status, thumbnailUrl } =
-        cachedData?.[videoId] || (await getVideoData(videoId));
-
-      return {
-        ...item,
-        status,
-        thumbnailUrl: thumbnailUrl || "/default-thumbnail.jpg",
-      };
-    })
-  );
-
   return {
-    props: { work: workWithStatus },
+    props: { work },
     revalidate: 172800, // 2日ごとに再生成
   };
 };
+
+// ylinkから動画IDを抽出する関数
+function extractVideoId(url) {
+  const match = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : null;
+}
