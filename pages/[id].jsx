@@ -9,13 +9,7 @@ import { css } from "@emotion/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXTwitter, faYoutube } from "@fortawesome/free-brands-svg-icons";
 
-
-
-export default function WorkId({
-  work,
-  previousWorks,
-  nextWorks,
-}) {
+export default function WorkId({ work, previousWorks, nextWorks }) {
   const showComment = work.comment !== undefined && work.comment !== "";
   const showIcon = work.icon !== undefined && work.icon !== "";
   const showCreator = work.creator !== undefined && work.creator !== "";
@@ -136,39 +130,46 @@ export default function WorkId({
               </p>
             )}
             {showMenber && (
-              <div>
-                {work.member.split(/[,、，]/).map((username, index) => {
-                  const memberId = work.memberid
-                    .split(/[,、，]/)
-                    [index]?.trim();
-                  return (
-                    <span key={index} style={{ marginRight: "10px" }}>
-                      {memberId ? (
-                        <a
-                          href={`https://twitter.com/${memberId}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {username.trim()}
-                        </a>
-                      ) : (
-                        username.trim()
-                      )}
-                      {memberId && (
-                        <span
-                          style={{
-                            fontSize: "0.8em",
-                            color: "#555",
-                            marginLeft: "5px",
-                          }}
-                        >
-                          @{memberId}
-                        </span>
-                      )}
-                    </span>
-                  );
-                })}
-              </div>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>No</th>
+                    <th>Name</th>
+                    <th>ID</th>
+                    <th>LINK</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {work.member.split(/[,、，]/).map((username, index) => {
+                    const memberId = work.memberid
+                      .split(/[,、，]/)
+                      [index]?.trim();
+                    return (
+                      <tr key={index}>
+                        <td>{index + 1}</td>
+                        <td>{username.trim()}</td>
+                        <td>{memberId ? `@${memberId}` : "-"}</td>
+                        <td>
+                          {memberId ? (
+                            <a
+                              href={`https://twitter.com/${memberId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <FontAwesomeIcon
+                                icon={faXTwitter}
+                                className={styles.twitterIcon}
+                              />
+                            </a>
+                          ) : (
+                            "-"
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             )}
           </div>
           <div className={styles.s2f}>
@@ -224,14 +225,16 @@ export async function getStaticPaths() {
     const data = await res.json();
 
     const uniquePaths = new Set(); // 重複を防ぐためのセットを使用
-    const paths = data.map((work) => {
-      const path = work.ylink.slice(17, 28);
-      if (!uniquePaths.has(path)) {
-        uniquePaths.add(path);
-        return { params: { id: path } };
-      }
-      return null; // 重複する場合はnullを返す
-    }).filter(Boolean); // nullを除去
+    const paths = data
+      .map((work) => {
+        const path = work.ylink.slice(17, 28);
+        if (!uniquePaths.has(path)) {
+          uniquePaths.add(path);
+          return { params: { id: path } };
+        }
+        return null; // 重複する場合はnullを返す
+      })
+      .filter(Boolean); // nullを除去
 
     return {
       paths,
@@ -259,17 +262,121 @@ export async function getStaticProps({ params }) {
       return { notFound: true }; // 該当作品がない場合は404を返す
     }
 
-    const currentIndex = data.findIndex((w) => w.ylink.slice(17, 28) === params.id);
+    const currentIndex = data.findIndex(
+      (w) => w.ylink.slice(17, 28) === params.id
+    );
 
     // 前後5作品を取得
-    const previousWorks = data.slice(Math.max(0, currentIndex - 5), currentIndex);
+    const previousWorks = data.slice(
+      Math.max(0, currentIndex - 5),
+      currentIndex
+    );
     const nextWorks = data.slice(currentIndex + 1, currentIndex + 6); // 現在の作品の次の5件
+
+    // tlinkが一致する作品を取得
+    const matchingTlinkWorks = data.filter(
+      (w) => w.tlink === work.tlink && w.ylink !== work.ylink
+    );
+
+    // memberid内にtlinkと一致する文字列がある作品を取得
+    const matchingMemberidWorks = data.filter(
+      (w) => w.memberid && w.memberid.includes(work.tlink)
+    );
+
+    let selectedWorks = [];
+
+    // tlink一致作品を選定
+    if (currentIndex > 0) {
+      // 前の作品がある場合
+      const previousTlinkWorks = matchingTlinkWorks.filter(
+        (w) => data.indexOf(w) < currentIndex
+      );
+      if (previousTlinkWorks.length > 0) {
+        selectedWorks.push(previousTlinkWorks.slice(-1)[0]); // 最も古い作品
+      }
+
+      const nextTlinkWorks = matchingTlinkWorks.filter(
+        (w) => data.indexOf(w) > currentIndex
+      );
+      if (nextTlinkWorks.length > 0) {
+        selectedWorks.push(nextTlinkWorks[0]); // 最新の作品
+      }
+    } else {
+      // 最新の作品がない場合は古い作品を取得
+      selectedWorks = matchingTlinkWorks.slice(0, 2); // 最大2件まで取得
+    }
+
+    // memberid一致の作品を前後に追加
+    const previousMemberidWorks = matchingMemberidWorks
+      .filter((w) => data.indexOf(w) < currentIndex)
+      .slice(-2); // 前の作品最大2件
+    const nextMemberidWorks = matchingMemberidWorks
+      .filter((w) => data.indexOf(w) > currentIndex)
+      .slice(0, 2); // 後の作品最大2件
+
+    // 表示するメンバーIDのリストを取得
+    const memberIds = work.memberid.split(",").map((id) => id.trim());
+
+    let additionalUserWorks = [];
+
+    // 各ユーザーごとに前後の作品を取得
+    for (const memberId of memberIds) {
+      const userWorks = data.filter(
+        (w) =>
+          w.memberid && w.memberid.includes(memberId) && w.ylink !== work.ylink
+      );
+
+      // tlink一致の作品を優先して取得
+      const userMatchingTlinkWorks = userWorks.filter(
+        (w) => w.tlink === work.tlink
+      );
+      const userOtherWorks = userWorks.filter((w) => w.tlink !== work.tlink);
+
+      const userSelectedWorks = [
+        ...userMatchingTlinkWorks.slice(0, 2), // 最大2件
+        ...userOtherWorks.slice(0, 2), // 最大2件
+      ];
+
+      // 追加作品に重複を削除して追加
+      additionalUserWorks = [
+        ...additionalUserWorks,
+        ...userSelectedWorks.filter(
+          (u) =>
+            !additionalUserWorks.some((existing) => existing.ylink === u.ylink)
+        ),
+      ];
+    }
+
+    // 重複を削除
+    const uniquePreviousWorks = Array.from(
+      new Set(
+        [...selectedWorks, ...previousWorks, ...previousMemberidWorks].map(
+          (w) => w.ylink
+        )
+      )
+    ).map((ylink) =>
+      [...selectedWorks, ...previousWorks, ...previousMemberidWorks].find(
+        (w) => w.ylink === ylink
+      )
+    );
+
+    const uniqueNextWorks = Array.from(
+      new Set(
+        [...nextWorks, ...nextMemberidWorks, ...additionalUserWorks].map(
+          (w) => w.ylink
+        )
+      )
+    ).map((ylink) =>
+      [...nextWorks, ...nextMemberidWorks, ...additionalUserWorks].find(
+        (w) => w.ylink === ylink
+      )
+    );
 
     return {
       props: {
         work,
-        previousWorks,
-        nextWorks,
+        previousWorks: uniquePreviousWorks, // tlink一致と前の作品をまとめて
+        nextWorks: uniqueNextWorks, // 後の作品にmemberid一致を追加
       },
     };
   } catch (error) {
