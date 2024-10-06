@@ -274,4 +274,3 @@ export const getStaticProps = async ({ params }) => {
     revalidate: 172800, // 2日ごとにISRを実行
   };
 };
-export const runtime = 'experimental-edge'; // Experimental Edge Runtimeを指定
