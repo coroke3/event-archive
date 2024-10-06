@@ -81,7 +81,7 @@ const fetchUserData = async (username) => {
 
 const fetchWorksData = async () => {
   const res = await fetch(
-    "https://script.google.com/macros/s/AKfycbyEph6zXb1IWFRLpTRLNLtxU4Kj7oe10bt2ifiyK09a6nM13PASsaBYFe9YpDj9OEkKTw/exec"
+    "https://pvsf-cash.vercel.app/api/videos"
   );
 
   if (!res.ok) {
