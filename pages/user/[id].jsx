@@ -138,7 +138,7 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
   ); 
 } 
 
-export const runtime = 'edge'; // Edge Runtimeを設定 
+export const runtime = 'experimental-edge'; // Edge Runtimeを設定 
 
 export const getStaticPaths = async () => { 
   try { 
