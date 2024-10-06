@@ -15,6 +15,7 @@ const fetchUserData = async (username) => {
     "https://script.google.com/macros/s/AKfycbzXvxOyXNXF6dUjsw0vbJxb_mLvWKhvk8l14YEOyBHsGOn25X-T4LnYcvTpvwxrqq5Xvw/exec",
     {
       headers: {
+        // "Cache-Control": "public, max-age=172800", // キャッシュを切るため削除
         "Cache-Control": "no-cache",
       },
     }
@@ -52,9 +53,7 @@ const fetchCollaborationWorksData = async (worksData, id) => {
   return collaborationWorks; // 修正: collaborationWorks を返す
 };
 
-export const runtime = 'experimental-edge';// Edge Runtimeを指定
-
-export default async function UserWorksPage({ user, works, collaborationWorks }) {
+export default function UserWorksPage({ user, works, collaborationWorks }) {
   const router = useRouter();
 
   const firstWork = works.length > 0 ? works[0] : null;
@@ -176,7 +175,7 @@ export default async function UserWorksPage({ user, works, collaborationWorks })
         </div>
         <div className="work">
           <h2>参加した合作</h2>
-          {collaborationWorks.length > 0 ? (
+          {collaborationWorks.length > 0 ? ( // collaborationWorksが存在するかチェック
             collaborationWorks.map((work) => (
               <div key={work.ylink} className="works">
                 <Link href={`../${work.ylink.slice(17, 28)}`}>
@@ -214,7 +213,7 @@ export default async function UserWorksPage({ user, works, collaborationWorks })
               </div>
             ))
           ) : (
-            <p>作品が見つかりませんでした。</p>
+            <p>作品が見つかりませんでした。</p> // 作品が見つからない場合のメッセージ
           )}
         </div>
       </div>
@@ -233,37 +232,46 @@ export const getStaticPaths = async () => {
       if (!usernames.has(username)) {
         // 重複チェック
         usernames.add(username); // Setに追加
-        return { params: { id: username } }; // 重複しなければパスを返す
+        return { params: { id: username } }; // 重複しなければパスを生成
       }
+      return null; // 重複する場合はnullを返す
     })
-    .filter(Boolean); // undefinedを除外
+    .filter(Boolean); // nullを除外
 
   return {
     paths,
-    fallback: "blocking", // ページが存在しない場合、ビルド時にデータを取得する
+    fallback: "blocking", // ページが見つからない場合はビルドを待つ
   };
 };
 
-export const getStaticProps = async ({ params }) => { 
-  const username = params.id.toLowerCase(); // usernameを小文字にする 
-  const user = await fetchUserData(username); 
+export const getStaticProps = async ({ params }) => {
+  const { id } = params;
 
-  // ユーザーが見つからない場合の処理
-  if (!user) {
+  const userData = await fetchUserData(id); // ビルド時にデータを取得
+  const worksData = await fetchWorksData();
+
+  // ここでビルド時にデータを取得し、ビルド後にキャッシュを使用する
+  const userWorks = await Promise.all(
+    worksData.filter(
+      (work) => work.tlink && work.tlink.toLowerCase() === id.toLowerCase()
+    )
+  );
+
+  const collaborationWorks = await fetchCollaborationWorksData(worksData, id);
+
+  if (!userData && userWorks.length === 0 && collaborationWorks.length === 0) {
     return {
-      notFound: true, // 404ページを表示
+      notFound: true, // ユーザーや作品が見つからない場合の対処
     };
   }
 
-  const works = await fetchWorksData(); 
-  const collaborationWorks = await fetchCollaborationWorksData(works, user.id); // 追加: 参加した合作データを取得 
-
-  return { 
-    props: { 
-      user, 
-      works: works.filter((work) => work.username === username), // ユーザー名に基づいて作品をフィルタリング 
-      collaborationWorks, 
-    }, 
-    revalidate: 60, // 60秒ごとに再生成 
-  }; 
-}
+  return {
+    props: {
+      user: userData,
+      works: userWorks,
+      collaborationWorks,
+    },
+    revalidate: 172800, // 2日ごとにISRを実行
+  };
+};
+export const runtime = 'experimental-edge'; // Experimental Edge Runtimeを指定
