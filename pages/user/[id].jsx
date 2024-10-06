@@ -10,54 +10,7 @@ import styles from "../../styles/users.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXTwitter, faYoutube } from "@fortawesome/free-brands-svg-icons";
 
-const getVideoData = async (videoId, fallbackUrl) => {
-  const apiKey = process.env.YOUTUBE_API_KEY;
-  const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${apiKey}&part=snippet,status`;
 
-  try {
-    const videoRes = await fetch(apiUrl);
-
-    if (!videoRes.ok) {
-      console.warn(`YouTube API の取得に失敗しました: ${videoRes.statusText}`);
-      return {
-        status: "public",
-        thumbnailUrl:
-          fallbackUrl || `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
-      };
-    }
-
-    const videoData = await videoRes.json();
-
-    if (videoData.items.length > 0) {
-      const videoItem = videoData.items[0];
-      const status = videoItem.status.privacyStatus || "public";
-      const thumbnails = videoItem.snippet.thumbnails;
-
-      const defaultThumbnailUrl = "/default-thumbnail.jpg";
-      const thumbnailUrl =
-        thumbnails?.maxres?.url ||
-        thumbnails?.high?.url ||
-        thumbnails?.medium?.url ||
-        thumbnails?.default?.url ||
-        defaultThumbnailUrl;
-
-      return { status, thumbnailUrl };
-    }
-
-    return {
-      status: "private",
-      thumbnailUrl:
-        fallbackUrl || `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
-    };
-  } catch (error) {
-    console.error(`API 呼び出しエラー: ${error.message}`);
-    return {
-      status: "public",
-      thumbnailUrl:
-        fallbackUrl || `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
-    };
-  }
-};
 
 const fetchUserData = async (username) => {
   const res = await fetch(
@@ -92,37 +45,18 @@ const fetchWorksData = async () => {
   return await res.json();
 };
 
-const fetchCollaborationWorksData = async (worksData, id) => {
-  const collaborationWorks = worksData.filter((work) => {
-    if (work.memberid) {
-      const memberIds = work.memberid.split(","); // カンマで分割
-      return memberIds.some((memberId) => memberId.trim() === id); // id と一致するかチェック
-    }
-    return false; // memberid が存在しない場合は false
-  });
-
-  // 動画IDとサムネイルURLを取得
-  const updatedCollaborationWorks = await Promise.all(
-    collaborationWorks.map(async (work) => {
-      const videoId = work.ylink.slice(17, 28); // ylinkから動画IDを取得
-      const fallbackUrl = work.thumbnailUrl; // ここでサムネイルURLを設定
-      const { status, thumbnailUrl } = await getVideoData(videoId, fallbackUrl);
-
-      // アイコンの取得
-      const creatorUserData = await fetchUserData(work.creator); // creatorからユーザー情報を取得
-      const creatorIcon = creatorUserData ? creatorUserData.icon : null; // undefined を null に置き換える
-
-      return {
-        ...work,
-        status,
-        thumbnailUrl,
-        creatorIcon: creatorIcon || null, // null に設定
-      }; // 作品データにステータスとサムネイル、アイコンを追加
-    })
-  );
-
-  return updatedCollaborationWorks;
+const fetchCollaborationWorksData = async (worksData, id) => { 
+  const collaborationWorks = worksData.filter((work) => { 
+    if (work.memberid) { 
+      const memberIds = work.memberid.split(","); // カンマで分割 
+      return memberIds.some((memberId) => memberId.trim() === id); // id と一致するかチェック 
+    } 
+    return false; // memberid が存在しない場合は false 
+  }); 
+ 
+  return collaborationWorks; // 修正: collaborationWorks を返す
 };
+
 
 export default function UserWorksPage({ user, works, collaborationWorks }) {
   const router = useRouter();
@@ -130,7 +64,7 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
   const firstWork = works.length > 0 ? works[0] : null;
   const firstCreator = firstWork ? firstWork.creator : "";
   const firstYchlink = firstWork ? firstWork.ychlink : "";
-  const firstThumbnailUrl = firstWork ? firstWork.thumbnailUrl : "";
+  const firstThumbnailUrl = firstWork ? firstWork.largeThumbnail : "";
   const firstIcon = firstWork ? firstWork.icon : "";
   const firstTlink = firstWork ? firstWork.tlink : ""; // 追加：最初のtlink
 
@@ -161,7 +95,7 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
               />
             )}
             <Image
-              src={firstThumbnailUrl} // サムネイルの URL
+              src={firstWork.largeThumbnail} // サムネイルの URL
               alt={`${firstWork.title} - ${firstCreator} | PVSF archive`}
               className={styles.uback}
               width={1280}
@@ -207,7 +141,7 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
                 >
                   <Link href={`../${work.ylink.slice(17, 28)}`}>
                     <Image
-                      src={work.thumbnailUrl}
+                      src={work.largeThumbnail}
                       alt={`${work.title} - ${work.creator} | PVSF archive`}
                       className="samune"
                       width={640}
@@ -251,7 +185,7 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
             <div key={work.ylink} className="works">
               <Link href={`../${work.ylink.slice(17, 28)}`}>
                 <Image
-                  src={work.thumbnailUrl}
+                  src={work.largeThumbnail}
                   alt={`${work.title} - ${work.creator} | PVSF archive`}
                   className="samune"
                   width={640}
@@ -260,9 +194,9 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
               </Link>
               <h3>{work.title}</h3>
               <div className="subtitle">
-                {work.creatorIcon ? (
+                {work.icon ? (
                   <Image
-                    src={`https://lh3.googleusercontent.com/d/${work.creatorIcon.slice(
+                    src={`https://lh3.googleusercontent.com/d/${work.icon.slice(
                       33
                     )}`}
                     className="icon"
@@ -324,19 +258,16 @@ export const getStaticProps = async ({ params }) => {
       .filter(
         (work) => work.tlink && work.tlink.toLowerCase() === id.toLowerCase()
       )
-      .map(async (work) => {
-        const videoId = work.ylink.slice(17, 28);
-        const fallbackUrl = work.thumbnailUrl;
-        const { status, thumbnailUrl } = await getVideoData(
-          videoId,
-          fallbackUrl
-        );
 
-        return { ...work, status, thumbnailUrl };
-      })
   );
 
   const collaborationWorks = await fetchCollaborationWorksData(worksData, id);
+
+  if (!userData && userWorks.length === 0 && collaborationWorks.length === 0) {
+    return {
+      notFound: true, // ユーザーや作品が見つからない場合の対処
+    };
+  }
 
   return {
     props: {
@@ -344,6 +275,6 @@ export const getStaticProps = async ({ params }) => {
       works: userWorks,
       collaborationWorks,
     },
-    revalidate: 172800, // 2日間ごとに再生成
+    revalidate: 172800, // 2日ごとにISRを実行
   };
 };
