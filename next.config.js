@@ -2,6 +2,7 @@
 const nextConfig = {};
 
 module.exports = {
+  output: 'standalone',
   images: {
     domains: [
       "i.gyazo.com",

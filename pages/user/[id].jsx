@@ -223,7 +223,7 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
 
 export const getStaticPaths = async () => {
   const res = await fetch(
-    "https://script.google.com/macros/s/AKfycbzXvxOyXNXF6dUjsw0vbJxb_mLvWKhvk8l14YEOyBHsGOn25X-T4LnYcvTpvwxrqq5Xvw/exec",
+    "https://script.google.com/macros/s/AKfycbzXvxOyXNXF6dUjsw0vbJxb_mLvWKhvk8l14YEOyBHsGOn25X-T4LnYcvTpvwxrqq5Xvw/exec"
   );
 
   const usersData = await res.json();
@@ -231,7 +231,7 @@ export const getStaticPaths = async () => {
     params: { id: user.username },
   }));
 
-  return { paths, fallback: "blocking" };
+  return { paths, fallback: false }; // fallbackをfalseにして、全てのページをビルド時に生成
 };
 
 export const getStaticProps = async ({ params }) => {
@@ -241,13 +241,18 @@ export const getStaticProps = async ({ params }) => {
   const works = worksData.filter((work) => work.tlink === id);
   const collaborationWorks = fetchCollaborationWorksData(worksData, id);
 
+  if (!user) {
+    return {
+      notFound: true, // ユーザーが存在しない場合404ページにリダイレクト
+    };
+  }
+
   return {
     props: {
       user,
       works,
       collaborationWorks,
     },
-    revalidate: 1,
   };
 };
 
