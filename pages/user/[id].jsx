@@ -9,7 +9,6 @@ import Footer from "../../components/Footer";
 import styles from "../../styles/users.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXTwitter, faYoutube } from "@fortawesome/free-brands-svg-icons";
-export const runtime = 'edge';
 
 const getVideoData = async (videoId, fallbackUrl) => {
   const apiKey = process.env.YOUTUBE_API_KEY;
