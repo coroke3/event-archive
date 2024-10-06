@@ -10,25 +10,24 @@ import styles from "../../styles/users.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXTwitter, faYoutube } from "@fortawesome/free-brands-svg-icons";
 
-const fetchUserData = async (username) => {
-  const res = await fetch(
-    "https://script.google.com/macros/s/AKfycbzXvxOyXNXF6dUjsw0vbJxb_mLvWKhvk8l14YEOyBHsGOn25X-T4LnYcvTpvwxrqq5Xvw/exec",
-    {
-      headers: {
-        // "Cache-Control": "public, max-age=172800", // キャッシュを切るため削除
-        "Cache-Control": "no-cache",
-      },
-    }
-  );
+const fetchUserData = async (username) => { 
+  const res = await fetch( 
+    "https://script.google.com/macros/s/AKfycbzXvxOyXNXF6dUjsw0vbJxb_mLvWKhvk8l14YEOyBHsGOn25X-T4LnYcvTpvwxrqq5Xvw/exec", 
+    { 
+      headers: { 
+        "Cache-Control": "no-cache", 
+      }, 
+    } 
+  ); 
 
-  if (!res.ok) {
-    console.error(`Failed to fetch user data: ${res.statusText}`);
-    return null;
-  }
+  if (!res.ok) { 
+    console.error(`Failed to fetch user data: ${res.statusText}`); 
+    return null; 
+  } 
 
-  const usersData = await res.json();
-  return usersData.find((user) => user.username === username);
-};
+  const usersData = await res.json(); 
+  return usersData.find((user) => user.username === username); 
+}; 
 
 const fetchWorksData = async () => {
   const res = await fetch("https://pvsf-cash.vercel.app/api/videos");
