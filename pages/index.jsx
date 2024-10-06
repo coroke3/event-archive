@@ -134,25 +134,26 @@ export default function Home({ work }) {
 }
 
 // 新しいエンドポイントからデータを取得
-export const getStaticProps = async () => {
-  const res = await fetch("https://youtubeapi.beeyugo55.workers.dev", {
-    headers: {
-      "Cache-Control": "no-cache", // キャッシュを使用しない
-    },
-  });
-
-  if (!res.ok) {
-    console.error(`Failed to fetch work data: ${res.statusText}`);
-    return { props: { work: [] } }; // エラー時は空の配列を返す
-  }
-
-  const work = await res.json();
-
-  return {
-    props: { work },
-    revalidate: 172800, // 2日ごとに再生成
-  };
+export const getStaticProps = async () => { 
+  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/videos`, { // フルURLを使用
+    headers: { 
+      "Cache-Control": "no-cache", // キャッシュを使用しない 
+    }, 
+  }); 
+ 
+  if (!res.ok) { 
+    console.error(`Failed to fetch work data: ${res.statusText}`); 
+    return { props: { work: [] } }; // エラー時は空の配列を返す 
+  } 
+ 
+  const work = await res.json(); 
+ 
+  return { 
+    props: { work }, 
+    revalidate: 172800, // 2日ごとに再生成 
+  }; 
 };
+
 
 // ylinkから動画IDを抽出する関数
 function extractVideoId(url) {

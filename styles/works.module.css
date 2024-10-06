@@ -1,18 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300&display=swap');
 
 
-	.works p {
-		margin: auto 10px;
-	}
-	.subtitle{
-		margin: auto 5px;
-		display: flex;
-		justify-self: start;
-	}
-	.private {
-		opacity: 0.5; /* 薄く表示する */
-		 /* 非公開作品をクリックできないようにする */
-	  }
+
 	@keyframes scroll {
 		0% {
 		  transform: translateX(100%);
