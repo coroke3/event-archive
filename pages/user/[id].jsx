@@ -10,15 +10,13 @@ import styles from "../../styles/users.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXTwitter, faYoutube } from "@fortawesome/free-brands-svg-icons";
 
-
-
 const fetchUserData = async (username) => {
   const res = await fetch(
     "https://script.google.com/macros/s/AKfycbzXvxOyXNXF6dUjsw0vbJxb_mLvWKhvk8l14YEOyBHsGOn25X-T4LnYcvTpvwxrqq5Xvw/exec",
     {
       headers: {
-       // "Cache-Control": "public, max-age=172800", // キャッシュを切るため削除
-       "Cache-Control": "no-cache",
+        // "Cache-Control": "public, max-age=172800", // キャッシュを切るため削除
+        "Cache-Control": "no-cache",
       },
     }
   );
@@ -33,9 +31,7 @@ const fetchUserData = async (username) => {
 };
 
 const fetchWorksData = async () => {
-  const res = await fetch(
-    "https://pvsf-cash.vercel.app/api/videos"
-  );
+  const res = await fetch("https://pvsf-cash.vercel.app/api/videos");
 
   if (!res.ok) {
     console.error(`Failed to fetch works data: ${res.statusText}`);
@@ -45,18 +41,17 @@ const fetchWorksData = async () => {
   return await res.json();
 };
 
-const fetchCollaborationWorksData = async (worksData, id) => { 
-  const collaborationWorks = worksData.filter((work) => { 
-    if (work.memberid) { 
-      const memberIds = work.memberid.split(","); // カンマで分割 
-      return memberIds.some((memberId) => memberId.trim() === id); // id と一致するかチェック 
-    } 
-    return false; // memberid が存在しない場合は false 
-  }); 
- 
+const fetchCollaborationWorksData = async (worksData, id) => {
+  const collaborationWorks = worksData.filter((work) => {
+    if (work.memberid) {
+      const memberIds = work.memberid.split(","); // カンマで分割
+      return memberIds.some((memberId) => memberId.trim() === id); // id と一致するかチェック
+    }
+    return false; // memberid が存在しない場合は false
+  });
+
   return collaborationWorks; // 修正: collaborationWorks を返す
 };
-
 
 export default function UserWorksPage({ user, works, collaborationWorks }) {
   const router = useRouter();
@@ -64,7 +59,6 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
   const firstWork = works.length > 0 ? works[0] : null;
   const firstCreator = firstWork ? firstWork.creator : "";
   const firstYchlink = firstWork ? firstWork.ychlink : "";
-  const firstThumbnailUrl = firstWork ? firstWork.largeThumbnail : "";
   const firstIcon = firstWork ? firstWork.icon : "";
   const firstTlink = firstWork ? firstWork.tlink : ""; // 追加：最初のtlink
 
@@ -181,43 +175,46 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
         </div>
         <div className="work">
           <h2>参加した合作</h2>
-          {collaborationWorks.map((work) => (
-            <div key={work.ylink} className="works">
-              <Link href={`../${work.ylink.slice(17, 28)}`}>
-                <Image
-                  src={work.largeThumbnail}
-                  alt={`${work.title} - ${work.creator} | PVSF archive`}
-                  className="samune"
-                  width={640}
-                  height={360}
-                />
-              </Link>
-              <h3>{work.title}</h3>
-              <div className="subtitle">
-                {work.icon ? (
+          {collaborationWorks.length > 0 ? ( // collaborationWorksが存在するかチェック
+            collaborationWorks.map((work) => (
+              <div key={work.ylink} className="works">
+                <Link href={`../${work.ylink.slice(17, 28)}`}>
                   <Image
-                    src={`https://lh3.googleusercontent.com/d/${work.icon.slice(
-                      33
-                    )}`}
-                    className="icon"
-                    alt={`${work.creator}のアイコン`}
-                    width={50}
-                    height={50}
+                    src={work.largeThumbnail}
+                    alt={`${work.title} - ${work.creator} | PVSF archive`}
+                    className="samune"
+                    width={640}
+                    height={360}
                   />
-                ) : (
-                  <Image
-                    src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
-                    alt={`アイコン`}
-                    className="icon"
-                    width={50}
-                    height={50}
-                  />
-                )}
-
-                <p>{work.creator}</p>
+                </Link>
+                <h3>{work.title}</h3>
+                <div className="subtitle">
+                  {work.icon ? (
+                    <Image
+                      src={`https://lh3.googleusercontent.com/d/${work.icon.slice(
+                        33
+                      )}`}
+                      className="icon"
+                      alt={`${work.creator}のアイコン`}
+                      width={50}
+                      height={50}
+                    />
+                  ) : (
+                    <Image
+                      src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
+                      alt={`アイコン`}
+                      className="icon"
+                      width={50}
+                      height={50}
+                    />
+                  )}
+                  <p>{work.creator}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p>作品が見つかりませんでした。</p> // 作品が見つからない場合のメッセージ
+          )}
         </div>
       </div>
       <Footer />
@@ -225,14 +222,15 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
   );
 }
 
-export const getStaticPaths = async () => { 
-  const worksData = await fetchWorksData(); // 作品データを取得 
+export const getStaticPaths = async () => {
+  const worksData = await fetchWorksData(); // 作品データを取得
   const usernames = new Set(); // 重複を排除するためのSetを作成
   const paths = worksData
-    .filter((work) => work.tlink && work.username) // tlinkがあり、usernameが存在する作品のみ 
+    .filter((work) => work.tlink && work.username) // tlinkがあり、usernameが存在する作品のみ
     .map((work) => {
       const username = work.username.toLowerCase(); // usernameを小文字にする
-      if (!usernames.has(username)) { // 重複チェック
+      if (!usernames.has(username)) {
+        // 重複チェック
         usernames.add(username); // Setに追加
         return { params: { id: username } }; // 重複しなければパスを生成
       }
@@ -240,10 +238,10 @@ export const getStaticPaths = async () => {
     })
     .filter(Boolean); // nullを除外
 
-  return { 
-    paths, 
-    fallback: "blocking", // ページが見つからない場合はビルドを待つ 
-  }; 
+  return {
+    paths,
+    fallback: "blocking", // ページが見つからない場合はビルドを待つ
+  };
 };
 
 export const getStaticProps = async ({ params }) => {
@@ -254,11 +252,9 @@ export const getStaticProps = async ({ params }) => {
 
   // ここでビルド時にデータを取得し、ビルド後にキャッシュを使用する
   const userWorks = await Promise.all(
-    worksData
-      .filter(
-        (work) => work.tlink && work.tlink.toLowerCase() === id.toLowerCase()
-      )
-
+    worksData.filter(
+      (work) => work.tlink && work.tlink.toLowerCase() === id.toLowerCase()
+    )
   );
 
   const collaborationWorks = await fetchCollaborationWorksData(worksData, id);
