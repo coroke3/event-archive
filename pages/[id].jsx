@@ -9,46 +9,12 @@ import { css } from "@emotion/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXTwitter, faYoutube } from "@fortawesome/free-brands-svg-icons";
 
-const getVideoThumbnail = async (videoId) => {
-  const apiKey = process.env.YOUTUBE_API_KEY;
-  const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${apiKey}&part=snippet`;
 
-  try {
-    const videoRes = await fetch(apiUrl, {
-      headers: {
-        "Cache-Control": "public, max-age=86400", // 1日キャッシュ
-      },
-    });
-
-    if (!videoRes.ok) {
-      console.warn(`YouTube API の取得に失敗しました: ${videoRes.statusText}`);
-      return `https://i.ytimg.com/vi/${videoId}/sddefault.jpg`; // デフォルトをsddefaultに変更
-    }
-
-    const videoData = await videoRes.json();
-
-    if (videoData.items.length > 0) {
-      const thumbnails = videoData.items[0].snippet.thumbnails;
-      return (
-        thumbnails?.medium?.url ||
-        `https://i.ytimg.com/vi/${videoId}/sddefault.jpg`
-      ); // mediumを使用
-    }
-
-    return `https://i.ytimg.com/vi/${videoId}/sddefault.jpg`; // デフォルトをsddefaultに変更
-  } catch (error) {
-    console.error(`API 呼び出しエラー: ${error.message}`);
-    return `https://i.ytimg.com/vi/${videoId}/sddefault.jpg`; // デフォルトをsddefaultに変更
-  }
-};
 
 export default function WorkId({
   work,
   previousWorks,
   nextWorks,
-  thumbnail,
-  previousThumbnails,
-  nextThumbnails,
 }) {
   const showComment = work.comment !== undefined && work.comment !== "";
   const showIcon = work.icon !== undefined && work.icon !== "";
@@ -88,7 +54,7 @@ export default function WorkId({
           property="og:description"
           content={`PVSF 出展作品  ${work.title} - ${work.creator}  music:${work.music} - ${work.credit}`}
         />
-        <meta property="og:image" content={thumbnail} />
+        <meta property="og:image" content={work.largeThumbnail} />
       </Head>
       <Header />
       <div className={styles.contentr}>
@@ -207,12 +173,12 @@ export default function WorkId({
           </div>
           <div className={styles.s2f}>
             <div className={styles.navLinks}>
-              {previousWorks.map((prevWork, index) => (
+              {previousWorks.map((prevWork) => (
                 <div className={styles.ss1} key={prevWork.ylink.slice(17, 28)}>
                   <div className={styles.ss12}>
                     <Link href={`/${prevWork.ylink.slice(17, 28)}`}>
                       <img
-                        src={previousThumbnails[index]}
+                        src={prevWork.smallThumbnail}
                         width={`100%`}
                         alt={`${prevWork.title} - ${prevWork.creator} | PVSF archive`}
                       />
@@ -224,12 +190,12 @@ export default function WorkId({
                   </div>
                 </div>
               ))}
-              {nextWorks.map((nextWork, index) => (
+              {nextWorks.map((nextWork) => (
                 <div className={styles.ss1} key={nextWork.ylink.slice(17, 28)}>
                   <div className={styles.ss12}>
                     <Link href={`/${nextWork.ylink.slice(17, 28)}`}>
                       <img
-                        src={nextThumbnails[index]}
+                        src={nextWork.smallThumbnail}
                         width={`100%`}
                         alt={`${nextWork.title} - ${nextWork.creator} | PVSF archive`}
                       />
@@ -251,7 +217,7 @@ export default function WorkId({
 
 export async function getStaticPaths() {
   const res = await fetch(
-    "https://script.google.com/macros/s/AKfycbyEph6zXb1IWFRLpTRLNLtxU4Kj7oe10bt2ifiyK09a6nM13PASsaBYFe9YpDj9OEkKTw/exec"
+    "https://pvsf-cash.vercel.app/api/videos"
   );
   const data = await res.json();
 
@@ -267,7 +233,7 @@ export async function getStaticPaths() {
 
 export async function getStaticProps({ params }) {
   const res = await fetch(
-    "https://script.google.com/macros/s/AKfycbyEph6zXb1IWFRLpTRLNLtxU4Kj7oe10bt2ifiyK09a6nM13PASsaBYFe9YpDj9OEkKTw/exec"
+    "https://pvsf-cash.vercel.app/api/videos"
   );
   const data = await res.json();
   const work = data.find((w) => w.ylink.slice(17, 28) === params.id);
@@ -280,28 +246,14 @@ export async function getStaticProps({ params }) {
   const previousWorks = data.slice(Math.max(0, currentIndex - 5), currentIndex);
   const nextWorks = data.slice(currentIndex + 1, currentIndex + 6); // 現在の作品の次の5件
 
-  // サムネイルを事前に取得
-  const previousThumbnails = await Promise.all(
-    previousWorks.map((prevWork) =>
-      getVideoThumbnail(prevWork.ylink.slice(17, 28))
-    )
-  );
 
-  const nextThumbnails = await Promise.all(
-    nextWorks.map((nextWork) => getVideoThumbnail(nextWork.ylink.slice(17, 28)))
-  );
 
-  // サムネイルを事前に取得
-  const thumbnail = await getVideoThumbnail(work.ylink.slice(17, 28));
 
   return {
     props: {
       work,
       previousWorks,
       nextWorks,
-      thumbnail,
-      previousThumbnails,
-      nextThumbnails,
     },
   };
 }
