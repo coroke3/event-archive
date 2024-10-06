@@ -216,44 +216,70 @@ export default function WorkId({
 }
 
 export async function getStaticPaths() {
-  const res = await fetch(
-    "https://pvsf-cash.vercel.app/api/videos"
-  );
-  const data = await res.json();
+  try {
+    const res = await fetch("https://pvsf-cash.vercel.app/api/videos");
+    if (!res.ok) {
+      throw new Error("Failed to fetch data");
+    }
+    const data = await res.json();
 
-  const paths = data.map((work) => ({
-    params: { id: work.ylink.slice(17, 28) },
-  }));
+    const uniquePaths = new Set(); // 重複を防ぐためのセットを使用
+    const paths = data.map((work) => {
+      const path = work.ylink.slice(17, 28);
+      if (!uniquePaths.has(path)) {
+        uniquePaths.add(path);
+        return { params: { id: path } };
+      }
+      return null; // 重複する場合はnullを返す
+    }).filter(Boolean); // nullを除去
 
-  return {
-    paths,
-    fallback: false,
-  };
+    return {
+      paths,
+      fallback: false,
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      paths: [],
+      fallback: false,
+    };
+  }
 }
 
 export async function getStaticProps({ params }) {
-  const res = await fetch(
-    "https://pvsf-cash.vercel.app/api/videos"
-  );
-  const data = await res.json();
-  const work = data.find((w) => w.ylink.slice(17, 28) === params.id);
+  try {
+    const res = await fetch("https://pvsf-cash.vercel.app/api/videos");
+    if (!res.ok) {
+      throw new Error("Failed to fetch data");
+    }
+    const data = await res.json();
+    const work = data.find((w) => w.ylink.slice(17, 28) === params.id);
 
-  const currentIndex = data.findIndex(
-    (w) => w.ylink.slice(17, 28) === params.id
-  );
+    if (!work) {
+      return { notFound: true }; // 該当作品がない場合は404を返す
+    }
 
-  // 前後5作品を取得
-  const previousWorks = data.slice(Math.max(0, currentIndex - 5), currentIndex);
-  const nextWorks = data.slice(currentIndex + 1, currentIndex + 6); // 現在の作品の次の5件
+    const currentIndex = data.findIndex((w) => w.ylink.slice(17, 28) === params.id);
 
+    // 前後5作品を取得
+    const previousWorks = data.slice(Math.max(0, currentIndex - 5), currentIndex);
+    const nextWorks = data.slice(currentIndex + 1, currentIndex + 6); // 現在の作品の次の5件
 
-
-
-  return {
-    props: {
-      work,
-      previousWorks,
-      nextWorks,
-    },
-  };
+    return {
+      props: {
+        work,
+        previousWorks,
+        nextWorks,
+      },
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      props: {
+        work: {},
+        previousWorks: [],
+        nextWorks: [],
+      },
+    };
+  }
 }
