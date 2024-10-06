@@ -10,24 +10,24 @@ import styles from "../../styles/users.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXTwitter, faYoutube } from "@fortawesome/free-brands-svg-icons";
 
-const fetchUserData = async (username) => { 
-  const res = await fetch( 
-    "https://script.google.com/macros/s/AKfycbzXvxOyXNXF6dUjsw0vbJxb_mLvWKhvk8l14YEOyBHsGOn25X-T4LnYcvTpvwxrqq5Xvw/exec", 
-    { 
-      headers: { 
-        "Cache-Control": "no-cache", 
-      }, 
-    } 
-  ); 
+const fetchUserData = async (username) => {
+  const res = await fetch(
+    "https://script.google.com/macros/s/AKfycbzXvxOyXNXF6dUjsw0vbJxb_mLvWKhvk8l14YEOyBHsGOn25X-T4LnYcvTpvwxrqq5Xvw/exec",
+    {
+      headers: {
+        "Cache-Control": "no-cache",
+      },
+    }
+  );
 
-  if (!res.ok) { 
-    console.error(`Failed to fetch user data: ${res.statusText}`); 
-    return null; 
-  } 
+  if (!res.ok) {
+    console.error(`Failed to fetch user data: ${res.statusText}`);
+    return null;
+  }
 
-  const usersData = await res.json(); 
-  return usersData.find((user) => user.username === username); 
-}; 
+  const usersData = await res.json();
+  return usersData.find((user) => user.username === username);
+};
 
 const fetchWorksData = async () => {
   const res = await fetch("https://pvsf-cash.vercel.app/api/videos");
@@ -40,21 +40,17 @@ const fetchWorksData = async () => {
   return await res.json();
 };
 
-const fetchCollaborationWorksData = async (worksData, id) => {
-  const collaborationWorks = worksData.filter((work) => {
+const fetchCollaborationWorksData = (worksData, id) => {
+  return worksData.filter((work) => {
     if (work.memberid) {
       const memberIds = work.memberid.split(","); // カンマで分割
       return memberIds.some((memberId) => memberId.trim() === id); // id と一致するかチェック
     }
     return false; // memberid が存在しない場合は false
   });
-
-  return collaborationWorks; // 修正: collaborationWorks を返す
 };
 
 export default function UserWorksPage({ user, works, collaborationWorks }) {
-  const router = useRouter();
-
   const firstWork = works.length > 0 ? works[0] : null;
   const firstCreator = firstWork ? firstWork.creator : "";
   const firstYchlink = firstWork ? firstWork.ychlink : "";
@@ -172,9 +168,10 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
             <p>このユーザーは作品を持っていません。</p>
           )}
         </div>
+
         <div className="work">
           <h2>参加した合作</h2>
-          {collaborationWorks.length > 0 ? ( // collaborationWorksが存在するかチェック
+          {collaborationWorks.length > 0 ? (
             collaborationWorks.map((work) => (
               <div key={work.ylink} className="works">
                 <Link href={`../${work.ylink.slice(17, 28)}`}>
@@ -212,7 +209,7 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
               </div>
             ))
           ) : (
-            <p>作品が見つかりませんでした。</p> // 作品が見つからない場合のメッセージ
+            <p>このユーザーは参加した合作作品を持っていません。</p> // 作品が見つからない場合のメッセージ
           )}
         </div>
       </div>
@@ -250,19 +247,12 @@ export const getStaticProps = async ({ params }) => {
   const worksData = await fetchWorksData();
 
   // ここでビルド時にデータを取得し、ビルド後にキャッシュを使用する
-  const userWorks = await Promise.all(
-    worksData.filter(
-      (work) => work.tlink && work.tlink.toLowerCase() === id.toLowerCase()
-    )
+  const userWorks = worksData.filter(
+    (work) => work.tlink && work.tlink.toLowerCase() === id.toLowerCase()
   );
 
-  const collaborationWorks = await fetchCollaborationWorksData(worksData, id);
-
-  if (!userData && userWorks.length === 0 && collaborationWorks.length === 0) {
-    return {
-      notFound: true, // ユーザーや作品が見つからない場合の対処
-    };
-  }
+  // 参加した合作作品を正しく取得
+  const collaborationWorks = fetchCollaborationWorksData(worksData, id);
 
   return {
     props: {
@@ -270,6 +260,5 @@ export const getStaticProps = async ({ params }) => {
       works: userWorks,
       collaborationWorks,
     },
-    revalidate: 172800, // 2日ごとにISRを実行
   };
 };
