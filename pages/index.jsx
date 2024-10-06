@@ -135,7 +135,7 @@ export default function Home({ work }) {
 
 // 新しいエンドポイントからデータを取得
 export const getStaticProps = async () => { 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/videos`, { // フルURLを使用
+  const res = await fetch(`https://pvsf-cash.vercel.app/api/videos`, { // フルURLを使用
     headers: { 
       "Cache-Control": "no-cache", // キャッシュを使用しない 
     }, 
