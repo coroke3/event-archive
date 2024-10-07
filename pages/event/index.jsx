@@ -31,7 +31,6 @@ export default function EventPage({ events = [] }) {
         <title>イベント一覧 - PVSF Archive</title>           
         <meta name="description" content="イベントの一覧です。" />           
       </Head>           
-      <Header />           
       <div className="content">           
         <h1>イベント一覧</h1>           
         <div className={styles.eventList}>  

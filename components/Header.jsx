@@ -7,8 +7,16 @@ import { useTheme } from "next-themes";
 function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { resolvedTheme } = useTheme();
-  const [language, setLanguage] = useState("JP");
+  const [language, setLanguage] = useState("EN");
   const [inProp, setInProp] = useState(true); // フェードイン/アウト制御
+
+  // 言語を localStorage に保存して、ページリロード時に保持する
+  useEffect(() => {
+    const storedLanguage = localStorage.getItem("language");
+    if (storedLanguage) {
+      setLanguage(storedLanguage);
+    }
+  }, []);
 
   useEffect(() => {
     let src;
@@ -32,7 +40,9 @@ function Header() {
   const toggleLanguage = () => {
     setInProp(false); // フェードアウト開始
     setTimeout(() => {
-      setLanguage(language === "JP" ? "EN" : "JP");
+      const newLanguage = language === "JP" ? "EN" : "JP";
+      setLanguage(newLanguage);
+      localStorage.setItem("language", newLanguage); // 言語をlocalStorageに保存
       setInProp(true); // フェードイン開始
     }, 500); // アニメーション時間と一致させる
   };
