@@ -142,6 +142,62 @@ header{
   font-size: 0.6rem;
   letter-spacing: 1px;
 }
+/* アニメーション用のスタイル */
+.fade-enter {
+  opacity: 0;
+  transition: opacity 0.5s ease-in;
+}
+
+.fade-enter-active {
+  opacity: 1;
+}
+
+.fade-exit {
+  opacity: 1;
+  transition: opacity 0.5s ease-in;
+}
+
+.fade-exit-active {
+  opacity: 0;
+}
+
+/* theme-switcher.css */
+
+/* スイッチの基本スタイル */
+.custom-switch {
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+/* スイッチが選択されている時 */
+.custom-switch[data-state='checked'] {
+  background-color: #4ade80; /* 緑色（選択時の背景色） */
+  transform: scale(1.1); /* サイズを大きくする */
+}
+
+/* スイッチが選択されていない時 */
+.custom-switch[data-state='unchecked'] {
+  background-color: #e5e5e5; /* グレー（非選択時の背景色） */
+}
+
+/* スイッチのアイコンスタイル */
+.custom-switch svg {
+  width: 1.5rem; /* アイコンのサイズ */
+  height: 1.5rem; /* アイコンのサイズ */
+  fill: white; /* アイコンの色 */
+}
+
+/* ダークモード時のスタイル */
+body.dark-mode .custom-switch[data-state='checked'] {
+  background-color: #2563eb; /* ダークモードの背景色 */
+}
+
+/* ダークモード時のアイコンの色 */
+body.dark-mode .custom-switch[data-state='unchecked'] svg {
+  fill: #000; /* ダークモードのアイコン色 */
+}
+
+
+
 @media screen and (min-width: 1150px) {
   @media (min-aspect-ratio: 16 / 9) {
   }
