@@ -184,39 +184,30 @@ export default function EventPage({ event, works = [], errorMessage = "" }) {
   ); 
 } 
  
-export const getStaticPaths = async () => { 
-  const eventsData = await fetchEventsData(); 
-  if (eventsData.error) { 
-    return { paths: [], fallback: true }; 
-  } 
+export const getStaticPaths = async () => {
+  const eventsData = await fetchEventsData();
+  if (eventsData.error) {
+    return { paths: [], fallback: false }; // fallback を false に設定
+  }
+
+  const paths = eventsData.map((event) => ({
+    params: { id: event.eventid },
+  }));
+
+  return { paths, fallback: false }; // fallback を false に設定
+};
+
  
-  const paths = eventsData.map((event) => ({ 
-    params: { id: event.eventid }, 
-  })); 
- 
-  return { paths, fallback: true }; 
-}; 
- 
-export const getStaticProps = async ({ params }) => { 
-  const { id } = params; 
-  const eventsData = await fetchEventsData(); 
-  if (eventsData.error) { 
-    return { 
-      props: { event: null, works: [], errorMessage: eventsData.message }, 
-    }; 
-  } 
- 
-  const event = eventsData.find((event) => event.eventid === id) || null; 
-  const worksData = await fetchWorksData(); 
-  if (worksData.error) { 
-    return { 
-      props: { event, works: [], errorMessage: worksData.message }, 
-    }; 
-  } 
- 
-  const works = worksData.filter((work) => work.eventname === event.eventid); 
- 
-  return { 
-    props: { event, works }, 
-  }; 
-}; 
+export const getStaticProps = async ({ params }) => {
+  try {
+    const { id } = params;
+    const eventsData = await fetchEventsData();
+    const event = eventsData.find((event) => event.eventid === id) || null;
+    const worksData = await fetchWorksData();
+    const works = worksData.filter((work) => work.eventname === event.eventid);
+
+    return { props: { event, works } };
+  } catch (error) {
+    return { props: { event: null, works: [], errorMessage: "データの取得に失敗しました。" } };
+  }
+};
