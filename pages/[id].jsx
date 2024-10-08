@@ -9,7 +9,7 @@ import { css } from "@emotion/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXTwitter, faYoutube } from "@fortawesome/free-brands-svg-icons";
 
-export default function WorkId({ work, previousWorks, nextWorks }) {
+export default function WorkId({ work, previousWorks, nextWorks,icon,eventname }) {
   const showComment = work.comment !== undefined && work.comment !== "";
   const showIcon = work.icon !== undefined && work.icon !== "";
   const showCreator = work.creator !== undefined && work.creator !== "";
@@ -73,7 +73,7 @@ export default function WorkId({ work, previousWorks, nextWorks }) {
                     src={`https://lh3.googleusercontent.com/d/${work.icon.slice(
                       33
                     )}`}
-                    className="icon"
+                    className={styles.icon}
                     alt={`${work.creator}のアイコン`}
                     width={50}
                     height={50}
@@ -84,7 +84,7 @@ export default function WorkId({ work, previousWorks, nextWorks }) {
                   <Image
                     src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
                     alt={`アイコン`}
-                    className="icon"
+                    className={styles.icon}
                     width={50}
                     height={50}
                   />{" "}
@@ -114,6 +114,22 @@ export default function WorkId({ work, previousWorks, nextWorks }) {
                 </h3>
               )}
               {showTime && <p className={styles.time}>{formattedDate}</p>}
+            </div>
+            <div className={styles.eventInfo}>
+              <Link href={`../../event/${work.eventname}`}>
+              {icon && (
+                <Image
+                  src={`https://lh3.googleusercontent.com/d/${icon.slice(
+                    33
+                  )}`} // 実際のアイコンのパスを指定
+                  alt={`${eventname}のアイコン`}
+                  className={styles.eventIcon}
+                  width={50}
+                  height={50}
+                />
+              )}
+              {eventname && <h4 className={styles.eventTitle}>{eventname}</h4>}
+              </Link>
             </div>
             {showMusic && (
               <p>
@@ -371,12 +387,29 @@ export async function getStaticProps({ params }) {
         (w) => w.ylink === ylink
       )
     );
+    const eventId = work.eventname; // eventnameからイベントIDを取得
+    const eventRes = await fetch(
+      `https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec?eventid=${eventId}`
+    );
+
+    if (!eventRes.ok) {
+      throw new Error("イベント情報の取得に失敗しました");
+    }
+
+    const eventData = await eventRes.json();
+
+    // eventDataから.eventnameと.iconを取得
+    const eventInfo = eventData.find((event) => event.eventid === eventId);
+    const eventname = eventInfo ? eventInfo.eventname : "";
+    const icon = eventInfo ? eventInfo.icon : "";
 
     return {
       props: {
         work,
-        previousWorks: uniquePreviousWorks, // tlink一致と前の作品をまとめて
-        nextWorks: uniqueNextWorks, // 後の作品にmemberid一致を追加
+        previousWorks: uniquePreviousWorks,
+        nextWorks: uniqueNextWorks,
+        eventname, // 追加
+        icon, // 追加
       },
     };
   } catch (error) {
@@ -386,6 +419,8 @@ export async function getStaticProps({ params }) {
         work: {},
         previousWorks: [],
         nextWorks: [],
+        eventname: "", // 追加
+        icon: "", // 追加
       },
     };
   }
