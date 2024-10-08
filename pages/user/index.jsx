@@ -56,7 +56,6 @@ export default function UserPage({ users = [], icons = [] }) {
         <title>ユーザー一覧 - PVSF Archive</title>        
         <meta name="description" content="ユーザーの名前とアイコンの一覧です。" />        
       </Head>        
-      <Header />        
       <div className="content">        
         <h1>ユーザー一覧</h1>        
         <div className={styles.userlist}>        

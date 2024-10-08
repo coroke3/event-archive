@@ -50,7 +50,6 @@ export default function WorkId({ work, previousWorks, nextWorks, icon, eventname
         /> 
         <meta property="og:image" content={work.largeThumbnail} /> 
       </Head> 
-      <Header /> 
       <div className={styles.contentr}> 
         <div className={styles.bf}> 
           <div className={styles.s1f}> 

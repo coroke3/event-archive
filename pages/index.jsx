@@ -5,6 +5,8 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import styles from "../styles/works.module.css";
 import Head from "next/head";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faLock, faLink } from "@fortawesome/free-solid-svg-icons";
 
 // メインコンポーネント
 export default function Home({ work }) {
@@ -25,26 +27,38 @@ export default function Home({ work }) {
     (item) =>
       (filter.public && item.status === "public") ||
       (filter.unlisted && item.status === "unlisted") ||
-      (filter.private && (item.status === "private" || item.status === "unknown"))
+      (filter.private &&
+        (item.status === "private" || item.status === "unknown"))
   );
 
   return (
     <div>
       <Head>
         <title>過去の投稿作品 - オンライン映像イベント / PVSF archive</title>
-        <meta name="description" content={`過去の投稿作品です。ぜひご覧ください。`} />
+        <meta
+          name="description"
+          content={`過去の投稿作品です。ぜひご覧ください。`}
+        />
         <meta name="twitter:card" content="summary" />
         <meta name="twitter:site" content="@pvscreeningfes" />
         <meta name="twitter:creator" content="@coroke3" />
         <meta property="og:url" content="pvsf.jp/work" />
-        <meta property="og:title" content="過去の投稿作品 - オンライン映像イベント / PVSF archive" />
-        <meta property="og:description" content="過去の投稿作品です。ぜひご覧ください。" />
-        <meta property="og:image" content="https://i.gyazo.com/35170e03ec321fb94276ca1c918efabc.jpg" />
+        <meta
+          property="og:title"
+          content="過去の投稿作品 - オンライン映像イベント / PVSF archive"
+        />
+        <meta
+          property="og:description"
+          content="過去の投稿作品です。ぜひご覧ください。"
+        />
+        <meta
+          property="og:image"
+          content="https://i.gyazo.com/35170e03ec321fb94276ca1c918efabc.jpg"
+        />
       </Head>
-      <Header />
 
       {/* チェックボックスによるフィルタリング */}
-      <div className="filter-options">
+      <div className={styles.filteroptions}>
         <label>
           <input
             type="checkbox"
@@ -79,13 +93,24 @@ export default function Home({ work }) {
           {displayedWorks.length > 0 ? (
             displayedWorks.map((work) => {
               const showIcon = work.icon && work.icon !== "";
-              const isPrivate = work.status === "private" || work.status === "unknown"; // 非公開かどうかを判定
+              const isPrivate =
+                work.status === "private" || work.status === "unknown"; // 非公開かどうかを判定
 
               return (
-                <div className={`works ${isPrivate ? 'private' : ''}`} key={work.ylink}>
+                <div
+                  className={`works ${isPrivate ? "private" : ""} ${
+                    work.status === "unlisted" ? "unlisted" : ""
+                  }`}
+                  key={work.ylink}
+                >
                   <Link href={`../${work.ylink.slice(17, 28)}`}>
                     <Image
-                      src={work.smallThumbnail || `https://img.youtube.com/vi/${extractVideoId(work.ylink)}/mqdefault.jpg`} // smallThumbnailが無い場合はデフォルトサムネイル
+                      src={
+                        work.smallThumbnail ||
+                        `https://img.youtube.com/vi/${extractVideoId(
+                          work.ylink
+                        )}/mqdefault.jpg`
+                      } // smallThumbnailが無い場合はデフォルトサムネイル
                       alt={`${work.title} - ${work.creator} | PVSF archive`}
                       className="samune"
                       width={640}
@@ -94,30 +119,45 @@ export default function Home({ work }) {
                   </Link>
                   <h3>{work.title}</h3>
                   <div className="subtitle">
-                    {showIcon ? (
-                      <Image
-                        src={`https://lh3.googleusercontent.com/d/${work.icon.slice(33)}`}
-                        className="icon"
-                        alt={`${work.creator}のアイコン`}
-                        width={50}
-                        height={50}
-                      />
-                    ) : (
-                      <Image
-                        src='https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg'
-                        alt={`アイコン`}
-                        className="icon"
-                        width={50}
-                        height={50}
-                      />
-                    )}
-                    <p>{work.creator}</p>
-                    <p>
-                      {work.status === "public"
-                        ? "公開中"
-                        : work.status === "unlisted"
-                        ? "限定公開"
-                        : "非公開"}
+                    <div className="insubtitle">
+                      {showIcon ? (
+                        <Image
+                          src={`https://lh3.googleusercontent.com/d/${work.icon.slice(
+                            33
+                          )}`}
+                          className="icon"
+                          alt={`${work.creator}のアイコン`}
+                          width={50}
+                          height={50}
+                        />
+                      ) : (
+                        <Image
+                          src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
+                          alt={`アイコン`}
+                          className="icon"
+                          width={50}
+                          height={50}
+                        />
+                      )}
+                      <p>{work.creator}</p>
+                    </div>
+                    <p className="status">
+                      {work.status === "public" ? null : work.status === // 公開状態のときは何も表示しない
+                        "unlisted" ? (
+                        <span className="inunlisted">
+                          <span className="icon">
+                            <FontAwesomeIcon icon={faLink} />
+                          </span>
+                          限定公開
+                        </span>
+                      ) : (
+                        <span className="inprivate">
+                          <span className="sicon">
+                            <FontAwesomeIcon icon={faLock} />
+                          </span>
+                          非公開
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -134,26 +174,26 @@ export default function Home({ work }) {
 }
 
 // 新しいエンドポイントからデータを取得
-export const getStaticProps = async () => { 
-  const res = await fetch(`https://pvsf-cash.vercel.app/api/videos`, { // フルURLを使用
-    headers: { 
-      "Cache-Control": "no-cache", // キャッシュを使用しない 
-    }, 
-  }); 
- 
-  if (!res.ok) { 
-    console.error(`Failed to fetch work data: ${res.statusText}`); 
-    return { props: { work: [] } }; // エラー時は空の配列を返す 
-  } 
- 
-  const work = await res.json(); 
- 
-  return { 
-    props: { work }, 
-    revalidate: 172800, // 2日ごとに再生成 
-  }; 
-};
+export const getStaticProps = async () => {
+  const res = await fetch(`https://pvsf-cash.vercel.app/api/videos`, {
+    // フルURLを使用
+    headers: {
+      "Cache-Control": "no-cache", // キャッシュを使用しない
+    },
+  });
 
+  if (!res.ok) {
+    console.error(`Failed to fetch work data: ${res.statusText}`);
+    return { props: { work: [] } }; // エラー時は空の配列を返す
+  }
+
+  const work = await res.json();
+
+  return {
+    props: { work },
+    revalidate: 172800, // 2日ごとに再生成
+  };
+};
 
 // ylinkから動画IDを抽出する関数
 function extractVideoId(url) {

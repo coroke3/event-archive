@@ -5,6 +5,8 @@ import Link from "next/link";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import styles from "../../styles/events.module.css";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faLock, faLink } from "@fortawesome/free-solid-svg-icons";
 
 const fetchEventsData = async () => {
   try {
@@ -53,7 +55,6 @@ export default function EventPage({ event, works = [], errorMessage = "" }) {
         <Head>
           <title>エラー - PVSF Archive</title>
         </Head>
-        <Header />
         <div className="content">
           <h1>エラーが発生しました</h1>
           <p>{errorMessage}</p>
@@ -150,7 +151,12 @@ export default function EventPage({ event, works = [], errorMessage = "" }) {
           <h2>このイベントの作品一覧</h2>
           {Array.isArray(works) && works.length > 0 ? (
             works.map((work) => (
-              <div className="works" key={work.ylink}>
+              <div
+                className={`works ${
+                  work.status === "private" ? "private" : ""
+                } ${work.status === "unlisted" ? "unlisted" : ""}`}
+                key={work.ylink}
+              >
                 <Link href={`../${work.ylink.slice(17, 28)}`}>
                   <Image
                     src={work.largeThumbnail}
@@ -162,26 +168,46 @@ export default function EventPage({ event, works = [], errorMessage = "" }) {
                 </Link>
                 <h3>{work.title}</h3>
                 <div className="subtitle">
-                  {work.icon ? (
-                    <Image
-                      src={`https://lh3.googleusercontent.com/d/${work.icon.slice(
-                        33
-                      )}`}
-                      className="icon"
-                      alt={`${work.creator}のアイコン`}
-                      width={50}
-                      height={50}
-                    />
-                  ) : (
-                    <Image
-                      src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
-                      alt={`アイコン`}
-                      className="icon"
-                      width={50}
-                      height={50}
-                    />
-                  )}
-                  <p>{work.creator}</p>
+                  <div className="insubtitle">
+                    {work.icon ? (
+                      <Image
+                        src={`https://lh3.googleusercontent.com/d/${work.icon.slice(
+                          33
+                        )}`}
+                        className="icon"
+                        alt={`${work.creator}のアイコン`}
+                        width={50}
+                        height={50}
+                      />
+                    ) : (
+                      <Image
+                        src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
+                        alt={`アイコン`}
+                        className="icon"
+                        width={50}
+                        height={50}
+                      />
+                    )}
+                    <p>{work.creator}</p>
+                  </div>
+                  <p className="status">
+                    {work.status === "public" ? null : work.status === // 公開状態のときは何も表示しない
+                      "unlisted" ? (
+                      <span className="inunlisted">
+                        <span className="icon">
+                          <FontAwesomeIcon icon={faLink} />
+                        </span>
+                        限定公開
+                      </span>
+                    ) : (
+                      <span className="inprivate">
+                        <span className="sicon">
+                          <FontAwesomeIcon icon={faLock} />
+                        </span>
+                        非公開
+                      </span>
+                    )}
+                  </p>
                 </div>
               </div>
             ))

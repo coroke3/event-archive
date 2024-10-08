@@ -83,6 +83,7 @@ th {
 }
 
 .icon {
+  margin: auto;
   width: 25px;
   height: 25px;
   border-radius: 20px;
@@ -97,7 +98,7 @@ th {
 .subtitle {
   margin: auto 5px;
   display: flex;
-  justify-self: start;
+  justify-content: space-between;
 }
 .works p {
   margin: auto 10px auto 0px;
@@ -196,6 +197,27 @@ body.dark-mode .custom-switch[data-state='unchecked'] svg {
 }
 
 
+.status {
+  display: flex;
+  align-items: center;
+  font-size: 0.6rem;
+}
+.insubtitle{
+  display: flex;
+}
+.inunlisted, .inprivate {
+  opacity: 0.7;
+  margin: auto;
+  border: 1px solid var(--foreground);
+  padding: 1px 5px;
+  border-radius: 5px;
+}
+.subtitle p{
+  margin: auto 0;
+}
+.sicon {
+  margin-right: 5px; 
+}
 
 @media screen and (min-width: 1150px) {
   @media (min-aspect-ratio: 16 / 9) {
