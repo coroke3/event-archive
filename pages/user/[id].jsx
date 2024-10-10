@@ -56,11 +56,14 @@ const fetchCollaborationWorksData = (worksData, id) => {
 
 
 export default function UserWorksPage({ user, works, collaborationWorks }) {
-  const firstWork = works.length > 0 ? works[0] : null;
+  const personalWorks = works.filter(work => work.type === "個人"); // 1. フィルタリング
+  const firstWork = personalWorks.length > 0 ? personalWorks[0] : works[0]; // 2. 最新の「個人」作品があればそれを使用
+  
   const firstCreator = firstWork ? firstWork.creator : "";
   const firstYchlink = firstWork ? firstWork.ychlink : "";
   const firstIcon = firstWork ? firstWork.icon : "";
-  const firstTlink = firstWork ? firstWork.tlink : ""; // 追加：最初のtlink
+  const firstTlink = firstWork ? firstWork.tlink : "";
+  
 
   return (
     <div>
