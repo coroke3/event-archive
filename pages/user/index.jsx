@@ -47,6 +47,24 @@ const fetchUserIcons = async () => {
 
   return await res.json();
 };
+// 作品データを取得する関数
+const fetchWorksData = async () => {
+  const res = await fetch(
+    "https://script.google.com/macros/s/AKfycbyEph6zXb1IWFRLpTRLNLtxU4Kj7oe10bt2ifiyK09a6nM13PASsaBYFe9YpDj9OEkKTw/exec",
+    {
+      headers: {
+        "Cache-Control": "no-cache",
+      },
+    }
+  );
+
+  if (!res.ok) {
+    console.error(`Failed to fetch works data: ${res.statusText}`);
+    return [];
+  }
+
+  return await res.json();
+};
 
 
 // 最新の作品を取得する関数を修正
@@ -203,6 +221,23 @@ const sortedUsers = [...users].sort((a, b) => {
 export const getStaticProps = async () => {
   const users = await fetchUsersData();
   const icons = await fetchUserIcons();
+  const works = await fetchWorksData(); // 作品データを取得
+
+  // member と memberid をカンマで分割してマッピング
+  const memberMap = {};
+  works.forEach(work => {
+    const memberIds = work.memberid.split(','); // memberidを分割
+    const memberNames = work.member.split(','); // memberを分割
+    memberIds.forEach((id, index) => {
+      memberMap[id.trim()] = memberNames[index].trim(); // マッピングを作成
+    });
+  });
+
+  // users に membername を追加
+  users.forEach(user => {
+    user.membername = memberMap[user.username] || "不明"; // 一致しない場合は「不明」を設定
+  });
+
   return {
     props: {
       users,
