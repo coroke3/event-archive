@@ -48,11 +48,12 @@ const fetchCollaborationWorksData = (worksData, id) => {
   return worksData.filter((work) => {
     if (work.memberid) {
       const memberIds = work.memberid.split(","); // カンマで分割
-      return memberIds.some((memberId) => memberId.trim() === id); // id と一致するかチェック
+      return memberIds.some((memberId) => memberId.trim().toLowerCase() === id.toLowerCase()); // 大文字小文字を無視して一致するかチェック
     }
     return false; // memberid が存在しない場合は false
   });
 };
+
 
 export default function UserWorksPage({ user, works, collaborationWorks }) {
   const firstWork = works.length > 0 ? works[0] : null;
@@ -287,7 +288,7 @@ export const getStaticProps = async ({ params }) => {
   const { id } = params;
   const user = await fetchUserData(id);
   const worksData = await fetchWorksData();
-  const works = worksData.filter((work) => work.tlink === id);
+  const works = worksData.filter((work) => work.tlink?.toLowerCase() === id.toLowerCase());
   const collaborationWorks = fetchCollaborationWorksData(worksData, id);
 
   if (!user) {

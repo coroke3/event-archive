@@ -65,7 +65,7 @@ function Header() {
                 unmountOnExit
               >
                 <h1 className="sitetitle">
-                  {language === "JP" ? "イベントアーカイブ" : "Event Archives"}
+               Event Archives
                 </h1>
               </CSSTransition>
             </Link>
@@ -80,7 +80,7 @@ function Header() {
                   unmountOnExit
                 >
                   <span>
-                    {language === "JP" ? "クリエイター" : "Creator"}
+                 クリエイター
                   </span>
                 </CSSTransition>
               </Link>
@@ -94,17 +94,14 @@ function Header() {
                   unmountOnExit
                 >
                   <span>
-                    {language === "JP" ? "イベント" : "Event"}
+                イベント
                   </span>
                 </CSSTransition>
               </Link>
             </div>
           </div>
 
-          {/* 言語切り替えボタン */}
-          <button onClick={toggleLanguage} className="lang-toggle">
-            {language === "JP" ? "EN" : "JP"}
-          </button>
+
 
           <ThemeSwitcher />
         </div>
