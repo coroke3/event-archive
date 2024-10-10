@@ -221,23 +221,6 @@ const sortedUsers = [...users].sort((a, b) => {
 export const getStaticProps = async () => {
   const users = await fetchUsersData();
   const icons = await fetchUserIcons();
-  const works = await fetchWorksData(); // 作品データを取得
-
-  // member と memberid をカンマで分割してマッピング
-  const memberMap = {};
-  works.forEach(work => {
-    const memberIds = work.memberid.split(','); // memberidを分割
-    const memberNames = work.member.split(','); // memberを分割
-    memberIds.forEach((id, index) => {
-      memberMap[id.trim()] = memberNames[index].trim(); // マッピングを作成
-    });
-  });
-
-  // users に membername を追加
-  users.forEach(user => {
-    user.membername = memberMap[user.username] || "不明"; // 一致しない場合は「不明」を設定
-  });
-
   return {
     props: {
       users,
