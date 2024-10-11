@@ -47,84 +47,124 @@ const fetchUserIcons = async () => {
 
   return await res.json();
 };
-// 作品データを取得する関数
-const fetchWorksData = async () => {
-  const res = await fetch(
-    "https://script.google.com/macros/s/AKfycbyEph6zXb1IWFRLpTRLNLtxU4Kj7oe10bt2ifiyK09a6nM13PASsaBYFe9YpDj9OEkKTw/exec",
-    {
-      headers: {
-        "Cache-Control": "no-cache",
-      },
+
+// 最新の作品を取得する関数 
+// 最新の作品を取得する関数  
+// 最新の作品を取得する関数  
+const getLatestWorkByTlink = (icons, tlink) => { 
+  const tlinkLatestWork = icons.filter(icon => 
+    icon.tlink?.toLowerCase() === tlink.toLowerCase()
+  ); 
+
+  const memberLatestWork = icons.filter(icon => 
+    icon.memberid && icon.memberid.toLowerCase().includes(tlink.toLowerCase())
+  ); 
+
+  // 1. tlinkが一致する作品があり、typeが個人の場合
+  const personalWork = tlinkLatestWork.find(icon => icon.type === "個人");
+  if (personalWork) {
+    return { creator: personalWork.creator, icon: personalWork.icon };
+  }
+
+  // 2. tlinkが一致する作品があるが、typeが個人ではない場合
+  if (memberLatestWork.length > 0) {
+    const matchedIcon = memberLatestWork.reduce((prev, current) => 
+      new Date(prev.date) > new Date(current.date) ? prev : current 
+    );
+
+    const memberIds = matchedIcon.memberid.split(","); 
+    const memberNames = matchedIcon.member.split(","); 
+    const matchedIndex = memberIds.findIndex(id => 
+      id.trim().toLowerCase() === tlink.toLowerCase()
+    );
+
+    if (matchedIndex !== -1) { 
+      const matchedMemberName = memberNames[matchedIndex].trim();
+      const latestIcon = tlinkLatestWork.length > 0 
+        ? tlinkLatestWork.reduce((prev, current) => 
+          new Date(prev.date) > new Date(current.date) ? prev : current 
+        ).icon 
+        : matchedIcon.icon;
+
+      return { creator: matchedMemberName, icon: latestIcon };
     }
-  );
+  }else{
+    const personalWork = tlinkLatestWork[0];
 
-  if (!res.ok) {
-    console.error(`Failed to fetch works data: ${res.statusText}`);
-    return [];
+    if (personalWork) {
+      return { creator: personalWork.creator, icon: personalWork.icon };
+    }
   }
 
-  return await res.json();
+  // 3. tlinkが一致しない場合
+  if (memberLatestWork.length > 0) {
+    const matchedIcon = memberLatestWork.reduce((prev, current) => 
+      new Date(prev.date) > new Date(current.date) ? prev : current 
+    );
+
+    const memberIds = matchedIcon.memberid.split(","); 
+    const memberNames = matchedIcon.member.split(","); 
+    const matchedIndex = memberIds.findIndex(id => 
+      id.trim().toLowerCase() === tlink.toLowerCase()
+    );
+
+    if (matchedIndex !== -1) { 
+      const matchedMemberName = memberNames[matchedIndex].trim();
+      return { creator: matchedMemberName, icon: null }; // アイコンは取得しない
+    }
+  }
+
+  // 4. すべての条件に合致しない場合
+  // tlinkLatestWorkが空の場合は、アイコンとcreatorを取得するロジック
+  if (tlinkLatestWork.length === 0) {
+    // アイコンは取得しないので、creatorはnullを返す
+    return { creator: null, icon: null };
+  }
+
+  return null; 
 };
 
 
-// 最新の作品を取得する関数を修正
-const getLatestWorkByTlink = (icons, tlink) => {
-  // まず、tlinkと一致し、.typeが"個人"のものを取得
-  const filteredIconsPersonal = icons.filter(
-    (icon) => icon.tlink?.toLowerCase() === tlink.toLowerCase() && icon.type === "個人"
-  );
 
-  // "個人"のものがあればそれを返し、なければ通常の最新作品を返す
-  if (filteredIconsPersonal.length > 0) {
-    return filteredIconsPersonal[0]; // "個人"の最新の作品
-  }
 
-  // "個人"がない場合は従来通り最新の作品を取得
-  const filteredIcons = icons.filter(
-    (icon) => icon.tlink?.toLowerCase() === tlink.toLowerCase()
-  );
-
-  return filteredIcons.length > 0 ? filteredIcons[0] : null;
-};
 
 
 export default function UserPage({ users = [], icons = [] }) {
   const [sortOption, setSortOption] = useState("totalWorks");
 
-
-// ソート処理で使用している合計作品数を計算
-const sortedUsers = [...users].sort((a, b) => { 
-  if (sortOption === "name") { 
-    const aLatestWork = getLatestWorkByTlink(icons, a.username); 
-    const bLatestWork = getLatestWorkByTlink(icons, b.username); 
-    const aCreatorName = aLatestWork ? aLatestWork.creator : "不明"; 
-    const bCreatorName = bLatestWork ? bLatestWork.creator : "不明"; 
-    return aCreatorName.localeCompare(bCreatorName); // creatorNameに基づくソート 
-  } 
-  if (sortOption === "totalWorks") { 
-    a.totalWorks = icons.filter( 
-      (icon) => 
-        (icon.tlink && 
-          icon.tlink.toLowerCase() === a.username.toLowerCase()) || 
-        (icon.memberid && 
-          icon.memberid.toLowerCase().includes(a.username.toLowerCase())) 
-    ).length; 
-    b.totalWorks = icons.filter( 
-      (icon) => 
-        (icon.tlink && 
-          icon.tlink.toLowerCase() === b.username.toLowerCase()) || 
-        (icon.memberid && 
-          icon.memberid.toLowerCase().includes(b.username.toLowerCase())) 
-    ).length; 
-    return b.totalWorks - a.totalWorks; // 合計作品数の降順 
-  } 
-  if (sortOption === "latestWork") { 
-    const aLatestWork = new Date(a.latestWork); 
-    const bLatestWork = new Date(b.latestWork); 
-    return bLatestWork - aLatestWork; 
-  } 
-  return 0; 
-}); 
+  // ソート処理で使用している合計作品数を計算
+  const sortedUsers = [...users].sort((a, b) => {
+    if (sortOption === "name") {
+      const aLatestWork = getLatestWorkByTlink(icons, a.username);
+      const bLatestWork = getLatestWorkByTlink(icons, b.username);
+      const aCreatorName = aLatestWork ? aLatestWork.creator : "不明";
+      const bCreatorName = bLatestWork ? bLatestWork.creator : "不明";
+      return aCreatorName.localeCompare(bCreatorName); // creatorNameに基づくソート
+    }
+    if (sortOption === "totalWorks") {
+      a.totalWorks = icons.filter(
+        (icon) =>
+          (icon.tlink &&
+            icon.tlink.toLowerCase() === a.username.toLowerCase()) ||
+          (icon.memberid &&
+            icon.memberid.toLowerCase().includes(a.username.toLowerCase()))
+      ).length;
+      b.totalWorks = icons.filter(
+        (icon) =>
+          (icon.tlink &&
+            icon.tlink.toLowerCase() === b.username.toLowerCase()) ||
+          (icon.memberid &&
+            icon.memberid.toLowerCase().includes(b.username.toLowerCase()))
+      ).length;
+      return b.totalWorks - a.totalWorks; // 合計作品数の降順
+    }
+    if (sortOption === "latestWork") {
+      const aLatestWork = new Date(a.latestWork);
+      const bLatestWork = new Date(b.latestWork);
+      return bLatestWork - aLatestWork;
+    }
+    return 0;
+  });
 
   return (
     <div>
@@ -148,7 +188,6 @@ const sortedUsers = [...users].sort((a, b) => {
         <div className={styles.userlist}>
           {sortedUsers.length > 0 ? (
             sortedUsers.map((user) => {
-              // tlinkに基づいて最新の作品を取得
               const latestWork = getLatestWorkByTlink(icons, user.username);
               const creatorName = latestWork ? latestWork.creator : "不明";
 
@@ -166,7 +205,6 @@ const sortedUsers = [...users].sort((a, b) => {
                     .includes(user.username.toLowerCase())
               );
 
-              // 重複を削除して合計作品数を算出
               const uniqueWorks = [
                 ...matchingWorksCount1,
                 ...matchingWorksCount2,
@@ -199,7 +237,7 @@ const sortedUsers = [...users].sort((a, b) => {
                     />
                   )}
                   <Link href={`/user/${user.username}`} passHref>
-                    <h4>{creatorName}</h4>
+                    <h4>{creatorName}</h4> {/* ここでcreatorNameを表示 */}
                     <p className="id">@{user.username}</p>
                     <p>個人作品数: {matchingWorksCount1.length}</p>
                     <p>合作作品数: {matchingWorksCount2.length}</p>
