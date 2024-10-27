@@ -92,7 +92,8 @@
   font-family: Arial, sans-serif;
 }
 
-.table th, .table td {
+.table th,
+.table td {
   padding: 12px 15px;
   text-align: left;
 }
@@ -111,7 +112,7 @@
 }
 
 .twitterIcon {
-  color: #1DA1F2; /* Twitterアイコンの色 */
+  color: #1da1f2; /* Twitterアイコンの色 */
   font-size: 1.2em; /* アイコンのサイズ */
   transition: color 0.3s ease; /* アイコンの色変更時のトランジション */
 }
@@ -121,11 +122,10 @@
 }
 
 @media screen and (max-width: 1300px) {
-
-.contentr {
-  width: 95%;
-  margin: 10px 2.5%;
-}
+  .contentr {
+    width: 95%;
+    margin: 10px 2.5%;
+  }
 }
 @media screen and (max-width: 1000px) {
   .s1f {
@@ -138,12 +138,11 @@
   }
 }
 @media screen and (max-width: 900px) {
-
   .contentr {
     width: 95%;
     margin: 69px 2.5%;
   }
-  }
+}
 @media screen and (max-width: 700px) {
   .s1f p,
   .s1f div,
@@ -169,7 +168,8 @@
     font-size: 0.8rem;
     line-height: 1.1rem;
   }
-  .s1f p,.s1f div{
+  .s1f p,
+  .s1f div {
     font-size: 0.7rem;
   }
   .s1f p div {
@@ -183,7 +183,6 @@
     font-size: 0.8rem;
     width: 100%;
     margin-left: 5px;
-
   }
   .time {
     padding: 0px 0;
@@ -207,10 +206,68 @@
     }
     .bf::before {
       content: "";
-      position:relative;
+      position: relative;
       width: 100%;
       aspect-ratio: 16/9;
     }
   }
 }
 
+@media (min-aspect-ratio: 20 / 9) {
+  .contentr {
+    width: 98%;
+    margin: 1%;
+  }
+  .bf {
+    width: 100%;
+    display: flex;
+  }
+  .s1f {
+    width: calc(160vh + 400px);
+    height: 90vh;
+    display: flex;
+    flex-direction: row-reverse;
+  }
+  .s2f {
+    width: calc(98% - calc(160vh + 400px));
+    height: 90vh;
+    height: 90svh;
+    overflow: auto;
+    margin: 0 0.5%;
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .ss1 {
+    width: calc(50% - 10px);
+    margin: 10px 5px;
+  }
+
+  .s1ftext {
+    width: calc(100% - 160vh);
+    margin: 20px;
+    height: 90vh;
+    height: 90svh;
+    overflow: auto;
+  }
+  .yf {
+    margin: 0;
+    width: auto;
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+  .s1ftext::-webkit-scrollbar {
+    background: var(--background);
+    width: 5px;
+    height: 0px;
+    opacity: 0.5;
+  }
+
+  .s1ftext::-webkit-scrollbar-thumb {
+    background-color: var(--background);
+    filter: brightness(50%);
+    border-radius: 10px;
+  }
+  .s1ftext::-webkit-scrollbar-thumb:hover {
+    background-color: var(--foreground);
+  }
+}

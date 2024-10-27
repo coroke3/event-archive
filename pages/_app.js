@@ -2,28 +2,32 @@ import "../styles.css";
 import Head from "next/head";
 import Script from "next/script";
 import * as gtag from "../libs/gtag";
-import { createClient } from "microcms-js-sdk";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
 import { Analytics } from "@vercel/analytics/react";
-import { ThemeProvider } from 'next-themes'
-import Header from "../components/Header"; 
-     
+import { ThemeProvider } from "next-themes";
+import Header from "../components/Header";
 
-function MyApp({ Component, pageProps }, AppProps) {
+function MyApp({ Component, pageProps }) {
   const router = useRouter();
+
   useEffect(() => {
-    const handleRouterChange = (url, any) => {
+    const handleRouteChange = (url) => {
       gtag.pageview(url);
     };
-    router.events.on("routeChangeComplete", handleRouterChange);
+    router.events.on("routeChangeComplete", handleRouteChange);
     return () => {
-      router.events.off("routeChangeComplete", handleRouterChange);
+      router.events.off("routeChangeComplete", handleRouteChange);
     };
   }, [router.events]);
+
   return (
     <>
-          <Header /> 
+      <ThemeProvider attribute="class" disableTransitionOnChange>
+        <Header />
+        <Component {...pageProps} />
+      </ThemeProvider>
+
       <Analytics />
 
       <Script
@@ -35,17 +39,15 @@ function MyApp({ Component, pageProps }, AppProps) {
         strategy="afterInteractive"
         dangerouslySetInnerHTML={{
           __html: `
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', '${gtag.GA_MEASUREMENT_ID}');
-    `,
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${gtag.GA_MEASUREMENT_ID}', {
+              page_path: window.location.pathname,
+            });
+          `,
         }}
       />
-      <ThemeProvider  disableTransitionOnChange>
-        <Component {...pageProps} />
-      </ThemeProvider>
     </>
   );
 }
