@@ -38,10 +38,14 @@ function Header() {
           </div>
           <div className="menubar">
             <div className="menubars ms2">
-              <Link href="../../../../user">クリエイター</Link>
+              <Link href="../../../../user">
+                <div class="en">CREATOR</div>クリエイターから探す
+              </Link>
             </div>
             <div className="menubars ms2">
-              <Link href="../../../../event">イベント</Link>
+              <Link href="../../../../event">
+                <div class="en">EVENT</div>イベントから探す
+              </Link>
             </div>
           </div>
           <ThemeSwitcher />

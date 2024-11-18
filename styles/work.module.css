@@ -221,19 +221,26 @@
   .bf {
     width: 100%;
     display: flex;
+    height: calc(100vh - 175px);
+    height: calc(100svh - 175px);
+    justify-content: space-between;
   }
   .s1f {
-    width: calc(160vh + 400px);
-    height: 90vh;
+    width: calc(162vh + 400px);
+    height: calc(100vh - 175px);
+    height: calc(100svh - 175px);
+    margin: 50px 0;
     display: flex;
     flex-direction: row-reverse;
+    justify-content: start;
   }
   .s2f {
     width: calc(98% - calc(160vh + 400px));
-    height: 90vh;
-    height: 90svh;
+    max-height: calc(100vh - 175px);
+    max-height: calc(100svh - 175px);
+    height: fit-content;
     overflow: auto;
-    margin: 0 0.5%;
+    margin: 50px 0.5%;
     display: flex;
     flex-wrap: wrap;
   }
@@ -244,9 +251,10 @@
 
   .s1ftext {
     width: calc(100% - 160vh);
+
     margin: 20px;
-    height: 90vh;
-    height: 90svh;
+    max-height: calc(100vh - 75px);
+    max-height: calc(100svh - 75px);
     overflow: auto;
   }
   .yf {
