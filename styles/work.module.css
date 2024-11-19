@@ -226,7 +226,7 @@
     justify-content: space-between;
   }
   .s1f {
-    width: calc(162vh + 400px);
+    width: calc(155vh + 400px);
     height: calc(100vh - 175px);
     height: calc(100svh - 175px);
     margin: 50px 0;
@@ -235,7 +235,7 @@
     justify-content: start;
   }
   .s2f {
-    width: calc(98% - calc(160vh + 400px));
+    width: calc(98% - calc(155vh + 400px));
     max-height: calc(100vh - 175px);
     max-height: calc(100svh - 175px);
     height: fit-content;
@@ -250,8 +250,6 @@
   }
 
   .s1ftext {
-    width: calc(100% - 160vh);
-
     margin: 20px;
     max-height: calc(100vh - 75px);
     max-height: calc(100svh - 75px);
@@ -277,5 +275,15 @@
   }
   .s1ftext::-webkit-scrollbar-thumb:hover {
     background-color: var(--foreground);
+  }
+  .userinfo {
+    flex-wrap: wrap;
+  }
+  .creator {
+    width: calc(100% - 50px);
+  }
+  .time {
+    margin: 10px 0;
+    text-align: left;
   }
 }
