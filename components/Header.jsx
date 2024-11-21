@@ -5,20 +5,6 @@ import { useTheme } from "next-themes";
 
 function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { resolvedTheme } = useTheme();
-  const [language, setLanguage] = useState("EN");
-  const [inProp, setInProp] = useState(true); // フェードイン/アウト制御
-  const [themeImageSrc, setThemeImageSrc] = useState(
-    "https://i.gyazo.com/70f00bd1015f6f121eb099b11ce450c0.png"
-  );
-
-  // 言語を localStorage に保存して、ページリロード時に保持する
-  useEffect(() => {
-    const storedLanguage = localStorage.getItem("language");
-    if (storedLanguage) {
-      setLanguage(storedLanguage);
-    }
-  }, []);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);

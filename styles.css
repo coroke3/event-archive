@@ -6,12 +6,14 @@
 }
 
 [color-scheme="dark"] {
-  --background: rgb(20, 20, 20);
-  --foreground: white;
+  --background: rgb(0, 0, 0);
+  --headback: rgb(20, 20, 20);
+  --foreground: rgb(255, 255, 255);
 }
 [color-scheme="light"] {
   --background: rgb(255, 255, 255);
-  --foreground: rgb(4, 4, 4);
+  --headback: rgb(245, 245, 245);
+  --foreground: rgb(0, 0, 0);
 }
 
 body {
@@ -125,13 +127,13 @@ header {
   width: 100%;
   position: fixed;
   z-index: 999999;
-  background-color: #666666;
+  background-color: #e5e5e5;
+  background-color: var(--headback);
 }
 
 .menu-items {
   width: 100%;
   height: 75px;
-  background-color: var(--background);
   display: flex;
 }
 .menu-items a {
@@ -139,12 +141,15 @@ header {
   color: var(--foreground);
 }
 .title {
+  width: 140px;
+  line-height: 1.62rem;
   margin: auto 40px;
   font-family: "Figtree", sans-serif;
   font-optical-sizing: auto;
   font-weight: 600;
   font-style: normal;
-  font-size: 2.8rem;
+  font-size: 2.3rem;
+  letter-spacing: -1.8px;
 }
 .menubar {
   display: flex;
@@ -287,6 +292,21 @@ body.dark-mode .custom-switch[data-state="unchecked"] svg {
     z-index: 9999;
     top: 26px;
     right: 85px;
+  }
+  .menu-btn {
+    display: block;
+    position: fixed;
+    cursor: pointer;
+    z-index: 100;
+    top: 20px;
+    right: 20px;
+  }
+  .menu-btn__burger {
+    width: 40px;
+    height: 4px;
+    background-color: var(--foreground);
+    margin: 6px 0;
+    transition: 0.4s;
   }
 }
 @media screen and (max-width: 700px) {

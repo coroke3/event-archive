@@ -23,7 +23,7 @@ function MyApp({ Component, pageProps }) {
 
   return (
     <>
-      <ThemeProvider attribute="class" disableTransitionOnChange>
+      <ThemeProvider defaultTheme="light" enableSystem={false}>
         <Header />
         <Component {...pageProps} />
       </ThemeProvider>
