@@ -13,7 +13,10 @@ function Header() {
   return (
     <header>
       <div className={`hamburger-menu ${isMenuOpen ? "open" : ""}`}>
-        <div className="menu-btn" onClick={toggleMenu}>
+        <div
+          className={`menu-btn ${isMenuOpen ? "open" : ""}`}
+          onClick={toggleMenu}
+        >
           <div className="menu-btn__burger"></div>
           <div className="menu-btn__burger"></div>
           <div className="menu-btn__burger"></div>
@@ -23,14 +26,16 @@ function Header() {
             <Link href="../../../../">Event Archives</Link>
           </div>
           <div className="menubar">
-            <div className="menubars ms2">
+            <div className="menubars">
               <Link href="../../../../user">
-                <div class="en">CREATOR</div>クリエイターから探す
+                <div className="en">CREATOR</div>
+                クリエイターから探す
               </Link>
             </div>
-            <div className="menubars ms2">
+            <div className="menubars">
               <Link href="../../../../event">
-                <div class="en">EVENT</div>イベントから探す
+                <div className="en">EVENT</div>
+                イベントから探す
               </Link>
             </div>
           </div>
