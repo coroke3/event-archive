@@ -338,6 +338,15 @@ body.dark-mode .custom-switch[data-state="unchecked"] svg {
   }
   .menu-items {
     flex-wrap: nowrap;
+    width: 75%;
+    padding: 0px;
+    position: absolute;
+    bottom: 0px;
+    left: 0;
+    background-color: var(--headback);
+    margin: auto;
+    box-sizing: content-box;
+    opacity: 1;
   }
   .open .menu-items {
     width: 75%;
@@ -370,7 +379,9 @@ body.dark-mode .custom-switch[data-state="unchecked"] svg {
     font-size: 16vw;
     line-height: 16vw;
   }
-
+  .title {
+    margin: 10px 20px;
+  }
   .open .title {
     margin: auto 0px;
     transition: all 0.5s;
