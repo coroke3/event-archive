@@ -1,4 +1,4 @@
-// pages/work/[id].jsx
+// pages/[id].jsx
 import Link from "next/link";
 import Image from "next/image";
 import Head from "next/head";
@@ -77,7 +77,11 @@ export default function WorkId({
               <h1 className={styles.title}>{work.title}</h1>
               <div className={styles.userinfo}>
                 {showIcon && work.icon ? (
-                  <Link href={`../user/${work.tlink.toLowerCase()}`}>
+                  <Link
+                    href={`../user/${
+                      work.tlink ? work.tlink.toLowerCase() : ""
+                    }`}
+                  >
                     <Image
                       src={`https://lh3.googleusercontent.com/d/${work.icon.slice(
                         33
@@ -86,22 +90,31 @@ export default function WorkId({
                       alt={`${work.creator}のアイコン`}
                       width={50}
                       height={50}
-                    />{" "}
+                    />
                   </Link>
                 ) : (
-                  <Link href={`../user/${work.tlink.toLowerCase()}`}>
+                  <Link
+                    href={`../user/${
+                      work.tlink ? work.tlink.toLowerCase() : ""
+                    }`}
+                  >
                     <Image
                       src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
                       alt={`アイコン`}
                       className={styles.icon}
                       width={50}
                       height={50}
-                    />{" "}
+                    />
                   </Link>
                 )}
+
                 {showCreator && (
                   <h3 className={styles.creator}>
-                    <Link href={`../user/${work.tlink.toLowerCase()}`}>
+                    <Link
+                      href={`../user/${
+                        work.tlink ? work.tlink.toLowerCase() : ""
+                      }`}
+                    >
                       {work.creator}{" "}
                     </Link>
                     {showYoutube && (
@@ -463,8 +476,8 @@ export async function getStaticProps({ params }) {
 
     // eventDataから.eventnameと.iconを取得
     const eventInfo = eventData.find((event) => event.eventid === eventId);
-    const eventname = eventInfo ? eventInfo.eventname : "";
-    const icon = eventInfo ? eventInfo.icon : "";
+    const eventname = eventInfo?.eventname || "Unknown Event";
+    const icon = eventInfo?.icon || "";
 
     return {
       props: {

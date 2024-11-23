@@ -351,7 +351,7 @@ body.dark-mode .custom-switch[data-state="unchecked"] svg {
     width: 75%;
     height: auto;
     padding: 10px;
-    left: 12.5%;
+    left: 9.5%;
     background-color: var(--headback);
     opacity: 1;
   }
@@ -410,5 +410,8 @@ body.dark-mode .custom-switch[data-state="unchecked"] svg {
 @media screen and (max-width: 500px) {
   .works {
     width: 100%;
+  }
+  .work {
+    width: 94%;
   }
 }
