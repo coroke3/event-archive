@@ -132,6 +132,7 @@
     width: 100%;
     margin: 0;
   }
+
   .s2f {
     width: 100%;
     margin: 24px 0;
@@ -144,12 +145,17 @@
   }
 }
 @media screen and (max-width: 700px) {
-  .s1f p,
-  .s1f div,
-  .s1f h2 {
+  .s1ftext p,
+  .s1ftext div,
+  .s1ftext h2,
+  .table {
     width: 93%;
     margin-left: auto;
     margin-right: auto;
+  }
+  .s1ftext {
+    width: 100%;
+    margin: 0;
   }
   .s2f {
     width: 93%;

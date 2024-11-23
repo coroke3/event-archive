@@ -1,6 +1,6 @@
 @charset "utf-8";
 
-@import url("https://fonts.googleapis.com/css2?family=Figtree:wght@600&family=Noto+Sans+JP:wght@300&family=Unbounded:wght@500&family=Zen+Kaku+Gothic+New:wght@500;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Figtree:wght@500&family=Noto+Sans+JP:wght@300&family=Plus+Jakarta+Sans:wght@200..800&family=Unbounded:wght@200..900&family=Zen+Kaku+Gothic+New:wght@500;700&display=swap");
 
 :root {
 }
@@ -20,10 +20,8 @@ body {
   margin: 0;
   margin-top: 75px;
   background-color: var(--background);
-  font-family: "Noto Sans JP", system-ui;
-  font-weight: 300;
-  font-style: normal;
-  font-family: "Zen Kaku Gothic New", sans-serif;
+
+  font-family: "Plus Jakarta Sans", "Zen Kaku Gothic New", sans-serif;
   font-weight: 500;
   font-style: normal;
 }
@@ -315,7 +313,6 @@ body.dark-mode .custom-switch[data-state="unchecked"] svg {
   .open {
     width: 100%;
     height: 100vh;
-    height: 100svh;
     position: fixed;
     z-index: 9999;
   }
@@ -332,33 +329,26 @@ body.dark-mode .custom-switch[data-state="unchecked"] svg {
   .hea,
   .menubar {
     display: block;
-    opacity: 0;
+    opacity: 0.3;
     width: 75%;
     height: auto;
   }
   .menu-items {
     flex-wrap: nowrap;
     width: 75%;
-    padding: 0px;
     position: absolute;
-    bottom: 0px;
-    left: 0;
     background-color: var(--headback);
-    margin: auto;
-    box-sizing: content-box;
     opacity: 1;
+    left: 0%;
+    bottom: 0;
+    flex-wrap: wrap-reverse;
   }
   .open .menu-items {
     width: 75%;
     height: auto;
     padding: 10px;
-    display: block;
-    position: absolute;
-    bottom: 0;
-    right: 12.5%;
+    left: 12.5%;
     background-color: var(--headback);
-    margin: auto;
-    box-sizing: content-box;
     opacity: 1;
   }
   .open .hea,
