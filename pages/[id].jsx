@@ -77,7 +77,7 @@ export default function WorkId({
               <h1 className={styles.title}>{work.title}</h1>
               <div className={styles.userinfo}>
                 {showIcon && work.icon ? (
-                  <Link href={`../user/${work.tlink}`}>
+                  <Link href={`../user/${work.tlink.toLowerCase()}`}>
                     <Image
                       src={`https://lh3.googleusercontent.com/d/${work.icon.slice(
                         33
@@ -89,7 +89,7 @@ export default function WorkId({
                     />{" "}
                   </Link>
                 ) : (
-                  <Link href={`../user/${work.tlink}`}>
+                  <Link href={`../user/${work.tlink.toLowerCase()}`}>
                     <Image
                       src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
                       alt={`アイコン`}
@@ -101,7 +101,9 @@ export default function WorkId({
                 )}
                 {showCreator && (
                   <h3 className={styles.creator}>
-                    <Link href={`../user/${work.tlink}`}>{work.creator} </Link>
+                    <Link href={`../user/${work.tlink.toLowerCase()}`}>
+                      {work.creator}{" "}
+                    </Link>
                     {showYoutube && (
                       <a
                         href={`${work.ylink}`}
