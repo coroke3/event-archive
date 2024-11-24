@@ -48,47 +48,47 @@ const fetchUserIcons = async () => {
   return await res.json();
 };
 
-// 最新の作品を取得する関数 
-// 最新の作品を取得する関数  
-// 最新の作品を取得する関数  
-const getLatestWorkByTlink = (icons, tlink) => { 
-  const tlinkLatestWork = icons.filter(icon => 
-    icon.tlink?.toLowerCase() === tlink.toLowerCase()
-  ); 
+// 最新の作品を取得する関数
+const getLatestWorkByTlink = (icons, tlink) => {
+  const tlinkLatestWork = icons.filter(
+    (icon) => icon.tlink?.toLowerCase() === tlink.toLowerCase()
+  );
 
-  const memberLatestWork = icons.filter(icon => 
-    icon.memberid && icon.memberid.toLowerCase().includes(tlink.toLowerCase())
-  ); 
+  const memberLatestWork = icons.filter(
+    (icon) =>
+      icon.memberid && icon.memberid.toLowerCase().includes(tlink.toLowerCase())
+  );
 
   // 1. tlinkが一致する作品があり、typeが個人の場合
-  const personalWork = tlinkLatestWork.find(icon => icon.type === "個人");
+  const personalWork = tlinkLatestWork.find((icon) => icon.type === "個人");
   if (personalWork) {
     return { creator: personalWork.creator, icon: personalWork.icon };
   }
 
   // 2. tlinkが一致する作品があるが、typeが個人ではない場合
   if (memberLatestWork.length > 0) {
-    const matchedIcon = memberLatestWork.reduce((prev, current) => 
-      new Date(prev.date) > new Date(current.date) ? prev : current 
+    const matchedIcon = memberLatestWork.reduce((prev, current) =>
+      new Date(prev.date) > new Date(current.date) ? prev : current
     );
 
-    const memberIds = matchedIcon.memberid.split(","); 
-    const memberNames = matchedIcon.member.split(","); 
-    const matchedIndex = memberIds.findIndex(id => 
-      id.trim().toLowerCase() === tlink.toLowerCase()
+    const memberIds = matchedIcon.memberid.split(",");
+    const memberNames = matchedIcon.member.split(",");
+    const matchedIndex = memberIds.findIndex(
+      (id) => id.trim().toLowerCase() === tlink.toLowerCase()
     );
 
-    if (matchedIndex !== -1) { 
+    if (matchedIndex !== -1) {
       const matchedMemberName = memberNames[matchedIndex].trim();
-      const latestIcon = tlinkLatestWork.length > 0 
-        ? tlinkLatestWork.reduce((prev, current) => 
-          new Date(prev.date) > new Date(current.date) ? prev : current 
-        ).icon 
-        : matchedIcon.icon;
+      const latestIcon =
+        tlinkLatestWork.length > 0
+          ? tlinkLatestWork.reduce((prev, current) =>
+              new Date(prev.date) > new Date(current.date) ? prev : current
+            ).icon
+          : matchedIcon.icon;
 
       return { creator: matchedMemberName, icon: latestIcon };
     }
-  }else{
+  } else {
     const personalWork = tlinkLatestWork[0];
 
     if (personalWork) {
@@ -98,17 +98,17 @@ const getLatestWorkByTlink = (icons, tlink) => {
 
   // 3. tlinkが一致しない場合
   if (memberLatestWork.length > 0) {
-    const matchedIcon = memberLatestWork.reduce((prev, current) => 
-      new Date(prev.date) > new Date(current.date) ? prev : current 
+    const matchedIcon = memberLatestWork.reduce((prev, current) =>
+      new Date(prev.date) > new Date(current.date) ? prev : current
     );
 
-    const memberIds = matchedIcon.memberid.split(","); 
-    const memberNames = matchedIcon.member.split(","); 
-    const matchedIndex = memberIds.findIndex(id => 
-      id.trim().toLowerCase() === tlink.toLowerCase()
+    const memberIds = matchedIcon.memberid.split(",");
+    const memberNames = matchedIcon.member.split(",");
+    const matchedIndex = memberIds.findIndex(
+      (id) => id.trim().toLowerCase() === tlink.toLowerCase()
     );
 
-    if (matchedIndex !== -1) { 
+    if (matchedIndex !== -1) {
       const matchedMemberName = memberNames[matchedIndex].trim();
       return { creator: matchedMemberName, icon: null }; // アイコンは取得しない
     }
@@ -121,13 +121,8 @@ const getLatestWorkByTlink = (icons, tlink) => {
     return { creator: null, icon: null };
   }
 
-  return null; 
+  return null;
 };
-
-
-
-
-
 
 export default function UserPage({ users = [], icons = [] }) {
   const [sortOption, setSortOption] = useState("totalWorks");
@@ -222,7 +217,7 @@ export default function UserPage({ users = [], icons = [] }) {
                       src={`https://lh3.googleusercontent.com/d/${latestWork.icon.slice(
                         33
                       )}`}
-                      className="icon"
+                      className={styles.iconuse}
                       alt={`${user.username}のアイコン`}
                       width={50}
                       height={50}
@@ -231,7 +226,7 @@ export default function UserPage({ users = [], icons = [] }) {
                     <Image
                       src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
                       alt={`アイコン`}
-                      className="icon"
+                      className={styles.iconuse}
                       width={50}
                       height={50}
                     />
@@ -239,9 +234,17 @@ export default function UserPage({ users = [], icons = [] }) {
                   <Link href={`/user/${user.username}`} passHref>
                     <h4>{creatorName}</h4> {/* ここでcreatorNameを表示 */}
                     <p className="id">@{user.username}</p>
-                    <p>個人作品数: {matchingWorksCount1.length}</p>
-                    <p>合作作品数: {matchingWorksCount2.length}</p>
-                    <p>合計作品数: {user.totalWorks}</p>
+                    <div className={styles.countb}>
+                      <div className={styles.counts}>
+                        <p>個人 {matchingWorksCount1.length}</p>
+                      </div>
+                      <div className={styles.counts}>
+                        <p>合作 {matchingWorksCount2.length}</p>
+                      </div>
+                      <div className={styles.counts}>
+                        <p>合計 {user.totalWorks}</p>
+                      </div>
+                    </div>
                   </Link>
                 </div>
               );

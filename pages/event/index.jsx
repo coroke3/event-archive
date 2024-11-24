@@ -53,24 +53,6 @@ export default function EventPage({ events = [] }) {
           {events.length > 0 ? (
             events.map((event) => (
               <div key={event.eventid} className={styles.eventItem}>
-                {event.icon ? (
-                  <Image
-                    src={`https://lh3.googleusercontent.com/d/${event.icon.slice(
-                      33
-                    )}`}
-                    alt={`${event.eventname}のアイコン`}
-                    width={50}
-                    height={50}
-                  />
-                ) : (
-                  <Image
-                    src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
-                    alt={`デフォルトアイコン`}
-                    width={50}
-                    height={50}
-                  />
-                )}
-                <h4>{event.eventname}</h4>
                 {event.img ? (
                   <Link href={`/event/${event.eventid}`} passHref>
                     <Image
@@ -82,7 +64,28 @@ export default function EventPage({ events = [] }) {
                     />
                   </Link>
                 ) : null}
-
+                <div className={styles.eventtitle}>
+                  {event.icon ? (
+                    <Image
+                      src={`https://lh3.googleusercontent.com/d/${event.icon.slice(
+                        33
+                      )}`}
+                      alt={`${event.eventname}のアイコン`}
+                      width={50}
+                      height={50}
+                      className={styles.icon}
+                    />
+                  ) : (
+                    <Image
+                      src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
+                      alt={`デフォルトアイコン`}
+                      width={50}
+                      height={50}
+                      className={styles.icon}
+                    />
+                  )}
+                  <h3>{event.eventname}</h3>
+                </div>
                 {event.start && event.end ? (
                   <p>
                     開催期間: {formatDate(event.start)} 〜{" "}
