@@ -2,7 +2,7 @@
 const nextConfig = {};
 
 module.exports = {
-  output: 'standalone',
+  output: "standalone",
   images: {
     domains: [
       "i.gyazo.com",
@@ -11,6 +11,7 @@ module.exports = {
       "img.youtube.com",
       "i.gyazo.com",
       "drive.google.com",
+      "pbs.twimg.com",
     ],
   },
 };

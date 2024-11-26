@@ -21,6 +21,12 @@
   height: auto;
   width: 100%;
 }
+.snsicon {
+  color: #1da1f2;
+  font-size: 24px;
+  display: inline-block;
+}
+
 @keyframes scroll {
   0% {
     transform: translateX(100%);

@@ -6,8 +6,15 @@ import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import styles from "../../styles/events.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faLock, faLink } from "@fortawesome/free-solid-svg-icons";
+import {
+  faLock,
+  faLink,
+  faGlobe,
+  faXTwitter,
+  faYoutube,
+} from "@fortawesome/free-solid-svg-icons";
 
+// データ取得関数（イベント）
 const fetchEventsData = async () => {
   try {
     const res = await fetch(
@@ -20,16 +27,16 @@ const fetchEventsData = async () => {
     if (!res.ok) {
       throw new Error(`イベントデータの取得に失敗しました (${res.statusText})`);
     }
-    return await res.json();
+    const data = await res.json();
+    console.log("Fetched Events Data:", data);
+    return data;
   } catch (error) {
     console.error("イベントデータ取得エラー:", error);
-    return {
-      error: true,
-      message: "イベントデータの取得中にエラーが発生しました。",
-    };
+    return { error: true, message: "イベントデータの取得に失敗しました。" };
   }
 };
 
+// データ取得関数（作品）
 const fetchWorksData = async () => {
   try {
     const res = await fetch("https://pvsf-cash.vercel.app/api/videos", {
@@ -38,13 +45,12 @@ const fetchWorksData = async () => {
     if (!res.ok) {
       throw new Error(`作品データの取得に失敗しました (${res.statusText})`);
     }
-    return await res.json();
+    const data = await res.json();
+    console.log("Fetched Works Data:", data);
+    return data;
   } catch (error) {
     console.error("作品データ取得エラー:", error);
-    return {
-      error: true,
-      message: "作品データの取得中にエラーが発生しました。",
-    };
+    return { error: true, message: "作品データの取得に失敗しました。" };
   }
 };
 
@@ -68,6 +74,8 @@ export default function EventPage({ event, works = [], errorMessage = "" }) {
   const members = event.member ? event.member.split(",") : [];
   const memberIds = event.memberid ? event.memberid.split(",") : [];
   const memberPosts = event.menberpost ? event.menberpost.split(",") : [];
+  const eventNames =
+    event?.eventname?.split(",").map((name) => name.trim()) || [];
 
   return (
     <div>
@@ -87,12 +95,13 @@ export default function EventPage({ event, works = [], errorMessage = "" }) {
         />
       </Head>
       <div className="content">
+        {/* イベント詳細 */}
+        {/* イベント詳細 */}
         {event ? (
           <>
             <div className={styles.eventDetails}>
               <div className={styles.ineventDetails}>
                 <h1>{event.eventname}</h1>
-
                 {event.icon && (
                   <Image
                     src={`https://lh3.googleusercontent.com/d/${event.icon.slice(
@@ -106,7 +115,7 @@ export default function EventPage({ event, works = [], errorMessage = "" }) {
                 )}
                 <p>{event.explanation}</p>
 
-                {/* Displaying the members */}
+                {/* Displaying the members only if they exist */}
                 {members.length > 0 && (
                   <div className={styles.members}>
                     <ul>
@@ -114,22 +123,26 @@ export default function EventPage({ event, works = [], errorMessage = "" }) {
                         <li key={index}>
                           <p>
                             <strong>{member}</strong>{" "}
-                            {memberPosts[index] && ` - ${memberPosts[index]}`}
+                            {memberIds[index] && (
+                              <>
+                                <span> </span>
+                                <Link
+                                  href={`https://twitter.com/${memberIds[index]}`}
+                                  className={styles.snsicon}
+                                >
+                                  <FontAwesomeIcon icon={faXTwitter} />
+                                  icon
+                                </Link>
+                              </>
+                            )}
                           </p>
-                          {memberIds[index] && (
-                            <Link
-                              href={`https://twitter.com/${memberIds[index]}`}
-                            >
-                              {`Twitter: @${memberIds[index]}`}
-                            </Link>
-                          )}
                         </li>
                       ))}
                     </ul>
                   </div>
                 )}
               </div>
-              {/* Displaying the event image (サムネ) */}
+
               {event.img && (
                 <div className={styles.eventThumbnail}>
                   <Image
@@ -146,7 +159,7 @@ export default function EventPage({ event, works = [], errorMessage = "" }) {
           <p>イベント情報が見つかりませんでした。</p>
         )}
 
-        {/* Displaying the works */}
+        {/* 作品一覧 */}
         <div className="work">
           <h2>このイベントの作品一覧</h2>
           {Array.isArray(works) && works.length > 0 ? (
@@ -191,19 +204,15 @@ export default function EventPage({ event, works = [], errorMessage = "" }) {
                     <p>{work.creator}</p>
                   </div>
                   <p className="status">
-                    {work.status === "public" ? null : work.status === // 公開状態のときは何も表示しない
+                    {work.status === "public" ? null : work.status ===
                       "unlisted" ? (
                       <span className="inunlisted">
-                        <span className="icon">
-                          <FontAwesomeIcon icon={faLink} />
-                        </span>
+                        <FontAwesomeIcon icon={faLink} />
                         限定公開
                       </span>
                     ) : (
                       <span className="inprivate">
-                        <span className="sicon">
-                          <FontAwesomeIcon icon={faLock} />
-                        </span>
+                        <FontAwesomeIcon icon={faLock} />
                         非公開
                       </span>
                     )}
@@ -224,14 +233,14 @@ export default function EventPage({ event, works = [], errorMessage = "" }) {
 export const getStaticPaths = async () => {
   const eventsData = await fetchEventsData();
   if (eventsData.error) {
-    return { paths: [], fallback: false }; // fallback を false に設定
+    return { paths: [], fallback: false };
   }
 
   const paths = eventsData.map((event) => ({
     params: { id: event.eventid },
   }));
 
-  return { paths, fallback: false }; // fallback を false に設定
+  return { paths, fallback: false };
 };
 
 export const getStaticProps = async ({ params }) => {
@@ -240,10 +249,18 @@ export const getStaticProps = async ({ params }) => {
     const eventsData = await fetchEventsData();
     const event = eventsData.find((event) => event.eventid === id) || null;
     const worksData = await fetchWorksData();
-    const works = worksData.filter((work) => work.eventname === event.eventid);
+
+    const works = worksData.filter((work) => {
+      const workEventNames =
+        work.eventname?.split(",").map((name) => name.trim()) || [];
+      return event && workEventNames.includes(event.eventid);
+    });
+
+    console.log("Filtered Works for Event:", { eventID: id, works });
 
     return { props: { event, works } };
   } catch (error) {
+    console.error("Error fetching static props:", error);
     return {
       props: {
         event: null,

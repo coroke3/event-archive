@@ -140,24 +140,23 @@ export default function WorkId({
                 {showTime && <p className={styles.time}>{formattedDate}</p>}
               </div>
               <div className={styles.eventInfo}>
-                {work.eventname && (
-                  <Link href={`../../event/${work.eventname}`}>
-                    {icon && (
-                      <Image
-                        src={`https://lh3.googleusercontent.com/d/${icon.slice(
-                          33
-                        )}`}
-                        alt={`${eventname}のアイコン`}
-                        className={styles.eventIcon}
-                        width={50}
-                        height={50}
-                      />
-                    )}
-                    {eventname && (
-                      <h4 className={styles.eventTitle}>{eventname}</h4>
-                    )}
-                  </Link>
-                )}
+                {work.eventname &&
+                  work.eventname.split(",").map((name, index) => (
+                    <Link key={index} href={`../../event/${name.trim()}`}>
+                      {icon && (
+                        <Image
+                          src={`https://lh3.googleusercontent.com/d/${icon.slice(
+                            33
+                          )}`}
+                          alt={`${name.trim()}のアイコン`}
+                          className={styles.eventIcon}
+                          width={50}
+                          height={50}
+                        />
+                      )}
+                      <h4 className={styles.eventTitle}>{name.trim()}</h4>
+                    </Link>
+                  ))}
               </div>
               {showMusic && (
                 <p>
