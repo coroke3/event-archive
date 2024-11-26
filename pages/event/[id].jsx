@@ -46,7 +46,7 @@ const fetchWorksData = async () => {
       throw new Error(`作品データの取得に失敗しました (${res.statusText})`);
     }
     const data = await res.json();
-    console.log("Fetched Works Data:", data);
+    console.log("Fetched Works Data:");
     return data;
   } catch (error) {
     console.error("作品データ取得エラー:", error);
