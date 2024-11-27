@@ -141,23 +141,26 @@ export default function WorkId({
               </div>
               <div className={styles.eventInfo}>
                 {work.eventname &&
-                  work.eventname.split(",").map((name, index) => (
-                    <Link key={index} href={`../../event/${name.trim()}`}>
-                      {icon && (
+                  work.eventname.split(",").map((eventId, index) => (
+                    <Link key={index} href={`../../event/${eventId.trim()}`}>
+                      {/* アイコンの取得 */}
+                      {icon && icon.split(",")[index] && (
                         <Image
-                          src={`https://lh3.googleusercontent.com/d/${icon.slice(
-                            33
-                          )}`}
-                          alt={`${name.trim()}のアイコン`}
+                          src={`https://lh3.googleusercontent.com/d/${icon
+                            .split(",")
+                            [index].slice(33)}`}
+                          alt={`${eventId.trim()}のアイコン`}
                           className={styles.eventIcon}
                           width={50}
                           height={50}
                         />
                       )}
-                      <h4 className={styles.eventTitle}>{name.trim()}</h4>
+                      {/* イベント名の表示 */}
+                      <h4 className={styles.eventTitle}>{eventId.trim()}</h4>
                     </Link>
                   ))}
               </div>
+
               {showMusic && (
                 <p>
                   <div
@@ -491,11 +494,11 @@ export async function getStaticProps({ params }) {
     console.error(error);
     return {
       props: {
-        work: {},
-        previousWorks: [],
-        nextWorks: [],
-        eventname: "", // 追加
-        icon: "", // 追加
+        work,
+        previousWorks: uniquePreviousWorks,
+        nextWorks: uniqueFinalNextWorks,
+        eventname, // 追加
+        icon, // 追加
       },
     };
   }

@@ -28,7 +28,6 @@ const fetchEventsData = async () => {
       throw new Error(`イベントデータの取得に失敗しました (${res.statusText})`);
     }
     const data = await res.json();
-    console.log("Fetched Events Data:", data);
     return data;
   } catch (error) {
     console.error("イベントデータ取得エラー:", error);
@@ -255,8 +254,6 @@ export const getStaticProps = async ({ params }) => {
         work.eventname?.split(",").map((name) => name.trim()) || [];
       return event && workEventNames.includes(event.eventid);
     });
-
-    console.log("Filtered Works for Event:", { eventID: id, works });
 
     return { props: { event, works } };
   } catch (error) {
