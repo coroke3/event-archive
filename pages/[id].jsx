@@ -494,11 +494,11 @@ export async function getStaticProps({ params }) {
     console.error(error);
     return {
       props: {
-        work,
-        previousWorks: uniquePreviousWorks,
-        nextWorks: uniqueFinalNextWorks,
-        eventname, // 追加
-        icon, // 追加
+        work: {},
+        previousWorks: [],
+        nextWorks: [],
+        eventname: "", // 追加
+        icon: "", // 追加
       },
     };
   }
