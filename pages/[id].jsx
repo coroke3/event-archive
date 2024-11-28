@@ -140,8 +140,8 @@ export default function WorkId({
                 {showTime && <p className={styles.time}>{formattedDate}</p>}
               </div>
               <div className={styles.eventInfo}>
-                {work.eventname &&
-                  work.eventname.split(",").map((eventId, index) => (
+                {work.eventid &&
+                  work.eventid.split(",").map((eventId, index) => (
                     <Link key={index} href={`../../event/${eventId.trim()}`}>
                       {/* アイコンの取得 */}
                       {icon && icon.split(",")[index] && (
@@ -465,7 +465,7 @@ export async function getStaticProps({ params }) {
       new Set(finalNextWorks.map((w) => w.ylink))
     ).map((ylink) => finalNextWorks.find((w) => w.ylink === ylink));
 
-    const eventId = work.eventname; // eventnameからイベントIDを取得
+    const eventId = work.eventid; // eventnameからイベントIDを取得
     const eventRes = await fetch(
       `https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec?eventid=${eventId}`
     );

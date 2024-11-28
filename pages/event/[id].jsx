@@ -251,7 +251,7 @@ export const getStaticProps = async ({ params }) => {
 
     const works = worksData.filter((work) => {
       const workEventNames =
-        work.eventname?.split(",").map((name) => name.trim()) || [];
+        work.eventid?.split(",").map((name) => name.trim()) || [];
       return event && workEventNames.includes(event.eventid);
     });
 
