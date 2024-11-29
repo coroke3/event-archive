@@ -1,7 +1,5 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
-
-module.exports = {
+const nextConfig = {
   output: "standalone",
   images: {
     domains: [
@@ -14,4 +12,12 @@ module.exports = {
       "pbs.twimg.com",
     ],
   },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals.push("async_hooks"); // async_hooks を外部モジュールとして設定
+    }
+    return config;
+  },
 };
+
+module.exports = nextConfig;
