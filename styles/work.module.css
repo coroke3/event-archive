@@ -200,12 +200,13 @@
   }
   .contentr {
     width: 100%;
-    margin: 75px 0%;
+    margin: 55px 0%;
     margin-left: 0px;
   }
+
   @media (max-aspect-ratio: 9 / 14) {
     .yf {
-      top: 75px;
+      top: 45px;
       left: 0px;
       position: fixed;
       z-index: 99999;
