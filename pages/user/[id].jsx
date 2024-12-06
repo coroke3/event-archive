@@ -48,22 +48,22 @@ const fetchCollaborationWorksData = (worksData, id) => {
   return worksData.filter((work) => {
     if (work.memberid) {
       const memberIds = work.memberid.split(","); // カンマで分割
-      return memberIds.some((memberId) => memberId.trim().toLowerCase() === id.toLowerCase()); // 大文字小文字を無視して一致するかチェック
+      return memberIds.some(
+        (memberId) => memberId.trim().toLowerCase() === id.toLowerCase()
+      ); // 大文字小文字を無視して一致するかチェック
     }
     return false; // memberid が存在しない場合は false
   });
 };
 
-
 export default function UserWorksPage({ user, works, collaborationWorks }) {
-  const personalWorks = works.filter(work => work.type === "個人"); // 1. フィルタリング
+  const personalWorks = works.filter((work) => work.type === "個人"); // 1. フィルタリング
   const firstWork = personalWorks.length > 0 ? personalWorks[0] : works[0]; // 2. 最新の「個人」作品があればそれを使用
-  
+
   const firstCreator = firstWork ? firstWork.creator : "";
   const firstYchlink = firstWork ? firstWork.ychlink : "";
   const firstIcon = firstWork ? firstWork.icon : "";
   const firstTlink = firstWork ? firstWork.tlink : "";
-  
 
   return (
     <div>
@@ -76,7 +76,7 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
           content={user ? `${user.username}の作品一覧です。` : "作品一覧です。"}
         />
       </Head>
-      <div className="content">
+      <div className={styles.content}>
         {firstWork && (
           <div className={styles.first}>
             {firstIcon && (
@@ -122,20 +122,91 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
             </div>
           </div>
         )}
+        <div className={styles.uwork}>
+          <div className="work">
+            {Array.isArray(works) && works.length > 0 ? (
+              works.map((work) => {
+                const showIcon = work.icon !== undefined && work.icon !== "";
+                const isPrivate =
+                  work.status === "private" || work.status === "unknown";
+                const isUnlisted = work.status === "unlisted"; // 限定公開かどうかを判定
 
-        <div className="work">
-          {Array.isArray(works) && works.length > 0 ? (
-            works.map((work) => {
-              const showIcon = work.icon !== undefined && work.icon !== "";
-              const isPrivate =
-                work.status === "private" || work.status === "unknown";
-              const isUnlisted = work.status === "unlisted"; // 限定公開かどうかを判定
+                return (
+                  <div
+                    className={`works ${isPrivate ? "private" : ""} ${
+                      work.status === "unlisted" ? "unlisted" : ""
+                    }`}
+                    key={work.ylink}
+                  >
+                    <Link href={`../${work.ylink.slice(17, 28)}`}>
+                      <Image
+                        src={work.largeThumbnail}
+                        alt={`${work.title} - ${work.creator} | PVSF archive`}
+                        className="samune"
+                        width={640}
+                        height={360}
+                      />
+                    </Link>
+                    <h3>{work.title}</h3>
+                    <div className="subtitle">
+                      <div className="insubtitle">
+                        {showIcon && work.icon ? (
+                          <Image
+                            src={`https://lh3.googleusercontent.com/d/${work.icon.slice(
+                              33
+                            )}`}
+                            className="icon"
+                            alt={`${work.creator}のアイコン`}
+                            width={50}
+                            height={50}
+                          />
+                        ) : (
+                          <Image
+                            src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
+                            alt={`アイコン`}
+                            className="icon"
+                            width={50}
+                            height={50}
+                          />
+                        )}
+                        <p>{work.creator}</p>
+                      </div>
 
-              return (
+                      <p className="status">
+                        {work.status === "public" ? null : work.status === // 公開状態のときは何も表示しない
+                          "unlisted" ? (
+                          <span className="inunlisted">
+                            <span className="icon">
+                              <FontAwesomeIcon icon={faLink} />
+                            </span>
+                            限定公開
+                          </span>
+                        ) : (
+                          <span className="inprivate">
+                            <span className="sicon">
+                              <FontAwesomeIcon icon={faLock} />
+                            </span>
+                            非公開
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <p>このユーザーは作品を持っていません。</p>
+            )}
+          </div>
+
+          <div className="work">
+            <h2>参加した合作</h2>
+            {collaborationWorks.length > 0 ? (
+              collaborationWorks.map((work) => (
                 <div
-                  className={`works ${isPrivate ? "private" : ""} ${
-                    work.status === "unlisted" ? "unlisted" : ""
-                  }`}
+                  className={`works ${
+                    work.status === "private" ? "private" : ""
+                  } ${work.status === "unlisted" ? "unlisted" : ""}`}
                   key={work.ylink}
                 >
                   <Link href={`../${work.ylink.slice(17, 28)}`}>
@@ -150,7 +221,7 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
                   <h3>{work.title}</h3>
                   <div className="subtitle">
                     <div className="insubtitle">
-                      {showIcon && work.icon ? (
+                      {work.icon ? (
                         <Image
                           src={`https://lh3.googleusercontent.com/d/${work.icon.slice(
                             33
@@ -192,81 +263,11 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
                     </p>
                   </div>
                 </div>
-              );
-            })
-          ) : (
-            <p>このユーザーは作品を持っていません。</p>
-          )}
-        </div>
-
-        <div className="work">
-          <h2>参加した合作</h2>
-          {collaborationWorks.length > 0 ? (
-            collaborationWorks.map((work) => (
-              <div
-              className={`works ${work.status === "private" ? "private" : ""} ${
-                work.status === "unlisted" ? "unlisted" : ""
-              }`}
-              key={work.ylink}
-            >
-              <Link href={`../${work.ylink.slice(17, 28)}`}>
-                <Image
-                  src={work.largeThumbnail}
-                  alt={`${work.title} - ${work.creator} | PVSF archive`}
-                  className="samune"
-                  width={640}
-                  height={360}
-                />
-              </Link>
-              <h3>{work.title}</h3>
-              <div className="subtitle">
-                <div className="insubtitle">
-                  {work.icon ? (
-                    <Image
-                      src={`https://lh3.googleusercontent.com/d/${work.icon.slice(
-                        33
-                      )}`}
-                      className="icon"
-                      alt={`${work.creator}のアイコン`}
-                      width={50}
-                      height={50}
-                    />
-                  ) : (
-                    <Image
-                      src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
-                      alt={`アイコン`}
-                      className="icon"
-                      width={50}
-                      height={50}
-                    />
-                  )}
-                  <p>{work.creator}</p>
-                </div>
-
-                <p className="status">
-                  {work.status === "public" ? null : work.status === // 公開状態のときは何も表示しない
-                    "unlisted" ? (
-                    <span className="inunlisted">
-                      <span className="icon">
-                        <FontAwesomeIcon icon={faLink} />
-                      </span>
-                      限定公開
-                    </span>
-                  ) : (
-                    <span className="inprivate">
-                      <span className="sicon">
-                        <FontAwesomeIcon icon={faLock} />
-                      </span>
-                      非公開
-                    </span>
-                  )}
-                </p>
-              </div>
-            </div>
-            ))
-          ) : (
-            <p>このユーザーは参加した合作作品を持っていません。</p>
-          )}
+              ))
+            ) : (
+              <p>このユーザーは参加した合作作品を持っていません。</p>
+            )}
+          </div>
         </div>
       </div>
       <Footer />
@@ -291,7 +292,9 @@ export const getStaticProps = async ({ params }) => {
   const { id } = params;
   const user = await fetchUserData(id);
   const worksData = await fetchWorksData();
-  const works = worksData.filter((work) => work.tlink?.toLowerCase() === id.toLowerCase());
+  const works = worksData.filter(
+    (work) => work.tlink?.toLowerCase() === id.toLowerCase()
+  );
   const collaborationWorks = fetchCollaborationWorksData(worksData, id);
 
   if (!user) {
