@@ -89,7 +89,9 @@
   border-collapse: collapse;
   margin: 20px 0;
   font-size: 1em;
-  font-family: Arial, sans-serif;
+  font-family: "Plus Jakarta Sans", "Zen Kaku Gothic New", sans-serif;
+  font-weight: 500;
+  font-style: normal;
 }
 
 .table th,
@@ -119,6 +121,11 @@
 
 .twitterIcon:hover {
   color: #0d95e8; /* ホバー時のTwitterアイコンの色 */
+}
+.table td img {
+  width: 30px;
+  height: 30px;
+  margin: auto;
 }
 
 @media screen and (max-width: 1300px) {
@@ -293,4 +300,16 @@
     margin: 10px 0;
     text-align: left;
   }
+}
+.table .userlink {
+  padding: 0;
+  margin: 5px auto;
+  height: min-content;
+  display: flex;
+  justify-self: start;
+}
+.userlis {
+  margin: auto 0;
+  padding: 2px 5px;
+  border-radius: 10px;
 }

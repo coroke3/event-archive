@@ -6,16 +6,21 @@
 }
 
 [data-theme="dark"] {
-  --background: rgb(20, 20, 20);
+  --background: rgb(0, 0, 0);
   --headback: rgb(20, 20, 20);
   --foreground: rgb(255, 255, 255);
+  --taga: rgb(125, 181, 234);
 }
 [data-theme="light"] {
   --background: rgb(255, 255, 255);
   --headback: rgb(245, 245, 245);
   --foreground: rgb(0, 0, 0);
+  --taga: rgb(55, 128, 144);
 }
-
+a {
+  color: var(--taga);
+  text-decoration: none;
+}
 body {
   margin: 0;
   margin-top: 75px;

@@ -177,13 +177,11 @@ export default function WorkId({
               </div>
 
               {workDetails.showMusic && (
-                <p>
-                  <div
-                    dangerouslySetInnerHTML={{
-                      __html: `楽曲:${work.music} - ${work.credit}<br> `,
-                    }}
-                  />
-                </p>
+                <p
+                  dangerouslySetInnerHTML={{
+                    __html: `楽曲:${work.music} - ${work.credit}<br> `,
+                  }}
+                />
               )}
               {workDetails.showMusicLink && (
                 <p>
@@ -231,7 +229,7 @@ export default function WorkId({
                         <tr key={index}>
                           <td>{index + 1}</td>
                           <td>{username.trim()}</td>
-                          <td>
+                          <td className={styles.userlink}>
                             {matchedUser ? (
                               <>
                                 {/* user/[id] リンク */}
@@ -258,15 +256,17 @@ export default function WorkId({
                                     <FontAwesomeIcon icon={faUser} />
                                   </Link>
                                 )}
-                                <Link
-                                  href={`/user/${matchedUser.username}`}
-                                  className={styles.userLink}
-                                >
-                                  {matchedUser.username}
-                                </Link>
+                                <div className={styles.userlis}>
+                                  <Link
+                                    href={`/user/${matchedUser.username}`}
+                                    className={styles.userLink}
+                                  >
+                                    /{matchedUser.username}
+                                  </Link>
+                                </div>
                               </>
                             ) : memberId ? (
-                              `@${memberId}`
+                              <div className={styles.userlis}>@{memberId}</div>
                             ) : (
                               "-"
                             )}
@@ -400,6 +400,7 @@ export async function getStaticProps({ params }) {
 
     // ステータスが "private" でない作品だけをフィルタリング
     const publicData = data.filter((w) => w.status !== "private");
+    const publicData2 = data;
 
     const work = publicData.find((w) => w.ylink.slice(17, 28) === params.id);
 
@@ -572,7 +573,7 @@ export async function getStaticProps({ params }) {
 
     const matchingIcon = [];
     for (const memberId of memberIds) {
-      const memberWorks = publicData.filter(
+      const memberWorks = publicData2.filter(
         (w) => w.tlink.toLowerCase() === memberId.toLowerCase()
       );
 
