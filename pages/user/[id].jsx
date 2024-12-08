@@ -16,7 +16,7 @@ const fetchUserData = async (username) => {
     headers: {
       "Cache-Control": "no-cache",
     },
-    cache: "no-store", // キャッシュを無効にする
+    cache: "no-store",
   });
 
   if (!res.ok) {
@@ -25,7 +25,97 @@ const fetchUserData = async (username) => {
   }
 
   const usersData = await res.json();
-  return usersData.find((user) => user.username === username);
+  const user = usersData.find((user) => user.username === username);
+
+  if (user) {
+    // 全ての作品データを取得
+    const allWorksData = await fetchWorksData();
+
+    // .tlinkが一致する作品をフィルタリング
+    const matchedWorksByTlink = allWorksData.filter(
+      (work) => work.tlink?.toLowerCase() === username.toLowerCase()
+    );
+
+    // .icon の取得
+    if (matchedWorksByTlink.length > 0) {
+      const personalWorks = matchedWorksByTlink.filter(
+        (work) => work.type === "個人"
+      );
+      const firstWork =
+        personalWorks.length > 0 ? personalWorks[0] : matchedWorksByTlink[0];
+      user.icon = firstWork.icon || "";
+    } else {
+      user.icon = "";
+    }
+
+    // .creator の取得
+    if (matchedWorksByTlink.length > 0) {
+      const personalWorks = matchedWorksByTlink.filter(
+        (work) => work.type === "個人"
+      );
+      const firstWork =
+        personalWorks.length > 0 ? personalWorks[0] : matchedWorksByTlink[0];
+      if (firstWork.type === "個人") {
+        user.creator = firstWork.creator;
+      }
+    }
+
+    if (!user.creator) {
+      // .creator が未設定の場合、.memberid と .member を使って最新の一致を探す
+      let latestWork = null;
+      for (const work of allWorksData) {
+        if (work.memberid) {
+          const memberIds = work.memberid.split(",");
+          const memberNames = work.member.split(",");
+
+          const matchedMemberIndex = memberIds.findIndex(
+            (memberId) =>
+              memberId.trim().toLowerCase() === username.toLowerCase()
+          );
+
+          if (matchedMemberIndex !== -1) {
+            latestWork = work; // 最新作を更新
+            user.creator = memberNames[matchedMemberIndex].trim();
+            break; // 最初に見つかった一致を優先
+          }
+        }
+      }
+
+      // 最新作が見つかっていない場合、ユーザー名を使用
+      if (!user.creator && latestWork) {
+        user.creator = username;
+      }
+    }
+
+    // .largeThumbnail の取得
+    if (matchedWorksByTlink.length > 0) {
+      const personalWorks = matchedWorksByTlink.filter(
+        (work) => work.type === "個人"
+      );
+      const firstWork =
+        personalWorks.length > 0 ? personalWorks[0] : matchedWorksByTlink[0];
+      user.largeThumbnail = firstWork.largeThumbnail || "";
+    } else {
+      user.largeThumbnail = "";
+    }
+
+    // .tlink の代入
+    user.tlink = username;
+
+    // .ychlink の取得
+    if (matchedWorksByTlink.length > 0) {
+      const personalWorks = matchedWorksByTlink.filter(
+        (work) => work.type === "個人"
+      );
+      const firstWork =
+        personalWorks.length > 0 ? personalWorks[0] : matchedWorksByTlink[0];
+      user.ychlink = firstWork.ychlink || "";
+    } else {
+      user.ychlink = "";
+    }
+  }
+
+  return user;
 };
 
 const fetchWorksData = async () => {
@@ -52,16 +142,7 @@ const fetchCollaborationWorksData = (worksData, id) => {
     return false; // memberid が存在しない場合は false
   });
 };
-
 export default function UserWorksPage({ user, works, collaborationWorks }) {
-  const personalWorks = works.filter((work) => work.type === "個人"); // 1. フィルタリング
-  const firstWork = personalWorks.length > 0 ? personalWorks[0] : works[0]; // 2. 最新の「個人」作品があればそれを使用
-
-  const firstCreator = firstWork ? firstWork.creator : "";
-  const firstYchlink = firstWork ? firstWork.ychlink : "";
-  const firstIcon = firstWork ? firstWork.icon : "";
-  const firstTlink = firstWork ? firstWork.tlink : "";
-
   return (
     <div>
       <Head>
@@ -74,51 +155,50 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
         />
       </Head>
       <div className={styles.content}>
-        {firstWork && (
-          <div className={styles.first}>
-            {firstIcon && (
-              <Image
-                src={`https://lh3.googleusercontent.com/d/${firstIcon.slice(
-                  33
-                )}`} // アイコンの URL
-                className={styles.uicon}
-                alt={`${firstCreator}のアイコン`}
-                width={150}
-                height={150}
-              />
-            )}
+        <div className={styles.first}>
+          {user.icon && (
             <Image
-              src={firstWork.largeThumbnail} // サムネイルの URL
-              alt={`${firstWork.title} - ${firstCreator} | PVSF archive`}
-              className={styles.uback}
-              width={1280}
-              height={720}
+              src={`https://lh3.googleusercontent.com/d/${user.icon.slice(33)}`} // アイコンの URL
+              className={styles.uicon}
+              alt={`${user.creator}のアイコン`}
+              width={150}
+              height={150}
             />
-            <div className={styles.textblock}>
-              <h2>{firstCreator}</h2>
-
+          )}
+          <div className={styles.textblock}>
+            {user.creator && <h2>{user.creator}</h2>}
+            {user.ychlink && (
               <a
                 className={styles.username}
-                href={`${firstYchlink}`}
+                href={`${user.ychlink}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 <FontAwesomeIcon icon={faYoutube} />
               </a>
-
-              {firstTlink && (
-                <a
-                  className={styles.username}
-                  href={`https://twitter.com/${firstTlink}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <FontAwesomeIcon icon={faXTwitter} />@{user.username}
-                </a>
-              )}
-            </div>
+            )}
+            {user.tlink && (
+              <a
+                className={styles.username}
+                href={`https://twitter.com/${user.tlink}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <FontAwesomeIcon icon={faXTwitter} />@{user.tlink}
+              </a>
+            )}
           </div>
-        )}
+          {user.largeThumbnail && (
+            <Image
+              src={user.largeThumbnail}
+              alt={`${user.creator}の作品`}
+              className={styles.uback}
+              width={1280}
+              height={720}
+            />
+          )}
+        </div>
+
         <div className={styles.uwork}>
           <div className="work">
             {Array.isArray(works) && works.length > 0 ? (
@@ -275,28 +355,38 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
 export const getStaticPaths = async () => {
   const res = await fetch("https://pvsf-cash.vercel.app/api/users");
 
+  if (!res.ok) {
+    console.error(`Failed to fetch users data: ${res.statusText}`);
+    return {
+      paths: [],
+      fallback: "blocking", // 動的生成に切り替え
+    };
+  }
+
   const usersData = await res.json();
   const paths = usersData.map((user) => ({
     params: { id: user.username },
   }));
 
-  return { paths, fallback: false }; // fallbackをfalseにして、全てのページをビルド時に生成
+  return { paths, fallback: "blocking" }; // 動的生成を有効に
 };
 
 export const getStaticProps = async ({ params }) => {
   const { id } = params;
+
   const user = await fetchUserData(id);
   const worksData = await fetchWorksData();
+
+  if (!user || !worksData) {
+    return {
+      notFound: true,
+    };
+  }
+
   const works = worksData.filter(
     (work) => work.tlink?.toLowerCase() === id.toLowerCase()
   );
   const collaborationWorks = fetchCollaborationWorksData(worksData, id);
-
-  if (!user) {
-    return {
-      notFound: true, // ユーザーが存在しない場合404ページにリダイレクト
-    };
-  }
 
   return {
     props: {

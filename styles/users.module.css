@@ -76,6 +76,44 @@
 @media screen and (max-width: 1550px) {
 }
 @media screen and (max-width: 1230px) {
+  .first::before {
+    content: "";
+    background-color: var(--background);
+    opacity: 0.4;
+    position: relative;
+    width: 100%;
+    height: auto;
+    top: 75px;
+    left: 0;
+    z-index: -99;
+  }
+  .first {
+    height: min-content;
+    padding: 100px 50px;
+    width: auto;
+    margin: auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-self: start;
+  }
+  .uback {
+    z-index: -100;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    position: relative;
+    top: 75px;
+    left: 0;
+  }
+  .content {
+    display: block;
+  }
+  .uwork {
+    width: 100%;
+  }
+  .uicon {
+    margin: auto;
+  }
 }
 @media screen and (max-width: 900px) {
 }

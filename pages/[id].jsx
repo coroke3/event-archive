@@ -373,9 +373,7 @@ export async function getStaticPaths() {
 export async function getStaticProps({ params }) {
   try {
     // 外部データの取得
-    const externalRes = await fetch(
-      "https://script.google.com/macros/s/AKfycbzXvxOyXNXF6dUjsw0vbJxb_mLvWKhvk8l14YEOyBHsGOn25X-T4LnYcvTpvwxrqq5Xvw/exec"
-    );
+    const externalRes = await fetch("https://pvsf-cash.vercel.app/api/users");
     if (!externalRes.ok) {
       throw new Error("外部データの取得に失敗しました");
     }
