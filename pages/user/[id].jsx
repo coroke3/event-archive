@@ -12,15 +12,12 @@ import { faXTwitter, faYoutube } from "@fortawesome/free-brands-svg-icons";
 import { faLock, faLink } from "@fortawesome/free-solid-svg-icons";
 
 const fetchUserData = async (username) => {
-  const res = await fetch(
-    "https://script.google.com/macros/s/AKfycbzXvxOyXNXF6dUjsw0vbJxb_mLvWKhvk8l14YEOyBHsGOn25X-T4LnYcvTpvwxrqq5Xvw/exec",
-    {
-      headers: {
-        "Cache-Control": "no-cache",
-      },
-      cache: "no-store", // キャッシュを無効にする
-    }
-  );
+  const res = await fetch("https://pvsf-cash.vercel.app/api/users", {
+    headers: {
+      "Cache-Control": "no-cache",
+    },
+    cache: "no-store", // キャッシュを無効にする
+  });
 
   if (!res.ok) {
     console.error(`Failed to fetch user data: ${res.statusText}`);
