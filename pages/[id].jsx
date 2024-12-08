@@ -8,13 +8,14 @@ import styles from "../styles/work.module.css";
 import { css } from "@emotion/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXTwitter, faYoutube } from "@fortawesome/free-brands-svg-icons";
-
+import { faUser } from "@fortawesome/free-brands-svg-icons";
 export default function WorkId({
   work,
   previousWorks,
   nextWorks,
   icon,
   eventname,
+  externalData,
 }) {
   const showComment = work.comment !== undefined && work.comment !== "";
   const showIcon = work.icon !== undefined && work.icon !== "";
@@ -27,6 +28,7 @@ export default function WorkId({
     work.music !== "" &&
     work.credit !== undefined &&
     work.credit !== "";
+  const showMusicLink = work.ymulink !== undefined && work.ymulink !== "";
   const originalDate = new Date(work.time);
   const modifiedDate = new Date(originalDate.getTime() - 9 * 60 * 60 * 1000);
   const formattedDate = modifiedDate.toLocaleString();
@@ -170,6 +172,11 @@ export default function WorkId({
                   />
                 </p>
               )}
+              {showMusicLink && (
+                <p>
+                  <Link href={work.ymulink}>楽曲リンク＞</Link>
+                </p>
+              )}
               {showComment && (
                 <p>
                   <div
@@ -192,11 +199,42 @@ export default function WorkId({
                       const memberId = work.memberid
                         .split(/[,、，]/)
                         [index]?.trim();
+                      // 外部JSONデータでのチェック
+                      const matchedUser = externalData.find(
+                        (user) => user.username === memberId
+                      );
+
                       return (
                         <tr key={index}>
                           <td>{index + 1}</td>
                           <td>{username.trim()}</td>
-                          <td>{memberId ? `@${memberId}` : "-"}</td>
+                          <td>
+                            {
+                              matchedUser ? (
+                                <>
+                                  {/* Twitterリンク */}
+                                  <a
+                                    href={`https://twitter.com/${memberId}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <FontAwesomeIcon icon={faUser} />
+                                  </a>
+                                  {/* user/[id] リンク */}
+                                  <Link
+                                    href={`/user/${memberId}`}
+                                    className={styles.userLink}
+                                  >
+                                    {matchedUser.username}
+                                  </Link>
+                                </>
+                              ) : memberId ? (
+                                `@${memberId}`
+                              ) : (
+                                "-"
+                              ) // 修正箇所
+                            }
+                          </td>
                           <td>
                             {memberId ? (
                               <a
@@ -265,6 +303,15 @@ export default function WorkId({
 
 export async function getStaticPaths() {
   try {
+    // 外部データの取得
+    const externalRes = await fetch(
+      "https://script.google.com/macros/s/AKfycbzXvxOyXNXF6dUjsw0vbJxb_mLvWKhvk8l14YEOyBHsGOn25X-T4LnYcvTpvwxrqq5Xvw/exec"
+    );
+    if (!externalRes.ok) {
+      throw new Error("外部データの取得に失敗しました");
+    }
+    const externalData = await externalRes.json();
+
     const res = await fetch("https://pvsf-cash.vercel.app/api/videos");
     if (!res.ok) {
       throw new Error("Failed to fetch data");
@@ -303,6 +350,16 @@ export async function getStaticPaths() {
 
 export async function getStaticProps({ params }) {
   try {
+    // 外部データの取得
+    const externalRes = await fetch(
+      "https://script.google.com/macros/s/AKfycbzXvxOyXNXF6dUjsw0vbJxb_mLvWKhvk8l14YEOyBHsGOn25X-T4LnYcvTpvwxrqq5Xvw/exec"
+    );
+    if (!externalRes.ok) {
+      throw new Error("外部データの取得に失敗しました");
+    }
+    const externalData = await externalRes.json();
+
+    // メインデータの取得
     const res = await fetch("https://pvsf-cash.vercel.app/api/videos");
     if (!res.ok) {
       throw new Error("Failed to fetch data");
@@ -331,7 +388,7 @@ export async function getStaticProps({ params }) {
     const nextWorks = publicData.slice(
       currentIndex + 1,
       currentIndex + 6 + additionalCount
-    ); // 現在の作品の次の作品
+    );
 
     // tlinkが一致する作品を取得
     const matchingTlinkWorks = publicData.filter(
@@ -484,6 +541,7 @@ export async function getStaticProps({ params }) {
     return {
       props: {
         work,
+        externalData, // 外部データを追加
         previousWorks: uniquePreviousWorks,
         nextWorks: uniqueFinalNextWorks, // 修正
         eventname, // 追加
@@ -495,6 +553,7 @@ export async function getStaticProps({ params }) {
     return {
       props: {
         work: {},
+        externalData: [], // 外部データのデフォルト値
         previousWorks: [],
         nextWorks: [],
         eventname: "", // 追加
