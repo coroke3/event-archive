@@ -16,6 +16,7 @@ export default function WorkId({
   icon,
   eventname,
   externalData,
+  matchingIcon,
 }) {
   const showComment = work.comment !== undefined && work.comment !== "";
   const showIcon = work.icon !== undefined && work.icon !== "";
@@ -199,9 +200,19 @@ export default function WorkId({
                       const memberId = work.memberid
                         .split(/[,、，]/)
                         [index]?.trim();
-                      // 外部JSONデータでのチェック
+
+                      // プロパティから渡されたmatchingIconを使用
+                      const memberIconInfo = matchingIcon.find(
+                        (item) =>
+                          item.memberId.toLowerCase() ===
+                          memberId?.toLowerCase()
+                      );
+
+                      // 外部データからユーザー情報を検索
                       const matchedUser = externalData.find(
-                        (user) => user.username === memberId
+                        (user) =>
+                          user.username.toLowerCase() ===
+                          memberId?.toLowerCase()
                       );
 
                       return (
@@ -209,31 +220,44 @@ export default function WorkId({
                           <td>{index + 1}</td>
                           <td>{username.trim()}</td>
                           <td>
-                            {
-                              matchedUser ? (
-                                <>
-                                  {/* Twitterリンク */}
-                                  <a
-                                    href={`https://twitter.com/${memberId}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    <FontAwesomeIcon icon={faUser} />
-                                  </a>
-                                  {/* user/[id] リンク */}
+                            {matchedUser ? (
+                              <>
+                                {/* user/[id] リンク */}
+                                {memberIconInfo && memberIconInfo.icon ? (
                                   <Link
-                                    href={`/user/${memberId}`}
+                                    href={`/user/${matchedUser.username}`}
                                     className={styles.userLink}
                                   >
-                                    {matchedUser.username}
+                                    <Image
+                                      src={`https://lh3.googleusercontent.com/d/${memberIconInfo.icon.slice(
+                                        33
+                                      )}`}
+                                      alt={`${matchedUser.username}のアイコン`}
+                                      width={50}
+                                      height={50}
+                                      className={styles.icon}
+                                    />
                                   </Link>
-                                </>
-                              ) : memberId ? (
-                                `@${memberId}`
-                              ) : (
-                                "-"
-                              ) // 修正箇所
-                            }
+                                ) : (
+                                  <Link
+                                    href={`/user/${matchedUser.username}`}
+                                    className={styles.userLink}
+                                  >
+                                    <FontAwesomeIcon icon={faUser} />
+                                  </Link>
+                                )}
+                                <Link
+                                  href={`/user/${matchedUser.username}`}
+                                  className={styles.userLink}
+                                >
+                                  {matchedUser.username}
+                                </Link>
+                              </>
+                            ) : memberId ? (
+                              `@${memberId}`
+                            ) : (
+                              "-"
+                            )}
                           </td>
                           <td>
                             {memberId ? (
@@ -538,10 +562,31 @@ export async function getStaticProps({ params }) {
     const eventname = eventInfo?.eventname || "Unknown Event";
     const icon = eventInfo?.icon || "";
 
+    const matchingIcon = [];
+    for (const memberId of memberIds) {
+      const memberWorks = publicData.filter(
+        (w) => w.tlink.toLowerCase() === memberId.toLowerCase()
+      );
+
+      if (memberWorks.length > 0) {
+        // .type が「個人」のものを優先
+        const prioritizedWorks = memberWorks.filter((w) => w.type === "個人");
+        const latestWork =
+          prioritizedWorks.length > 0 ? prioritizedWorks[0] : memberWorks[0];
+        console.log(latestWork.icon + "いける？");
+        matchingIcon.push({
+          memberId,
+          icon: latestWork.icon, // アイコン情報
+        });
+      }
+    }
+    console.log(matchingIcon + "いける？");
+
     return {
       props: {
         work,
         externalData, // 外部データを追加
+        matchingIcon,
         previousWorks: uniquePreviousWorks,
         nextWorks: uniqueFinalNextWorks, // 修正
         eventname, // 追加

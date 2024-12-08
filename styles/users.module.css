@@ -23,15 +23,21 @@
   z-index: -99;
 }
 .first {
-  height: auto;
-  display: flex;
-  padding: 50px;
+  height: min-content;
+  padding: 100px 50px;
   width: 400px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-self: start;
 }
 .uicon {
+  width: 200px;
+  height: 200px;
+  margin: 0 100px;
   border-radius: 50%;
 }
 .username {
+  margin: auto;
   font-size: 0.6rem;
   letter-spacing: 0.3px;
   border: solid var(--foreground) 1px;
@@ -39,7 +45,8 @@
   padding: 1px 5px;
 }
 .textblock {
-  margin: auto 10px 10px 10px;
+  margin: auto;
+  width: auto;
 }
 .textblock h2 {
   border: 0;
