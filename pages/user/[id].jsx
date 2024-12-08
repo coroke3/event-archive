@@ -276,9 +276,7 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
 }
 
 export const getStaticPaths = async () => {
-  const res = await fetch(
-    "https://script.google.com/macros/s/AKfycbzXvxOyXNXF6dUjsw0vbJxb_mLvWKhvk8l14YEOyBHsGOn25X-T4LnYcvTpvwxrqq5Xvw/exec"
-  );
+  const res = await fetch("https://pvsf-cash.vercel.app/api/users");
 
   const usersData = await res.json();
   const paths = usersData.map((user) => ({

@@ -328,9 +328,7 @@ export default function WorkId({
 export async function getStaticPaths() {
   try {
     // 外部データの取得
-    const externalRes = await fetch(
-      "https://script.google.com/macros/s/AKfycbzXvxOyXNXF6dUjsw0vbJxb_mLvWKhvk8l14YEOyBHsGOn25X-T4LnYcvTpvwxrqq5Xvw/exec"
-    );
+    const externalRes = await fetch("https://pvsf-cash.vercel.app/api/users");
     if (!externalRes.ok) {
       throw new Error("外部データの取得に失敗しました");
     }
@@ -573,14 +571,13 @@ export async function getStaticProps({ params }) {
         const prioritizedWorks = memberWorks.filter((w) => w.type === "個人");
         const latestWork =
           prioritizedWorks.length > 0 ? prioritizedWorks[0] : memberWorks[0];
-        console.log(latestWork.icon + "いける？");
+
         matchingIcon.push({
           memberId,
           icon: latestWork.icon, // アイコン情報
         });
       }
     }
-    console.log(matchingIcon + "いける？");
 
     return {
       props: {

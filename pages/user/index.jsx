@@ -8,14 +8,11 @@ import { useState } from "react";
 
 // ユーザー情報を取得する関数
 const fetchUsersData = async () => {
-  const res = await fetch(
-    "https://script.google.com/macros/s/AKfycbzXvxOyXNXF6dUjsw0vbJxb_mLvWKhvk8l14YEOyBHsGOn25X-T4LnYcvTpvwxrqq5Xvw/exec",
-    {
-      headers: {
-        "Cache-Control": "no-cache",
-      },
-    }
-  );
+  const res = await fetch("https://pvsf-cash.vercel.app/api/users", {
+    headers: {
+      "Cache-Control": "no-cache",
+    },
+  });
 
   if (!res.ok) {
     console.error(`Failed to fetch user data: ${res.statusText}`);
@@ -77,7 +74,7 @@ const getLatestWorkByTlink = (icons, tlink) => {
       (id) => id.trim().toLowerCase() === tlink.toLowerCase()
     );
 
-    if (matchedIndex !== -1) {
+    if (matchedIndex !== -1 && memberNames[matchedIndex] !== undefined) {
       const matchedMemberName = memberNames[matchedIndex].trim();
       const latestIcon =
         tlinkLatestWork.length > 0
@@ -109,7 +106,11 @@ const getLatestWorkByTlink = (icons, tlink) => {
     );
 
     if (matchedIndex !== -1) {
-      const matchedMemberName = memberNames[matchedIndex].trim();
+      // Check if memberNames[matchedIndex] is defined and is a string
+      const matchedMemberName =
+        typeof memberNames[matchedIndex] === "string"
+          ? memberNames[matchedIndex].trim()
+          : null;
       return { creator: matchedMemberName, icon: null }; // アイコンは取得しない
     }
   }
