@@ -1,14 +1,16 @@
 // pages/[id].jsx
+import React, { useMemo } from "react"; // Added React import
 import Link from "next/link";
 import Image from "next/image";
 import Head from "next/head";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
-import styles from "../styles/work.module.css";
-import { css } from "@emotion/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faXTwitter, faYoutube } from "@fortawesome/free-brands-svg-icons";
-import { faUser } from "@fortawesome/free-brands-svg-icons";
+import {
+  faXTwitter,
+  faYoutube,
+  faUser,
+} from "@fortawesome/free-brands-svg-icons";
+import styles from "../styles/work.module.css";
+
 export default function WorkId({
   work,
   previousWorks,
@@ -18,29 +20,51 @@ export default function WorkId({
   externalData,
   matchingIcon,
 }) {
-  const showComment = work.comment !== undefined && work.comment !== "";
-  const showIcon = work.icon !== undefined && work.icon !== "";
-  const showCreator = work.creator !== undefined && work.creator !== "";
-  const showTwitter = work.tlink !== undefined && work.tlink !== "";
-  const showYoutube = work.ylink !== undefined && work.ylink !== "";
-  const showMenber = work.member !== undefined && work.member !== "";
-  const showMusic =
-    work.music !== undefined &&
-    work.music !== "" &&
-    work.credit !== undefined &&
-    work.credit !== "";
-  const showMusicLink = work.ymulink !== undefined && work.ymulink !== "";
-  const originalDate = new Date(work.time);
-  const modifiedDate = new Date(originalDate.getTime() - 9 * 60 * 60 * 1000);
-  const formattedDate = modifiedDate.toLocaleString();
-  const showTime = work.time !== undefined && work.time !== "";
+  // Memoize conditional checks to improve readability and potential performance
+  const workDetails = {
+    showComment: work.comment && work.comment.trim() !== "",
+    showIcon: work.icon && work.icon.trim() !== "",
+    showCreator: work.creator && work.creator.trim() !== "",
+    showTwitter: work.tlink && work.tlink.trim() !== "",
+    showYoutube: work.ylink && work.ylink.trim() !== "",
+    showMember:
+      work.member &&
+      work.memberid &&
+      work.member.trim() !== "" &&
+      work.memberid.trim() !== "",
+    showMusic:
+      work.music &&
+      work.credit &&
+      work.music.trim() !== "" &&
+      work.credit.trim() !== "",
+    showMusicLink: work.ymulink && work.ymulink.trim() !== "",
+    showTime: work.time && work.time.trim() !== "",
+  };
+
+  // Optimize date formatting with memoization
+  const formattedDate = React.useMemo(() => {
+    if (!work.time) return "";
+    const originalDate = new Date(work.time);
+    const modifiedDate = new Date(originalDate.getTime() - 9 * 60 * 60 * 1000);
+    return modifiedDate.toLocaleString();
+  }, [work.time]);
+
+  // Memoize YouTube embed URL extraction
+  const youtubeEmbedUrl = React.useMemo(
+    () =>
+      work.ylink
+        ? `https://www.youtube.com/embed/${work.ylink.slice(
+            17,
+            28
+          )}?vq=hd1080&autoplay=1`
+        : null,
+    [work.ylink]
+  );
 
   return (
     <div>
       <Head>
-        <title>
-          {`${work.title} - ${work.creator} - オンライン映像イベント / PVSF archive`}
-        </title>
+        <title>{`${work.title} - ${work.creator} - オンライン映像イベント / PVSF archive`}</title>
         <meta
           name="description"
           content={`PVSFへの出展作品です。  ${work.title} - ${work.creator}`}
@@ -63,12 +87,9 @@ export default function WorkId({
       <div className={styles.contentr}>
         <div className={styles.bf}>
           <div className={styles.s1f}>
-            {work.ylink && (
+            {work.ylink && youtubeEmbedUrl && (
               <iframe
-                src={`https://www.youtube.com/embed/${work.ylink.slice(
-                  17,
-                  28
-                )}?vq=hd1080&autoplay=1`}
+                src={youtubeEmbedUrl}
                 title="YouTube video player"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -79,12 +100,8 @@ export default function WorkId({
             <div className={styles.s1ftext}>
               <h1 className={styles.title}>{work.title}</h1>
               <div className={styles.userinfo}>
-                {showIcon && work.icon ? (
-                  <Link
-                    href={`../user/${
-                      work.tlink ? work.tlink.toLowerCase() : ""
-                    }`}
-                  >
+                {workDetails.showIcon ? (
+                  <Link href={`../user/${work.tlink?.toLowerCase() || ""}`}>
                     <Image
                       src={`https://lh3.googleusercontent.com/d/${work.icon.slice(
                         33
@@ -96,14 +113,10 @@ export default function WorkId({
                     />
                   </Link>
                 ) : (
-                  <Link
-                    href={`../user/${
-                      work.tlink ? work.tlink.toLowerCase() : ""
-                    }`}
-                  >
+                  <Link href={`../user/${work.tlink?.toLowerCase() || ""}`}>
                     <Image
                       src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
-                      alt={`アイコン`}
+                      alt="アイコン"
                       className={styles.icon}
                       width={50}
                       height={50}
@@ -111,16 +124,12 @@ export default function WorkId({
                   </Link>
                 )}
 
-                {showCreator && (
+                {workDetails.showCreator && (
                   <h3 className={styles.creator}>
-                    <Link
-                      href={`../user/${
-                        work.tlink ? work.tlink.toLowerCase() : ""
-                      }`}
-                    >
+                    <Link href={`../user/${work.tlink?.toLowerCase() || ""}`}>
                       {work.creator}{" "}
                     </Link>
-                    {showYoutube && (
+                    {workDetails.showYoutube && (
                       <a
                         href={`${work.ylink}`}
                         target="_blank"
@@ -129,7 +138,7 @@ export default function WorkId({
                         <FontAwesomeIcon icon={faYoutube} />
                       </a>
                     )}
-                    {showTwitter && (
+                    {workDetails.showTwitter && (
                       <a
                         href={`https://twitter.com/${work.tlink}`}
                         target="_blank"
@@ -140,8 +149,11 @@ export default function WorkId({
                     )}
                   </h3>
                 )}
-                {showTime && <p className={styles.time}>{formattedDate}</p>}
+                {workDetails.showTime && (
+                  <p className={styles.time}>{formattedDate}</p>
+                )}
               </div>
+
               <div className={styles.eventInfo}>
                 {work.eventid &&
                   work.eventid.split(",").map((eventId, index) => (
@@ -164,7 +176,7 @@ export default function WorkId({
                   ))}
               </div>
 
-              {showMusic && (
+              {workDetails.showMusic && (
                 <p>
                   <div
                     dangerouslySetInnerHTML={{
@@ -173,19 +185,19 @@ export default function WorkId({
                   />
                 </p>
               )}
-              {showMusicLink && (
+              {workDetails.showMusicLink && (
                 <p>
                   <Link href={work.ymulink}>楽曲リンク＞</Link>
                 </p>
               )}
-              {showComment && (
+              {workDetails.showComment && (
                 <p>
                   <div
                     dangerouslySetInnerHTML={{ __html: `${work.comment}` }}
                   />
                 </p>
               )}
-              {showMenber && (
+              {workDetails.showMember && (
                 <table className={styles.table}>
                   <thead>
                     <tr>
