@@ -309,7 +309,7 @@ export const getStaticPaths = async () => {
     params: { id: user.username },
   }));
 
-  return { paths, fallback: "blocking" }; // 動的生成を有効に
+  return { paths, fallback: false }; // 動的生成を有効に
 };
 
 export const getStaticProps = async ({ params }) => {
