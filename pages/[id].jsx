@@ -400,7 +400,7 @@ export async function getStaticProps({ params }) {
 
     // ステータスが "private" でない作品だけをフィルタリング
     const publicData = data.filter((w) => w.status !== "private");
-    const publicData2 = data;
+    const publicData2 = data; // アイコン取得用
 
     const work = publicData.find((w) => w.ylink.slice(17, 28) === params.id);
 
@@ -413,7 +413,7 @@ export async function getStaticProps({ params }) {
     );
 
     // 前後の表示作品数を調整する
-    const additionalCount = 2; // 追加で表示する作品数
+    const additionalCount = 2;
     const previousWorks = publicData.slice(
       Math.max(0, currentIndex - 5 - additionalCount),
       currentIndex
@@ -437,7 +437,6 @@ export async function getStaticProps({ params }) {
 
     // tlink一致作品を選定
     if (currentIndex > 0) {
-      // 前の作品がある場合
       const previousTlinkWorks = matchingTlinkWorks.filter(
         (w) => publicData.indexOf(w) < currentIndex
       );
@@ -452,17 +451,16 @@ export async function getStaticProps({ params }) {
         selectedWorks.push(nextTlinkWorks[0]); // 最新の作品
       }
     } else {
-      // 最新の作品がない場合は古い作品を取得
       selectedWorks = matchingTlinkWorks.slice(0, 2); // 最大2件まで取得
     }
 
     // memberid一致の作品を前後に追加
     const previousMemberidWorks = matchingMemberidWorks
       .filter((w) => publicData.indexOf(w) < currentIndex)
-      .slice(-2); // 前の作品最大2件
+      .slice(-2);
     const nextMemberidWorks = matchingMemberidWorks
       .filter((w) => publicData.indexOf(w) > currentIndex)
-      .slice(0, 2); // 後の作品最大2件
+      .slice(0, 2);
 
     // 表示するメンバーIDのリストを取得
     const memberIds = work.memberid.split(",").map((id) => id.trim());
@@ -476,18 +474,16 @@ export async function getStaticProps({ params }) {
           w.memberid && w.memberid.includes(memberId) && w.ylink !== work.ylink
       );
 
-      // tlink一致の作品を優先して取得
       const userMatchingTlinkWorks = userWorks.filter(
         (w) => w.tlink === work.tlink
       );
       const userOtherWorks = userWorks.filter((w) => w.tlink !== work.tlink);
 
       const userSelectedWorks = [
-        ...userMatchingTlinkWorks.slice(0, 2), // 最大2件
-        ...userOtherWorks.slice(0, 2), // 最大2件
+        ...userMatchingTlinkWorks.slice(0, 2),
+        ...userOtherWorks.slice(0, 2),
       ];
 
-      // 追加作品に重複を削除して追加
       additionalUserWorks = [
         ...additionalUserWorks,
         ...userSelectedWorks.filter(
@@ -497,30 +493,25 @@ export async function getStaticProps({ params }) {
       ];
     }
 
-    // 重複を削除
+    // 重複削除を一回で実行
+    const allPreviousWorks = [
+      ...selectedWorks,
+      ...previousWorks,
+      ...previousMemberidWorks,
+    ];
+    const allNextWorks = [
+      ...nextWorks,
+      ...nextMemberidWorks,
+      ...additionalUserWorks,
+    ];
+
     const uniquePreviousWorks = Array.from(
-      new Set(
-        [...selectedWorks, ...previousWorks, ...previousMemberidWorks].map(
-          (w) => w.ylink
-        )
-      )
-    ).map((ylink) =>
-      [...selectedWorks, ...previousWorks, ...previousMemberidWorks].find(
-        (w) => w.ylink === ylink
-      )
-    );
+      new Set(allPreviousWorks.map((w) => w.ylink))
+    ).map((ylink) => allPreviousWorks.find((w) => w.ylink === ylink));
 
     const uniqueNextWorks = Array.from(
-      new Set(
-        [...nextWorks, ...nextMemberidWorks, ...additionalUserWorks].map(
-          (w) => w.ylink
-        )
-      )
-    ).map((ylink) =>
-      [...nextWorks, ...nextMemberidWorks, ...additionalUserWorks].find(
-        (w) => w.ylink === ylink
-      )
-    );
+      new Set(allNextWorks.map((w) => w.ylink))
+    ).map((ylink) => allNextWorks.find((w) => w.ylink === ylink));
 
     // .credit 一致の作品を最大4件取得
     const matchingCreditWorks = publicData
@@ -530,7 +521,7 @@ export async function getStaticProps({ params }) {
           w.credit.toLowerCase() === work.credit?.toLowerCase() &&
           w.ylink !== work.ylink
       )
-      .slice(0, 4); // 最大4件
+      .slice(0, 4);
 
     // .music 一致の作品を最大4件取得
     const matchingMusicWorks = publicData
@@ -541,7 +532,7 @@ export async function getStaticProps({ params }) {
           w.music.toLowerCase() === work.music?.toLowerCase() &&
           w.ylink !== work.ylink
       )
-      .slice(0, 4); // 最大4件
+      .slice(0, 4);
 
     // 最終的なユニークな次の作品に追加
     const finalNextWorks = [
@@ -550,12 +541,12 @@ export async function getStaticProps({ params }) {
       ...matchingMusicWorks,
     ];
 
-    // finalNextWorksからも重複を削除
     const uniqueFinalNextWorks = Array.from(
       new Set(finalNextWorks.map((w) => w.ylink))
     ).map((ylink) => finalNextWorks.find((w) => w.ylink === ylink));
 
-    const eventId = work.eventid; // eventnameからイベントIDを取得
+    // イベントデータの取得
+    const eventId = work.eventid;
     const eventRes = await fetch(
       `https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec?eventid=${eventId}`
     );
@@ -565,12 +556,11 @@ export async function getStaticProps({ params }) {
     }
 
     const eventData = await eventRes.json();
-
-    // eventDataから.eventnameと.iconを取得
     const eventInfo = eventData.find((event) => event.eventid === eventId);
     const eventname = eventInfo?.eventname || "Unknown Event";
     const icon = eventInfo?.icon || "";
 
+    // メンバーのアイコン取得
     const matchingIcon = [];
     for (const memberId of memberIds) {
       const memberWorks = publicData2.filter(
@@ -578,14 +568,13 @@ export async function getStaticProps({ params }) {
       );
 
       if (memberWorks.length > 0) {
-        // .type が「個人」のものを優先
         const prioritizedWorks = memberWorks.filter((w) => w.type === "個人");
         const latestWork =
           prioritizedWorks.length > 0 ? prioritizedWorks[0] : memberWorks[0];
 
         matchingIcon.push({
           memberId,
-          icon: latestWork.icon, // アイコン情報
+          icon: latestWork.icon,
         });
       }
     }
@@ -593,12 +582,12 @@ export async function getStaticProps({ params }) {
     return {
       props: {
         work,
-        externalData, // 外部データを追加
+        externalData,
         matchingIcon,
         previousWorks: uniquePreviousWorks,
-        nextWorks: uniqueFinalNextWorks, // 修正
-        eventname, // 追加
-        icon, // 追加
+        nextWorks: uniqueFinalNextWorks,
+        eventname,
+        icon,
       },
     };
   } catch (error) {
@@ -606,11 +595,11 @@ export async function getStaticProps({ params }) {
     return {
       props: {
         work: {},
-        externalData: [], // 外部データのデフォルト値
+        externalData: [],
         previousWorks: [],
         nextWorks: [],
-        eventname: "", // 追加
-        icon: "", // 追加
+        eventname: "",
+        icon: "",
       },
     };
   }
