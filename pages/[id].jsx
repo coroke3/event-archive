@@ -306,7 +306,7 @@ export default function WorkId({
                   />
                 </p>
               )}
-              {workDetails.showMember && (
+              {workDetails.showMember && work?.member && (
                 <table className={styles.table}>
                   <thead>
                     <tr>
@@ -319,40 +319,38 @@ export default function WorkId({
                   <tbody>
                     {work.member.split(/[,、，]/).map((username, index) => {
                       const memberId = work.memberid
-                        .split(/[,、，]/)
-                        [index]?.trim();
+                        ?.split(/[,、，]/)
+                        ?.[index]
+                        ?.trim() || '';
 
                       // プロパティから渡されたmatchingIconを使用
-                      const memberIconInfo = matchingIcon.find(
+                      const memberIconInfo = matchingIcon?.find(
                         (item) =>
-                          item.memberId.toLowerCase() ===
+                          item?.memberId?.toLowerCase() ===
                           memberId?.toLowerCase()
                       );
 
                       // 外部データからユーザー情報を検索
-                      const matchedUser = externalData.find(
+                      const matchedUser = externalData?.find(
                         (user) =>
-                          user.username.toLowerCase() ===
+                          user?.username?.toLowerCase() ===
                           memberId?.toLowerCase()
                       );
 
                       return (
                         <tr key={index}>
                           <td>{index + 1}</td>
-                          <td>{username.trim()}</td>
+                          <td>{username?.trim() || ''}</td>
                           <td className={styles.userlink}>
                             {matchedUser ? (
                               <>
-                                {/* user/[id] リンク */}
-                                {memberIconInfo && memberIconInfo.icon ? (
+                                {memberIconInfo?.icon ? (
                                   <Link
                                     href={`/user/${matchedUser.username}`}
                                     className={styles.userLink}
                                   >
                                     <Image
-                                      src={`https://lh3.googleusercontent.com/d/${memberIconInfo.icon.slice(
-                                        33
-                                      )}`}
+                                      src={`https://lh3.googleusercontent.com/d/${memberIconInfo.icon.slice(33)}`}
                                       alt={`${matchedUser.username}のアイコン`}
                                       width={50}
                                       height={50}
@@ -488,7 +486,7 @@ function getMemberIcons(memberIds, publicData2) {
   return matchingIcon;
 }
 
-// 関連動画を得する関数
+// 関連動画を取得する関数
 function getRelatedWorks(work, publicData, currentIndex) {
   // ヘモ化されたヘルパー関数
   const uniqueWorks = (works) => (
