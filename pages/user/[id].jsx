@@ -283,6 +283,9 @@ const UserProfile = React.memo(({ user }) => (
   </div>
 ));
 
+// displayNameを設定
+UserProfile.displayName = 'UserProfile';
+
 export default function UserWorksPage({ user, works, collaborationWorks }) {
   // メタデータをメモ化
   const pageTitle = useMemo(() => 

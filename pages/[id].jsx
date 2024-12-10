@@ -152,7 +152,7 @@ export default function WorkId({
 
   // メンバー情報の処理を最適化
   const memberInfo = useMemo(() => {
-    if (!workDetails.showMember) return [];
+    if (!work?.member || !workDetails.showMember) return [];
     return work.member.split(/[,、，]/).map((username, index) => {
       const memberId = work.memberid.split(/[,、，]/)[index]?.trim();
       const memberIconInfo = matchingIcon.find(
@@ -163,7 +163,7 @@ export default function WorkId({
       );
       return { username, memberId, memberIconInfo, matchedUser };
     });
-  }, [work.member, work.memberid, matchingIcon, externalData]);
+  }, [work?.member, work?.memberid, matchingIcon, externalData, workDetails.showMember]);
   return (
     <div>
       <Head>
