@@ -123,3 +123,9 @@
   @media (min-aspect-ratio: 16 / 9) {
   }
 }
+.socialIcon {
+  width: 1em;
+  height: 1em;
+  font-size: inherit;
+  vertical-align: middle;
+}

@@ -1,5 +1,6 @@
 // pages/user/[id].jsx
 
+import React, { useMemo } from 'react';
 import { useRouter } from "next/router";
 import Image from "next/image";
 import Head from "next/head";
@@ -8,8 +9,7 @@ import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import styles from "../../styles/users.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faXTwitter, faYoutube } from "@fortawesome/free-brands-svg-icons";
-import { faLock, faLink } from "@fortawesome/free-solid-svg-icons";
+import { faXTwitter, faYoutube, faLock, faLink } from "@fortawesome/free-brands-svg-icons";
 
 const fetchUserData = async (username) => {
   const res = await fetch("https://pvsf-cash.vercel.app/api/users", {
@@ -142,208 +142,177 @@ const fetchCollaborationWorksData = (worksData, id) => {
     return false; // memberid が存在しない場合は false
   });
 };
+
+// メモ化されたコンポーネント
+const WorkCard = React.memo(({ work }) => {
+  const showIcon = work.icon !== undefined && work.icon !== "";
+  const isPrivate = work.status === "private" || work.status === "unknown";
+  const isUnlisted = work.status === "unlisted";
+
+  return (
+    <div
+      className={`works ${isPrivate ? "private" : ""} ${
+        isUnlisted ? "unlisted" : ""
+      }`}
+      key={work.ylink}
+    >
+      <Link href={`../${work.ylink.slice(17, 28)}`}>
+        <Image
+          src={work.largeThumbnail}
+          alt={`${work.title} - ${work.creator} | PVSF archive`}
+          className="samune"
+          width={640}
+          height={360}
+          loading="lazy"
+          placeholder="blur"
+          blurDataURL={work.smallThumbnail || work.largeThumbnail}
+        />
+      </Link>
+      <h3>{work.title}</h3>
+      <div className="subtitle">
+        <div className="insubtitle">
+          <Image
+            src={showIcon && work.icon ? 
+              `https://lh3.googleusercontent.com/d/${work.icon.slice(33)}` :
+              "https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
+            }
+            className="icon"
+            alt={`${work.creator}のアイコン`}
+            width={50}
+            height={50}
+            loading="lazy"
+          />
+          <p>{work.creator}</p>
+        </div>
+        <StatusBadge status={work.status} />
+      </div>
+    </div>
+  );
+});
+
+// ステータスバッジをメモ化
+const StatusBadge = React.memo(({ status }) => {
+  if (status === "public") return null;
+  
+  return (
+    <p className="status">
+      {status === "unlisted" ? (
+        <span className="inunlisted">
+          <span className="icon">
+            <FontAwesomeIcon icon={faLink} />
+          </span>
+          限定公開
+        </span>
+      ) : (
+        <span className="inprivate">
+          <span className="sicon">
+            <FontAwesomeIcon icon={faLock} />
+          </span>
+          非公開
+        </span>
+      )}
+    </p>
+  );
+});
+
+// ユーザープロフィールコンポーネント
+const UserProfile = React.memo(({ user }) => (
+  <div className={styles.first}>
+    {user.icon && (
+      <Image
+        src={`https://lh3.googleusercontent.com/d/${user.icon.slice(33)}`}
+        className={styles.uicon}
+        alt={`${user.creator}のアイコン`}
+        width={150}
+        height={150}
+        priority
+      />
+    )}
+    <div className={styles.textblock}>
+      {user.creator && <h2>{user.creator}</h2>}
+      <div className={styles.socialLinks}>
+        {user.ychlink && (
+          <a
+            className={styles.username}
+            href={user.ychlink}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <FontAwesomeIcon icon={faYoutube} className={styles.socialIcon} />
+          </a>
+        )}
+        {user.tlink && (
+          <a
+            className={styles.username}
+            href={`https://twitter.com/${user.tlink}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <FontAwesomeIcon icon={faXTwitter} className={styles.socialIcon} />
+            @{user.tlink}
+          </a>
+        )}
+      </div>
+    </div>
+    {user.largeThumbnail && (
+      <Image
+        src={user.largeThumbnail}
+        alt={`${user.creator}の作品`}
+        className={styles.uback}
+        width={1280}
+        height={720}
+        priority
+      />
+    )}
+  </div>
+));
+
 export default function UserWorksPage({ user, works, collaborationWorks }) {
+  // メタデータをメモ化
+  const pageTitle = useMemo(() => 
+    user ? `${user.username}の作品 - PVSF Archive` : "作品一覧",
+    [user?.username]
+  );
+
+  const pageDescription = useMemo(() =>
+    user ? `${user.username}の作品一覧です。` : "作品一覧です。",
+    [user?.username]
+  );
+
+  // 作品リストをメモ化
+  const worksList = useMemo(() => (
+    Array.isArray(works) && works.length > 0 ? (
+      works.map(work => <WorkCard key={work.ylink} work={work} />)
+    ) : (
+      <p>このユーザーは作品を持っていません。</p>
+    )
+  ), [works]);
+
+  // 合作リストをメモ化
+  const collaborationList = useMemo(() => (
+    collaborationWorks.length > 0 ? (
+      collaborationWorks.map(work => <WorkCard key={work.ylink} work={work} />)
+    ) : (
+      <p>このユーザーは参加した合作作品を持って���ません。</p>
+    )
+  ), [collaborationWorks]);
+
   return (
     <div>
       <Head>
-        <title>
-          {user ? `${user.username}の作品 - PVSF Archive` : "作品一覧"}
-        </title>
-        <meta
-          name="description"
-          content={user ? `${user.username}の作品一覧です。` : "作品一覧です。"}
-        />
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDescription} />
       </Head>
+      
       <div className={styles.content}>
-        <div className={styles.first}>
-          {user.icon && (
-            <Image
-              src={`https://lh3.googleusercontent.com/d/${user.icon.slice(33)}`} // アイコンの URL
-              className={styles.uicon}
-              alt={`${user.creator}のアイコン`}
-              width={150}
-              height={150}
-            />
-          )}
-          <div className={styles.textblock}>
-            {user.creator && <h2>{user.creator}</h2>}
-            {user.ychlink && (
-              <a
-                className={styles.username}
-                href={`${user.ychlink}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <FontAwesomeIcon icon={faYoutube} />
-              </a>
-            )}
-            {user.tlink && (
-              <a
-                className={styles.username}
-                href={`https://twitter.com/${user.tlink}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <FontAwesomeIcon icon={faXTwitter} />@{user.tlink}
-              </a>
-            )}
-          </div>
-          {user.largeThumbnail && (
-            <Image
-              src={user.largeThumbnail}
-              alt={`${user.creator}の作品`}
-              className={styles.uback}
-              width={1280}
-              height={720}
-            />
-          )}
-        </div>
-
+        <UserProfile user={user} />
         <div className={styles.uwork}>
           <div className="work">
-            {Array.isArray(works) && works.length > 0 ? (
-              works.map((work) => {
-                const showIcon = work.icon !== undefined && work.icon !== "";
-                const isPrivate =
-                  work.status === "private" || work.status === "unknown";
-                const isUnlisted = work.status === "unlisted"; // 限定公開かどうかを判定
-
-                return (
-                  <div
-                    className={`works ${isPrivate ? "private" : ""} ${
-                      work.status === "unlisted" ? "unlisted" : ""
-                    }`}
-                    key={work.ylink}
-                  >
-                    <Link href={`../${work.ylink.slice(17, 28)}`}>
-                      <Image
-                        src={work.largeThumbnail}
-                        alt={`${work.title} - ${work.creator} | PVSF archive`}
-                        className="samune"
-                        width={640}
-                        height={360}
-                      />
-                    </Link>
-                    <h3>{work.title}</h3>
-                    <div className="subtitle">
-                      <div className="insubtitle">
-                        {showIcon && work.icon ? (
-                          <Image
-                            src={`https://lh3.googleusercontent.com/d/${work.icon.slice(
-                              33
-                            )}`}
-                            className="icon"
-                            alt={`${work.creator}のアイコン`}
-                            width={50}
-                            height={50}
-                          />
-                        ) : (
-                          <Image
-                            src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
-                            alt={`アイコン`}
-                            className="icon"
-                            width={50}
-                            height={50}
-                          />
-                        )}
-                        <p>{work.creator}</p>
-                      </div>
-
-                      <p className="status">
-                        {work.status === "public" ? null : work.status === // 公開状態のときは何も表示しない
-                          "unlisted" ? (
-                          <span className="inunlisted">
-                            <span className="icon">
-                              <FontAwesomeIcon icon={faLink} />
-                            </span>
-                            限定公開
-                          </span>
-                        ) : (
-                          <span className="inprivate">
-                            <span className="sicon">
-                              <FontAwesomeIcon icon={faLock} />
-                            </span>
-                            非公開
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <p>このユーザーは作品を持っていません。</p>
-            )}
+            {worksList}
           </div>
-
           <div className="work">
             <h2>参加した合作</h2>
-            {collaborationWorks.length > 0 ? (
-              collaborationWorks.map((work) => (
-                <div
-                  className={`works ${
-                    work.status === "private" ? "private" : ""
-                  } ${work.status === "unlisted" ? "unlisted" : ""}`}
-                  key={work.ylink}
-                >
-                  <Link href={`../${work.ylink.slice(17, 28)}`}>
-                    <Image
-                      src={work.largeThumbnail}
-                      alt={`${work.title} - ${work.creator} | PVSF archive`}
-                      className="samune"
-                      width={640}
-                      height={360}
-                    />
-                  </Link>
-                  <h3>{work.title}</h3>
-                  <div className="subtitle">
-                    <div className="insubtitle">
-                      {work.icon ? (
-                        <Image
-                          src={`https://lh3.googleusercontent.com/d/${work.icon.slice(
-                            33
-                          )}`}
-                          className="icon"
-                          alt={`${work.creator}のアイコン`}
-                          width={50}
-                          height={50}
-                        />
-                      ) : (
-                        <Image
-                          src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
-                          alt={`アイコン`}
-                          className="icon"
-                          width={50}
-                          height={50}
-                        />
-                      )}
-                      <p>{work.creator}</p>
-                    </div>
-
-                    <p className="status">
-                      {work.status === "public" ? null : work.status === // 公開状態のときは何も表示しない
-                        "unlisted" ? (
-                        <span className="inunlisted">
-                          <span className="icon">
-                            <FontAwesomeIcon icon={faLink} />
-                          </span>
-                          限定公開
-                        </span>
-                      ) : (
-                        <span className="inprivate">
-                          <span className="sicon">
-                            <FontAwesomeIcon icon={faLock} />
-                          </span>
-                          非公開
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p>このユーザーは参加した合作作品を持っていません。</p>
-            )}
+            {collaborationList}
           </div>
         </div>
       </div>
