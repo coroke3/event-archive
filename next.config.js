@@ -19,6 +19,11 @@ const nextConfig = {
         pathname: '/**',
       },
       {
+        protocol: 'http',
+        hostname: 'img.youtube.com',
+        pathname: '/**',
+      },
+      {
         protocol: 'https',
         hostname: 'img.youtube.com',
         pathname: '/**',
