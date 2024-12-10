@@ -117,7 +117,7 @@ export default function WorkId({
 
   // メタデータをuseMemoで最適化
   const metaData = useMemo(() => ({
-    title: `${work.title} - ${work.creator} - オンライ���映像イベント / PVSF archive`,
+    title: `${work.title} - ${work.creator} - オンライン映像イベント / PVSF archive`,
     description: `PVSFへの出展作品です。  ${work.title} - ${work.creator}`,
     ogDescription: `PVSF 出展作品  ${work.title} - ${work.creator}  music:${work.music} - ${work.credit}`,
   }), [work]);
@@ -670,48 +670,34 @@ export async function getStaticPaths() {
     if (!res.ok) {
       throw new Error("Failed to fetch data");
     }
-
     const data = await res.json();
-    if (!Array.isArray(data)) {
-      throw new Error("Invalid data format");
+
+    const uniquePaths = new Set(); // 重複を防ぐためのセット
+    const paths = data
+      .map((work) => {
+        const path = work.ylink.slice(17, 28);
+        if (!uniquePaths.has(path)) {
+          uniquePaths.add(path);
+          return { params: { id: path } };
+        }
+        return null;
+      })
+      .filter(Boolean); // nullを除去
+
+    // 重複パスがあった場合の警告
+    if (paths.length !== uniquePaths.size) {
+      console.warn("重複するパスが検出され、スキップされました。");
     }
 
-    // 有効なパスを全て収集（重複を含む）
-    const allPaths = data
-      .filter(work => work?.ylink && typeof work.ylink === 'string')
-      .map(work => {
-        try {
-          const id = work.ylink.slice(17, 28);
-          return id ? { params: { id } } : null;
-        } catch (e) {
-          console.warn(`Invalid ylink format for work:`, work);
-          return null;
-        }
-      })
-      .filter(Boolean);
-
-    // 重複パスの処理（最初に見つかったパスを保持）
-    const seenPaths = new Set();
-    const uniquePaths = allPaths.filter(path => {
-      if (seenPaths.has(path.params.id)) {
-        console.warn(`Duplicate path found: ${path.params.id}`);
-        return false;
-      }
-      seenPaths.add(path.params.id);
-      return true;
-    });
-
-    console.log(`Total paths: ${allPaths.length}, Unique paths: ${uniquePaths.length}`);
-
     return {
-      paths: uniquePaths,
-      fallback: false, // 動的生成を無効化
+      paths,
+      fallback: false,
     };
   } catch (error) {
-    console.error(`Error in getStaticPaths: ${error.message}`);
+    console.error(error);
     return {
       paths: [],
-      fallback: false, // 動的生成を無効化
+      fallback: false,
     };
   }
 }

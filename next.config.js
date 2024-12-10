@@ -2,15 +2,39 @@
 const nextConfig = {
   output: "standalone",
   images: {
-    domains: [
-      "i.gyazo.com",
-      "lh3.googleusercontent.com",
-      "i.ytimg.com",
-      "img.youtube.com",
-      "i.gyazo.com",
-      "drive.google.com",
-      "pbs.twimg.com",
-    ],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+        pathname: '/d/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.gyazo.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.ytimg.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.youtube.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'drive.google.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'pbs.twimg.com',
+        pathname: '/**',
+      }
+    ]
+    
   },
   webpack: (config, { isServer }) => {
     if (isServer) {
