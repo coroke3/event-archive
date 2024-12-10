@@ -11,87 +11,93 @@ import {
 import styles from "../styles/work.module.css";
 
 // メモ化されたコンポーネント
-const WorkCard = React.memo(({ work }) => (
-  <div className={styles.ss1} key={work.ylink.slice(17, 28)}>
-    <div className={styles.ss12}>
-      <Link href={`/${work.ylink.slice(17, 28)}`}>
-        <img
-          src={work.smallThumbnail}
-          width="100%"
-          alt={`${work.title} - ${work.creator} | PVSF archive`}
-          loading="lazy"
-        />
-      </Link>
+const WorkCard = React.memo(function WorkCard({ work }) {
+  return (
+    <div className={styles.ss1} key={work.ylink.slice(17, 28)}>
+      <div className={styles.ss12}>
+        <Link href={`/${work.ylink.slice(17, 28)}`}>
+          <img
+            src={work.smallThumbnail}
+            width="100%"
+            alt={`${work.title} - ${work.creator} | PVSF archive`}
+            loading="lazy"
+          />
+        </Link>
+      </div>
+      <div className={styles.ss13}>
+        <p className={styles.scc}>{work.title}</p>
+        <p className={styles.sc}>{work.creator}</p>
+      </div>
     </div>
-    <div className={styles.ss13}>
-      <p className={styles.scc}>{work.title}</p>
-      <p className={styles.sc}>{work.creator}</p>
-    </div>
-  </div>
-));
+  );
+});
 
 // メモ化されたユーザーアイコンコンポーネント
-const UserIcon = React.memo(({ work }) => (
-  <Link href={`../user/${work.tlink?.toLowerCase() || ""}`}>
-    <Image
-      src={work.icon ? 
-        `https://lh3.googleusercontent.com/d/${work.icon.slice(33)}` :
-        "https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
-      }
-      className={styles.icon}
-      alt={`${work.creator || ""}のアイコン`}
-      width={50}
-      height={50}
-    />
-  </Link>
-));
+const UserIcon = React.memo(function UserIcon({ work }) {
+  return (
+    <Link href={`../user/${work.tlink?.toLowerCase() || ""}`}>
+      <Image
+        src={work.icon ? 
+          `https://lh3.googleusercontent.com/d/${work.icon.slice(33)}` :
+          "https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
+        }
+        className={styles.icon}
+        alt={`${work.creator || ""}のアイコン`}
+        width={50}
+        height={50}
+      />
+    </Link>
+  );
+});
 
 // メモ化されたメンバーテーブル行コンポーネント
-const MemberTableRow = React.memo(({ username, memberId, memberIconInfo, matchedUser }) => (
-  <tr>
-    <td>{index + 1}</td>
-    <td>{username.trim()}</td>
-    <td className={styles.userlink}>
-      {matchedUser ? (
-        <>
-          {memberIconInfo?.icon ? (
-            <Link href={`/user/${matchedUser.username}`} className={styles.userLink}>
-              <Image
-                src={`https://lh3.googleusercontent.com/d/${memberIconInfo.icon.slice(33)}`}
-                alt={`${matchedUser.username}のアイコン`}
-                width={50}
-                height={50}
-                className={styles.icon}
-              />
-            </Link>
-          ) : (
-            <Link href={`/user/${matchedUser.username}`} className={styles.userLink}>
-              <FontAwesomeIcon icon={faUser} />
-            </Link>
-          )}
-          <div className={styles.userlis}>
-            <Link href={`/user/${matchedUser.username}`} className={styles.userLink}>
-              /{matchedUser.username}
-            </Link>
-          </div>
-        </>
-      ) : memberId ? (
-        <div className={styles.userlis}>@{memberId}</div>
-      ) : (
-        "-"
-      )}
-    </td>
-    <td>
-      {memberId ? (
-        <a href={`https://twitter.com/${memberId}`} target="_blank" rel="noopener noreferrer">
-          <FontAwesomeIcon icon={faXTwitter} className={styles.twitterIcon} />
-        </a>
-      ) : (
-        "-"
-      )}
-    </td>
-  </tr>
-));
+const MemberTableRow = React.memo(function MemberTableRow({ username, memberId, memberIconInfo, matchedUser, index }) {
+  return (
+    <tr>
+      <td>{index + 1}</td>
+      <td>{username.trim()}</td>
+      <td className={styles.userlink}>
+        {matchedUser ? (
+          <>
+            {memberIconInfo?.icon ? (
+              <Link href={`/user/${matchedUser.username}`} className={styles.userLink}>
+                <Image
+                  src={`https://lh3.googleusercontent.com/d/${memberIconInfo.icon.slice(33)}`}
+                  alt={`${matchedUser.username}のアイコン`}
+                  width={50}
+                  height={50}
+                  className={styles.icon}
+                />
+              </Link>
+            ) : (
+              <Link href={`/user/${matchedUser.username}`} className={styles.userLink}>
+                <FontAwesomeIcon icon={faUser} />
+              </Link>
+            )}
+            <div className={styles.userlis}>
+              <Link href={`/user/${matchedUser.username}`} className={styles.userLink}>
+                /{matchedUser.username}
+              </Link>
+            </div>
+          </>
+        ) : memberId ? (
+          <div className={styles.userlis}>@{memberId}</div>
+        ) : (
+          "-"
+        )}
+      </td>
+      <td>
+        {memberId ? (
+          <a href={`https://twitter.com/${memberId}`} target="_blank" rel="noopener noreferrer">
+            <FontAwesomeIcon icon={faXTwitter} className={styles.twitterIcon} />
+          </a>
+        ) : (
+          "-"
+        )}
+      </td>
+    </tr>
+  );
+});
 
 export default function WorkId({
   work,
