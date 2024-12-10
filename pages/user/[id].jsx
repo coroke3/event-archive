@@ -9,7 +9,7 @@ import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import styles from "../../styles/users.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faXTwitter, faYoutube, faLock, faLink } from "@fortawesome/free-brands-svg-icons";
+import { faXTwitter, faYoutube, faLock, faLink, faUser } from "@fortawesome/free-brands-svg-icons";
 
 const fetchUserData = async (username) => {
   const res = await fetch("https://pvsf-cash.vercel.app/api/users", {
@@ -143,75 +143,92 @@ const fetchCollaborationWorksData = (worksData, id) => {
   });
 };
 
-// メモ化されたコンポーネント
-const WorkCard = React.memo(({ work }) => {
-  const showIcon = work.icon !== undefined && work.icon !== "";
-  const isPrivate = work.status === "private" || work.status === "unknown";
-  const isUnlisted = work.status === "unlisted";
-
+// メモ化されたWorkCardコンポーネント
+const WorkCard = React.memo(function WorkCard({ work }) {
   return (
-    <div
-      className={`works ${isPrivate ? "private" : ""} ${
-        isUnlisted ? "unlisted" : ""
-      }`}
-      key={work.ylink}
-    >
-      <Link href={`../${work.ylink.slice(17, 28)}`}>
-        <Image
-          src={work.largeThumbnail}
-          alt={`${work.title} - ${work.creator} | PVSF archive`}
-          className="samune"
-          width={640}
-          height={360}
-          loading="lazy"
-          placeholder="blur"
-          blurDataURL={work.smallThumbnail || work.largeThumbnail}
-        />
-      </Link>
-      <h3>{work.title}</h3>
-      <div className="subtitle">
-        <div className="insubtitle">
-          <Image
-            src={showIcon && work.icon ? 
-              `https://lh3.googleusercontent.com/d/${work.icon.slice(33)}` :
-              "https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
-            }
-            className="icon"
-            alt={`${work.creator}のアイコン`}
-            width={50}
-            height={50}
+    <div className={styles.ss1} key={work.ylink.slice(17, 28)}>
+      <div className={styles.ss12}>
+        <Link href={`/${work.ylink.slice(17, 28)}`}>
+          <img
+            src={work.smallThumbnail}
+            width="100%"
+            alt={`${work.title} - ${work.creator} | PVSF archive`}
             loading="lazy"
           />
-          <p>{work.creator}</p>
-        </div>
-        <StatusBadge status={work.status} />
+        </Link>
+      </div>
+      <div className={styles.ss13}>
+        <p className={styles.scc}>{work.title}</p>
+        <p className={styles.sc}>{work.creator}</p>
       </div>
     </div>
   );
 });
 
-// ステータスバッジをメモ化
-const StatusBadge = React.memo(({ status }) => {
-  if (status === "public") return null;
-  
+// メモ化されたUserIconコンポーネント
+const UserIcon = React.memo(function UserIcon({ work }) {
   return (
-    <p className="status">
-      {status === "unlisted" ? (
-        <span className="inunlisted">
-          <span className="icon">
-            <FontAwesomeIcon icon={faLink} />
-          </span>
-          限定公開
-        </span>
-      ) : (
-        <span className="inprivate">
-          <span className="sicon">
-            <FontAwesomeIcon icon={faLock} />
-          </span>
-          非公開
-        </span>
-      )}
-    </p>
+    <Link href={`../user/${work.tlink?.toLowerCase() || ""}`}>
+      <Image
+        src={work.icon ? 
+          `https://lh3.googleusercontent.com/d/${work.icon.slice(33)}` :
+          "https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
+        }
+        className={styles.icon}
+        alt={`${work.creator || ""}のアイコン`}
+        width={50}
+        height={50}
+      />
+    </Link>
+  );
+});
+
+// メモ化されたMemberTableRowコンポーネント
+const MemberTableRow = React.memo(function MemberTableRow({ username, memberId, memberIconInfo, matchedUser, index }) {
+  return (
+    <tr>
+      <td>{index + 1}</td>
+      <td>{username.trim()}</td>
+      <td className={styles.userlink}>
+        {matchedUser ? (
+          <>
+            {memberIconInfo?.icon ? (
+              <Link href={`/user/${matchedUser.username}`} className={styles.userLink}>
+                <Image
+                  src={`https://lh3.googleusercontent.com/d/${memberIconInfo.icon.slice(33)}`}
+                  alt={`${matchedUser.username}のアイコン`}
+                  width={50}
+                  height={50}
+                  className={styles.icon}
+                />
+              </Link>
+            ) : (
+              <Link href={`/user/${matchedUser.username}`} className={styles.userLink}>
+                <FontAwesomeIcon icon={faUser} />
+              </Link>
+            )}
+            <div className={styles.userlis}>
+              <Link href={`/user/${matchedUser.username}`} className={styles.userLink}>
+                /{matchedUser.username}
+              </Link>
+            </div>
+          </>
+        ) : memberId ? (
+          <div className={styles.userlis}>@{memberId}</div>
+        ) : (
+          "-"
+        )}
+      </td>
+      <td>
+        {memberId ? (
+          <a href={`https://twitter.com/${memberId}`} target="_blank" rel="noopener noreferrer">
+            <FontAwesomeIcon icon={faXTwitter} className={styles.twitterIcon} />
+          </a>
+        ) : (
+          "-"
+        )}
+      </td>
+    </tr>
   );
 });
 
@@ -293,7 +310,7 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
     collaborationWorks.length > 0 ? (
       collaborationWorks.map(work => <WorkCard key={work.ylink} work={work} />)
     ) : (
-      <p>このユーザーは参加した合作作品を持って���ません。</p>
+      <p>このユーザーは参加した合作作品を持っていません。</p>
     )
   ), [collaborationWorks]);
 
