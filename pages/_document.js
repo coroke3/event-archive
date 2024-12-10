@@ -1,4 +1,5 @@
 import NextDocument, { Html, Head, Main, NextScript } from 'next/document';
+import Script from 'next/script';
 
 export default class Document extends NextDocument {
   render() {
@@ -15,8 +16,24 @@ export default class Document extends NextDocument {
           <meta name="msapplication-config" content="/favicons/browserconfig.xml" />
           <meta name="theme-color" content="#ffffff" />
           <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "3845b92434ec4243880bac1fcd4e6bdf"}'></script>
-          <script async src="https://www.googletagmanager.com/gtag/js?id=G-SY2KZEZJBK"></script>
-
+          <Script
+            strategy="afterInteractive"
+            src={`https://www.googletagmanager.com/gtag/js?id=YOUR_TRACKING_ID`}
+          />
+          <Script
+            id="google-analytics"
+            strategy="afterInteractive"
+            dangerouslySetInnerHTML={{
+              __html: `
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', 'YOUR_TRACKING_ID', {
+                  page_path: window.location.pathname,
+                });
+              `,
+            }}
+          />
         </Head>
         <body>
            
