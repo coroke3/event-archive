@@ -1,5 +1,4 @@
-// pages/[id].jsx
-import React, { useMemo } from "react"; // Added React import
+import React, { useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Head from "next/head";
@@ -11,6 +10,89 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 import styles from "../styles/work.module.css";
 
+// メモ化されたコンポーネント
+const WorkCard = React.memo(({ work }) => (
+  <div className={styles.ss1} key={work.ylink.slice(17, 28)}>
+    <div className={styles.ss12}>
+      <Link href={`/${work.ylink.slice(17, 28)}`}>
+        <img
+          src={work.smallThumbnail}
+          width="100%"
+          alt={`${work.title} - ${work.creator} | PVSF archive`}
+          loading="lazy"
+        />
+      </Link>
+    </div>
+    <div className={styles.ss13}>
+      <p className={styles.scc}>{work.title}</p>
+      <p className={styles.sc}>{work.creator}</p>
+    </div>
+  </div>
+));
+
+// メモ化されたユーザーアイコンコンポーネント
+const UserIcon = React.memo(({ work }) => (
+  <Link href={`../user/${work.tlink?.toLowerCase() || ""}`}>
+    <Image
+      src={work.icon ? 
+        `https://lh3.googleusercontent.com/d/${work.icon.slice(33)}` :
+        "https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
+      }
+      className={styles.icon}
+      alt={`${work.creator || ""}のアイコン`}
+      width={50}
+      height={50}
+    />
+  </Link>
+));
+
+// メモ化されたメンバーテーブル行コンポーネント
+const MemberTableRow = React.memo(({ username, memberId, memberIconInfo, matchedUser }) => (
+  <tr>
+    <td>{index + 1}</td>
+    <td>{username.trim()}</td>
+    <td className={styles.userlink}>
+      {matchedUser ? (
+        <>
+          {memberIconInfo?.icon ? (
+            <Link href={`/user/${matchedUser.username}`} className={styles.userLink}>
+              <Image
+                src={`https://lh3.googleusercontent.com/d/${memberIconInfo.icon.slice(33)}`}
+                alt={`${matchedUser.username}のアイコン`}
+                width={50}
+                height={50}
+                className={styles.icon}
+              />
+            </Link>
+          ) : (
+            <Link href={`/user/${matchedUser.username}`} className={styles.userLink}>
+              <FontAwesomeIcon icon={faUser} />
+            </Link>
+          )}
+          <div className={styles.userlis}>
+            <Link href={`/user/${matchedUser.username}`} className={styles.userLink}>
+              /{matchedUser.username}
+            </Link>
+          </div>
+        </>
+      ) : memberId ? (
+        <div className={styles.userlis}>@{memberId}</div>
+      ) : (
+        "-"
+      )}
+    </td>
+    <td>
+      {memberId ? (
+        <a href={`https://twitter.com/${memberId}`} target="_blank" rel="noopener noreferrer">
+          <FontAwesomeIcon icon={faXTwitter} className={styles.twitterIcon} />
+        </a>
+      ) : (
+        "-"
+      )}
+    </td>
+  </tr>
+));
+
 export default function WorkId({
   work,
   previousWorks,
@@ -20,29 +102,28 @@ export default function WorkId({
   externalData,
   matchingIcon,
 }) {
-  // Memoize conditional checks to improve readability and potential performance
-  const workDetails = {
-    showComment: work.comment && work.comment.trim() !== "",
-    showIcon: work.icon && work.icon.trim() !== "",
-    showCreator: work.creator && work.creator.trim() !== "",
-    showTwitter: work.tlink && work.tlink.trim() !== "",
-    showYoutube: work.ylink && work.ylink.trim() !== "",
-    showMember:
-      work.member &&
-      work.memberid &&
-      work.member.trim() !== "" &&
-      work.memberid.trim() !== "",
-    showMusic:
-      work.music &&
-      work.credit &&
-      work.music.trim() !== "" &&
-      work.credit.trim() !== "",
-    showMusicLink: work.ymulink && work.ymulink.trim() !== "",
-    showTime: work.time && work.time.trim() !== "",
-  };
+  // workDetailsをuseMemoで最適化
+  const workDetails = useMemo(() => ({
+    showComment: work.comment?.trim() !== "",
+    showIcon: work.icon?.trim() !== "",
+    showCreator: work.creator?.trim() !== "",
+    showTwitter: work.tlink?.trim() !== "",
+    showYoutube: work.ylink?.trim() !== "",
+    showMember: work.member?.trim() !== "" && work.memberid?.trim() !== "",
+    showMusic: work.music?.trim() !== "" && work.credit?.trim() !== "",
+    showMusicLink: work.ymulink?.trim() !== "",
+    showTime: work.time?.trim() !== "",
+  }), [work]);
 
-  // Optimize date formatting with memoization
-  const formattedDate = React.useMemo(() => {
+  // メタデータをuseMemoで最適化
+  const metaData = useMemo(() => ({
+    title: `${work.title} - ${work.creator} - オンライン映像イベント / PVSF archive`,
+    description: `PVSFへの出展作品です。  ${work.title} - ${work.creator}`,
+    ogDescription: `PVSF 出展作品  ${work.title} - ${work.creator}  music:${work.music} - ${work.credit}`,
+  }), [work]);
+
+  // 日付フォーマット
+  const formattedDate = useMemo(() => {
     if (!work.time) return "";
     const originalDate = new Date(work.time);
     const modifiedDate = new Date(originalDate.getTime() - 9 * 60 * 60 * 1000);
@@ -57,18 +138,26 @@ export default function WorkId({
     }).format(modifiedDate);
   }, [work.time]);
 
-  // Memoize YouTube embed URL extraction
-  const youtubeEmbedUrl = React.useMemo(
-    () =>
-      work.ylink
-        ? `https://www.youtube.com/embed/${work.ylink.slice(
-            17,
-            28
-          )}?vq=hd1080&autoplay=1`
-        : null,
+  // YouTube URL
+  const youtubeEmbedUrl = useMemo(() => 
+    work.ylink ? `https://www.youtube.com/embed/${work.ylink.slice(17, 28)}?vq=hd1080&autoplay=1` : null,
     [work.ylink]
   );
 
+  // メンバー情報の処理を最適化
+  const memberInfo = useMemo(() => {
+    if (!workDetails.showMember) return [];
+    return work.member.split(/[,、，]/).map((username, index) => {
+      const memberId = work.memberid.split(/[,、，]/)[index]?.trim();
+      const memberIconInfo = matchingIcon.find(
+        item => item.memberId.toLowerCase() === memberId?.toLowerCase()
+      );
+      const matchedUser = externalData.find(
+        user => user.username.toLowerCase() === memberId?.toLowerCase()
+      );
+      return { username, memberId, memberIconInfo, matchedUser };
+    });
+  }, [work.member, work.memberid, matchingIcon, externalData]);
   return (
     <div>
       <Head>
@@ -387,141 +476,126 @@ function getMemberIcons(memberIds, publicData2) {
 
 // 関連動画を取得する関数
 function getRelatedWorks(work, publicData, currentIndex) {
-  // ヘルパー関数
-  const uniqueWorks = (works) => {
-    return Array.from(new Set(works.map(w => w.ylink)))
-      .map(ylink => works.find(w => w.ylink === ylink));
-  };
-
-  const getRandomWorks = (works, count) => {
-    const shuffled = [...works].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, count);
-  };
-
-  // ①.tlinkが一致する前後作品
-  const matchingTlinkWorks = publicData.filter(
-    w => w.tlink === work.tlink && w.ylink !== work.ylink
+  // ヘモ化されたヘルパー関数
+  const uniqueWorks = (works) => (
+    Array.from(new Set(works.map(w => w.ylink)))
+      .map(ylink => works.find(w => w.ylink === ylink))
   );
-  const currentTlinkIndex = publicData.findIndex(w => w.ylink === work.ylink);
-  const tlinkWorks = [];
-  
-  if (currentTlinkIndex !== -1) {
-    const previousTlinkWork = publicData.slice(0, currentTlinkIndex).reverse().find(
-      w => w.tlink === work.tlink
-    );
-    if (previousTlinkWork) tlinkWorks.push(previousTlinkWork);
-    
-    const nextTlinkWork = publicData.slice(currentTlinkIndex + 1).find(
-      w => w.tlink === work.tlink
-    );
-    if (nextTlinkWork) tlinkWorks.push(nextTlinkWork);
-  }
 
-  // ②.tlinkと.memberidから取得できるidが一致する時系列が近い作品
+  const getRandomWorks = (works, count) => (
+    works.length <= count ? works : 
+    works.sort(() => 0.5 - Math.random()).slice(0, count)
+  );
+
+  // 共通のフィルター条件
+  const baseFilter = w => w.ylink !== work.ylink;
   const memberIds = work.memberid?.split(',').map(id => id.trim()).filter(Boolean) || [];
-  const tlinkInMemberidWorks = [];
-  
   const workTime = new Date(work.time);
-  const relatedWorks = publicData
-    .filter(w => 
-      w.memberid?.split(',')
-        .map(id => id.trim())
-        .includes(work.tlink) && 
-      w.ylink !== work.ylink
-    )
-    .map(w => ({
-      ...w,
-      timeDiff: Math.abs(new Date(w.time) - workTime)
-    }))
-    .sort((a, b) => a.timeDiff - b.timeDiff)
-    .slice(0, 2);
-
-  tlinkInMemberidWorks.push(...relatedWorks);
-
-  // ③前後6作品ずつ
-  const surroundingWorks = [
-    ...publicData.slice(Math.max(0, currentIndex - 6), currentIndex),
-    ...publicData.slice(currentIndex + 1, currentIndex + 7)
-  ];
-
-  // ④.memberidとtlinkが一致する作品
   const worksPerUser = publicData.length <= 25 ? 2 : 1;
-  const memberTlinkWorks = [];
-  memberIds.forEach(memberId => {
-    const userWorks = publicData.filter(w => 
-      w.tlink === memberId && 
-      w.ylink !== work.ylink
-    );
-    memberTlinkWorks.push(...getRandomWorks(userWorks, worksPerUser));
+
+  // 各カテゴリの作品を一度に取得
+  const categorizedWorks = publicData.reduce((acc, w) => {
+    if (!baseFilter(w)) return acc;
+
+    // ①.tlink一致
+    if (w.tlink === work.tlink) {
+      acc.tlinkWorks.push(w);
+    }
+
+    // ②.memberidにtlink一致
+    if (w.memberid?.split(',').map(id => id.trim()).includes(work.tlink)) {
+      acc.memberidWorks.push({
+        ...w,
+        timeDiff: Math.abs(new Date(w.time) - workTime)
+      });
+    }
+
+    // ④⑤.memberid関連
+    if (memberIds.some(id => w.tlink === id)) {
+      acc.memberTlinkWorks.push(w);
+    } else if (memberIds.some(id => w.memberid?.includes(id)) && w.tlink !== work.tlink) {
+      acc.memberRelatedWorks.push(w);
+    }
+
+    // ⑥⑦.music/credit一致
+    if (typeof w.music === "string" && typeof work.music === "string" && 
+        w.music.toLowerCase() === work.music.toLowerCase()) {
+      acc.musicWorks.push(w);
+    }
+    if (typeof w.credit === "string" && typeof work.credit === "string" && 
+        w.credit.toLowerCase() === work.credit.toLowerCase()) {
+      acc.creditWorks.push(w);
+    }
+
+    // ⑨.deterministicScore
+    if (w.deterministicScore) {
+      acc.scoreWorks.push(w);
+    }
+
+    return acc;
+  }, {
+    tlinkWorks: [],
+    memberidWorks: [],
+    memberTlinkWorks: [],
+    memberRelatedWorks: [],
+    musicWorks: [],
+    creditWorks: [],
+    scoreWorks: []
   });
 
-  // ⑤.memberidで関連する作品
-  const memberRelatedWorks = [];
-  memberIds.forEach(memberId => {
-    const relatedWorks = publicData.filter(w => 
-      w.memberid?.includes(memberId) && 
-      w.ylink !== work.ylink &&
-      w.tlink !== work.tlink &&
-      !memberIds.includes(w.tlink)
-    );
-    memberRelatedWorks.push(...getRandomWorks(relatedWorks, worksPerUser));
-  });
+  // 各カテゴリの作品を処理
+  const processedWorks = {
+    // ①前後の作品
+    tlinkWorks: categorizedWorks.tlinkWorks
+      .sort((a, b) => Math.abs(currentIndex - publicData.indexOf(a)) - 
+                      Math.abs(currentIndex - publicData.indexOf(b)))
+      .slice(0, 2),
 
-  // ⑥.music完全一致作品
-  const matchingMusicWorks = getRandomWorks(
-    publicData.filter(w =>
-      typeof w.music === "string" &&
-      typeof work.music === "string" &&
-      w.music.toLowerCase() === work.music.toLowerCase() &&
-      w.ylink !== work.ylink
-    ),
-    4
-  );
+    // ②時系列の近い作品
+    memberidWorks: categorizedWorks.memberidWorks
+      .sort((a, b) => a.timeDiff - b.timeDiff)
+      .slice(0, 2),
 
-  // ⑦.credit完全一致作品
-  const matchingCreditWorks = getRandomWorks(
-    publicData.filter(w =>
-      typeof w.credit === "string" &&
-      typeof work.credit === "string" &&
-      w.credit.toLowerCase() === work.credit.toLowerCase() &&
-      w.ylink !== work.ylink
-    ),
-    4
-  );
+    // ③前後6作品
+    surroundingWorks: [
+      ...publicData.slice(Math.max(0, currentIndex - 6), currentIndex),
+      ...publicData.slice(currentIndex + 1, currentIndex + 7)
+    ],
 
-  // ⑧完全ランダム2作品
-  const randomWorks = getRandomWorks(
-    publicData.filter(w => w.ylink !== work.ylink),
-    2
-  );
+    // ④⑤memberid関連
+    memberTlinkWorks: getRandomWorks(categorizedWorks.memberTlinkWorks, worksPerUser * memberIds.length),
+    memberRelatedWorks: getRandomWorks(categorizedWorks.memberRelatedWorks, worksPerUser * memberIds.length),
 
-  // ⑨.deterministicScoreの上位50作品から2作品
-  const topScoreWorks = getRandomWorks(
-    publicData
-      .filter(w => w.ylink !== work.ylink && w.deterministicScore)
-      .sort((a, b) => b.deterministicScore - a.deterministicScore)
-      .slice(0, 50),
-    2
-  );
+    // ⑥⑦music/credit一致
+    musicWorks: getRandomWorks(categorizedWorks.musicWorks, 4),
+    creditWorks: getRandomWorks(categorizedWorks.creditWorks, 4),
 
-  // すべての作品を新しい順序で結合して重複���除去
-  const allWorks = [
-    ...tlinkWorks,
-    ...tlinkInMemberidWorks,
-    ...surroundingWorks,
-    ...memberTlinkWorks,
-    ...memberRelatedWorks,
-    ...matchingMusicWorks,
-    ...matchingCreditWorks,
-    ...randomWorks,
-    ...topScoreWorks
-  ];
+    // ⑧ランダム
+    randomWorks: getRandomWorks(publicData.filter(baseFilter), 2),
 
-  const uniqueAllWorks = uniqueWorks(allWorks);
+    // ⑨スコア上位
+    scoreWorks: getRandomWorks(
+      categorizedWorks.scoreWorks
+        .sort((a, b) => b.deterministicScore - a.deterministicScore)
+        .slice(0, 50),
+      2
+    )
+  };
 
-  // 前後の作品に分割（半分ずつ）
+  // 結果の結合と重複除去
+  const uniqueAllWorks = uniqueWorks([
+    ...processedWorks.tlinkWorks,
+    ...processedWorks.memberidWorks,
+    ...processedWorks.surroundingWorks,
+    ...processedWorks.memberTlinkWorks,
+    ...processedWorks.memberRelatedWorks,
+    ...processedWorks.musicWorks,
+    ...processedWorks.creditWorks,
+    ...processedWorks.randomWorks,
+    ...processedWorks.scoreWorks
+  ]);
+
   const midPoint = Math.floor(uniqueAllWorks.length / 2);
-  
   return {
     previousWorks: uniqueAllWorks.slice(0, midPoint),
     nextWorks: uniqueAllWorks.slice(midPoint)
