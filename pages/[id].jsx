@@ -46,7 +46,7 @@ export default function WorkId({
     if (!work.time) return "";
     const originalDate = new Date(work.time);
     const modifiedDate = new Date(originalDate.getTime() - 9 * 60 * 60 * 1000);
-    return modifiedDate.toLocaleString();
+    return modifiedDate.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
   }, [work.time]);
 
   // Memoize YouTube embed URL extraction
@@ -336,256 +336,222 @@ export default function WorkId({
     </div>
   );
 }
+// イベントデータを取得する関数
+async function fetchEventData(eventId) {
+  const eventRes = await fetch(
+    `https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec?eventid=${eventId}`
+  );
 
-export async function getStaticPaths() {
-  try {
-    // 外部データの取得
-    const externalRes = await fetch("https://pvsf-cash.vercel.app/api/users");
-    if (!externalRes.ok) {
-      throw new Error("外部データの取得に失敗しました");
-    }
-    const externalData = await externalRes.json();
-
-    const res = await fetch("https://pvsf-cash.vercel.app/api/videos");
-    if (!res.ok) {
-      throw new Error("Failed to fetch data");
-    }
-    const data = await res.json();
-
-    const uniquePaths = new Set(); // 重複を防ぐためのセットを使用
-    const paths = data
-      .map((work) => {
-        const path = work.ylink.slice(17, 28);
-        if (!uniquePaths.has(path)) {
-          uniquePaths.add(path);
-          return { params: { id: path } };
-        }
-        return null; // 重複する場合はnullを返す
-      })
-      .filter(Boolean); // nullを除去
-
-    // 重複パスがあった場合の処理
-    if (paths.length !== uniquePaths.size) {
-      console.warn("Duplicate paths detected. Some paths were skipped.");
-    }
-
-    return {
-      paths,
-      fallback: false,
-    };
-  } catch (error) {
-    console.error(error);
-    return {
-      paths: [],
-      fallback: false,
-    };
+  if (!eventRes.ok) {
+    throw new Error("イベント情報の取得に失敗しました");
   }
+
+  const eventData = await eventRes.json();
+  const eventInfo = eventData.find((event) => event.eventid === eventId);
+  
+  return {
+    eventname: eventInfo?.eventname || "Unknown Event",
+    icon: eventInfo?.icon || "",
+  };
 }
 
+// メンバーのアイコンを取得する関数
+function getMemberIcons(memberIds, publicData2) {
+  const matchingIcon = [];
+  for (const memberId of memberIds) {
+    const memberWorks = publicData2.filter(
+      (w) => w.tlink.toLowerCase() === memberId.toLowerCase()
+    );
+
+    if (memberWorks.length > 0) {
+      const prioritizedWorks = memberWorks.filter((w) => w.type === "個人");
+      const latestWork =
+        prioritizedWorks.length > 0 ? prioritizedWorks[0] : memberWorks[0];
+
+      matchingIcon.push({
+        memberId,
+        icon: latestWork.icon,
+      });
+    }
+  }
+  return matchingIcon;
+}
+
+// 関連動画を取得する関数
+function getRelatedWorks(work, publicData, currentIndex) {
+  // 前後の表示作品数を調整
+  const additionalCount = 2;
+  const previousWorks = publicData.slice(
+    Math.max(0, currentIndex - 5 - additionalCount),
+    currentIndex
+  );
+  const nextWorks = publicData.slice(
+    currentIndex + 1,
+    currentIndex + 6 + additionalCount
+  );
+
+  // tlink一致作品を取得
+  const matchingTlinkWorks = publicData.filter(
+    (w) => w.tlink === work.tlink && w.ylink !== work.ylink
+  );
+
+  // memberid一致作品を取得
+  const matchingMemberidWorks = publicData.filter(
+    (w) => w.memberid && w.memberid.includes(work.tlink)
+  );
+
+  let selectedWorks = [];
+  if (currentIndex > 0) {
+    const previousTlinkWorks = matchingTlinkWorks.filter(
+      (w) => publicData.indexOf(w) < currentIndex
+    );
+    if (previousTlinkWorks.length > 0) {
+      selectedWorks.push(previousTlinkWorks.slice(-1)[0]);
+    }
+
+    const nextTlinkWorks = matchingTlinkWorks.filter(
+      (w) => publicData.indexOf(w) > currentIndex
+    );
+    if (nextTlinkWorks.length > 0) {
+      selectedWorks.push(nextTlinkWorks[0]);
+    }
+  } else {
+    selectedWorks = matchingTlinkWorks.slice(0, 2);
+  }
+
+  const previousMemberidWorks = matchingMemberidWorks
+    .filter((w) => publicData.indexOf(w) < currentIndex)
+    .slice(-2);
+  const nextMemberidWorks = matchingMemberidWorks
+    .filter((w) => publicData.indexOf(w) > currentIndex)
+    .slice(0, 2);
+
+  const memberIds = work.memberid.split(",").map((id) => id.trim());
+  let additionalUserWorks = [];
+
+  for (const memberId of memberIds) {
+    const userWorks = publicData.filter(
+      (w) =>
+        w.memberid && w.memberid.includes(memberId) && w.ylink !== work.ylink
+    );
+
+    const userMatchingTlinkWorks = userWorks.filter(
+      (w) => w.tlink === work.tlink
+    );
+    const userOtherWorks = userWorks.filter((w) => w.tlink !== work.tlink);
+
+    const userSelectedWorks = [
+      ...userMatchingTlinkWorks.slice(0, 2),
+      ...userOtherWorks.slice(0, 2),
+    ];
+
+    additionalUserWorks = [
+      ...additionalUserWorks,
+      ...userSelectedWorks.filter(
+        (u) =>
+          !additionalUserWorks.some((existing) => existing.ylink === u.ylink)
+      ),
+    ];
+  }
+
+  const allPreviousWorks = [
+    ...selectedWorks,
+    ...previousWorks,
+    ...previousMemberidWorks,
+  ];
+  const allNextWorks = [
+    ...nextWorks,
+    ...nextMemberidWorks,
+    ...additionalUserWorks,
+  ];
+
+  const uniquePreviousWorks = Array.from(
+    new Set(allPreviousWorks.map((w) => w.ylink))
+  ).map((ylink) => allPreviousWorks.find((w) => w.ylink === ylink));
+
+  const uniqueNextWorks = Array.from(
+    new Set(allNextWorks.map((w) => w.ylink))
+  ).map((ylink) => allNextWorks.find((w) => w.ylink === ylink));
+
+  const matchingCreditWorks = publicData
+    .filter(
+      (w) =>
+        w.credit &&
+        w.credit.toLowerCase() === work.credit?.toLowerCase() &&
+        w.ylink !== work.ylink
+    )
+    .slice(0, 4);
+
+  const matchingMusicWorks = publicData
+    .filter(
+      (w) =>
+        w.music &&
+        typeof w.music === "string" &&
+        w.music.toLowerCase() === work.music?.toLowerCase() &&
+        w.ylink !== work.ylink
+    )
+    .slice(0, 4);
+
+  const finalNextWorks = [
+    ...uniqueNextWorks,
+    ...matchingCreditWorks,
+    ...matchingMusicWorks,
+  ];
+
+  const uniqueFinalNextWorks = Array.from(
+    new Set(finalNextWorks.map((w) => w.ylink))
+  ).map((ylink) => finalNextWorks.find((w) => w.ylink === ylink));
+
+  return {
+    previousWorks: uniquePreviousWorks,
+    nextWorks: uniqueFinalNextWorks,
+  };
+}
+
+// getStaticPropsを更新
 export async function getStaticProps({ params }) {
   try {
-    // 外部データの取得
     const externalRes = await fetch("https://pvsf-cash.vercel.app/api/users");
     if (!externalRes.ok) {
       throw new Error("外部データの取得に失敗しました");
     }
     const externalData = await externalRes.json();
 
-    // メインデータの取得
     const res = await fetch("https://pvsf-cash.vercel.app/api/videos");
     if (!res.ok) {
       throw new Error("Failed to fetch data");
     }
     const data = await res.json();
 
-    // ステータスが "private" でない作品だけをフィルタリング
     const publicData = data.filter((w) => w.status !== "private");
-    const publicData2 = data; // アイコン取得用
+    const publicData2 = data;
 
     const work = publicData.find((w) => w.ylink.slice(17, 28) === params.id);
-
     if (!work) {
-      return { notFound: true }; // 該当作品がない場合は404を返す
+      return { notFound: true };
     }
 
     const currentIndex = publicData.findIndex(
       (w) => w.ylink.slice(17, 28) === params.id
     );
 
-    // 前後の表示作品数を調整する
-    const additionalCount = 2;
-    const previousWorks = publicData.slice(
-      Math.max(0, currentIndex - 5 - additionalCount),
+    // 各機能を別関数から取得
+    const { eventname, icon } = await fetchEventData(work.eventid);
+    const memberIds = work.memberid.split(",").map((id) => id.trim());
+    const matchingIcon = getMemberIcons(memberIds, publicData2);
+    const { previousWorks, nextWorks } = getRelatedWorks(
+      work,
+      publicData,
       currentIndex
     );
-    const nextWorks = publicData.slice(
-      currentIndex + 1,
-      currentIndex + 6 + additionalCount
-    );
-
-    // tlinkが一致する作品を取得
-    const matchingTlinkWorks = publicData.filter(
-      (w) => w.tlink === work.tlink && w.ylink !== work.ylink
-    );
-
-    // memberid内にtlinkと一致する文字列がある作品を取得
-    const matchingMemberidWorks = publicData.filter(
-      (w) => w.memberid && w.memberid.includes(work.tlink)
-    );
-
-    let selectedWorks = [];
-
-    // tlink一致作品を選定
-    if (currentIndex > 0) {
-      const previousTlinkWorks = matchingTlinkWorks.filter(
-        (w) => publicData.indexOf(w) < currentIndex
-      );
-      if (previousTlinkWorks.length > 0) {
-        selectedWorks.push(previousTlinkWorks.slice(-1)[0]); // 最も古い作品
-      }
-
-      const nextTlinkWorks = matchingTlinkWorks.filter(
-        (w) => publicData.indexOf(w) > currentIndex
-      );
-      if (nextTlinkWorks.length > 0) {
-        selectedWorks.push(nextTlinkWorks[0]); // 最新の作品
-      }
-    } else {
-      selectedWorks = matchingTlinkWorks.slice(0, 2); // 最大2件まで取得
-    }
-
-    // memberid一致の作品を前後に追加
-    const previousMemberidWorks = matchingMemberidWorks
-      .filter((w) => publicData.indexOf(w) < currentIndex)
-      .slice(-2);
-    const nextMemberidWorks = matchingMemberidWorks
-      .filter((w) => publicData.indexOf(w) > currentIndex)
-      .slice(0, 2);
-
-    // 表示するメンバーIDのリストを取得
-    const memberIds = work.memberid.split(",").map((id) => id.trim());
-
-    let additionalUserWorks = [];
-
-    // 各ユーザーごとに前後の作品を取得
-    for (const memberId of memberIds) {
-      const userWorks = publicData.filter(
-        (w) =>
-          w.memberid && w.memberid.includes(memberId) && w.ylink !== work.ylink
-      );
-
-      const userMatchingTlinkWorks = userWorks.filter(
-        (w) => w.tlink === work.tlink
-      );
-      const userOtherWorks = userWorks.filter((w) => w.tlink !== work.tlink);
-
-      const userSelectedWorks = [
-        ...userMatchingTlinkWorks.slice(0, 2),
-        ...userOtherWorks.slice(0, 2),
-      ];
-
-      additionalUserWorks = [
-        ...additionalUserWorks,
-        ...userSelectedWorks.filter(
-          (u) =>
-            !additionalUserWorks.some((existing) => existing.ylink === u.ylink)
-        ),
-      ];
-    }
-
-    // 重複削除を一回で実行
-    const allPreviousWorks = [
-      ...selectedWorks,
-      ...previousWorks,
-      ...previousMemberidWorks,
-    ];
-    const allNextWorks = [
-      ...nextWorks,
-      ...nextMemberidWorks,
-      ...additionalUserWorks,
-    ];
-
-    const uniquePreviousWorks = Array.from(
-      new Set(allPreviousWorks.map((w) => w.ylink))
-    ).map((ylink) => allPreviousWorks.find((w) => w.ylink === ylink));
-
-    const uniqueNextWorks = Array.from(
-      new Set(allNextWorks.map((w) => w.ylink))
-    ).map((ylink) => allNextWorks.find((w) => w.ylink === ylink));
-
-    // .credit 一致の作品を最大4件取得
-    const matchingCreditWorks = publicData
-      .filter(
-        (w) =>
-          w.credit &&
-          w.credit.toLowerCase() === work.credit?.toLowerCase() &&
-          w.ylink !== work.ylink
-      )
-      .slice(0, 4);
-
-    // .music 一致の作品を最大4件取得
-    const matchingMusicWorks = publicData
-      .filter(
-        (w) =>
-          w.music &&
-          typeof w.music === "string" &&
-          w.music.toLowerCase() === work.music?.toLowerCase() &&
-          w.ylink !== work.ylink
-      )
-      .slice(0, 4);
-
-    // 最終的なユニークな次の作品に追加
-    const finalNextWorks = [
-      ...uniqueNextWorks,
-      ...matchingCreditWorks,
-      ...matchingMusicWorks,
-    ];
-
-    const uniqueFinalNextWorks = Array.from(
-      new Set(finalNextWorks.map((w) => w.ylink))
-    ).map((ylink) => finalNextWorks.find((w) => w.ylink === ylink));
-
-    // イベントデータの取得
-    const eventId = work.eventid;
-    const eventRes = await fetch(
-      `https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec?eventid=${eventId}`
-    );
-
-    if (!eventRes.ok) {
-      throw new Error("イベント情報の取得に失敗しました");
-    }
-
-    const eventData = await eventRes.json();
-    const eventInfo = eventData.find((event) => event.eventid === eventId);
-    const eventname = eventInfo?.eventname || "Unknown Event";
-    const icon = eventInfo?.icon || "";
-
-    // メンバーのアイコン取得
-    const matchingIcon = [];
-    for (const memberId of memberIds) {
-      const memberWorks = publicData2.filter(
-        (w) => w.tlink.toLowerCase() === memberId.toLowerCase()
-      );
-
-      if (memberWorks.length > 0) {
-        const prioritizedWorks = memberWorks.filter((w) => w.type === "個人");
-        const latestWork =
-          prioritizedWorks.length > 0 ? prioritizedWorks[0] : memberWorks[0];
-
-        matchingIcon.push({
-          memberId,
-          icon: latestWork.icon,
-        });
-      }
-    }
 
     return {
       props: {
         work,
         externalData,
         matchingIcon,
-        previousWorks: uniquePreviousWorks,
-        nextWorks: uniqueFinalNextWorks,
+        previousWorks,
+        nextWorks,
         eventname,
         icon,
       },
@@ -601,6 +567,43 @@ export async function getStaticProps({ params }) {
         eventname: "",
         icon: "",
       },
+    };
+  }
+}
+export async function getStaticPaths() {
+  try {
+    const res = await fetch("https://pvsf-cash.vercel.app/api/videos");
+    if (!res.ok) {
+      throw new Error("Failed to fetch data");
+    }
+    const data = await res.json();
+
+    const uniquePaths = new Set(); // 重複を防ぐためのセット
+    const paths = data
+      .map((work) => {
+        const path = work.ylink.slice(17, 28);
+        if (!uniquePaths.has(path)) {
+          uniquePaths.add(path);
+          return { params: { id: path } };
+        }
+        return null;
+      })
+      .filter(Boolean); // nullを除去
+
+    // 重複パスがあった場合の警告
+    if (paths.length !== uniquePaths.size) {
+      console.warn("重複するパスが検出され、スキップされました。");
+    }
+
+    return {
+      paths,
+      fallback: false,
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      paths: [],
+      fallback: false,
     };
   }
 }
