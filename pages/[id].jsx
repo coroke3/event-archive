@@ -46,7 +46,15 @@ export default function WorkId({
     if (!work.time) return "";
     const originalDate = new Date(work.time);
     const modifiedDate = new Date(originalDate.getTime() - 9 * 60 * 60 * 1000);
-    return modifiedDate.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
+    return new Intl.DateTimeFormat('ja-JP', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }).format(modifiedDate);
   }, [work.time]);
 
   // Memoize YouTube embed URL extraction
@@ -379,132 +387,144 @@ function getMemberIcons(memberIds, publicData2) {
 
 // 関連動画を取得する関数
 function getRelatedWorks(work, publicData, currentIndex) {
-  // 前後の表示作品数を調整
-  const additionalCount = 2;
-  const previousWorks = publicData.slice(
-    Math.max(0, currentIndex - 5 - additionalCount),
-    currentIndex
-  );
-  const nextWorks = publicData.slice(
-    currentIndex + 1,
-    currentIndex + 6 + additionalCount
-  );
+  // ヘルパー関数
+  const uniqueWorks = (works) => {
+    return Array.from(new Set(works.map(w => w.ylink)))
+      .map(ylink => works.find(w => w.ylink === ylink));
+  };
 
-  // tlink一致作品を取得
+  const getRandomWorks = (works, count) => {
+    const shuffled = [...works].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
+  };
+
+  // ①.tlinkが一致する前後作品
   const matchingTlinkWorks = publicData.filter(
-    (w) => w.tlink === work.tlink && w.ylink !== work.ylink
+    w => w.tlink === work.tlink && w.ylink !== work.ylink
   );
-
-  // memberid一致作品を取得
-  const matchingMemberidWorks = publicData.filter(
-    (w) => w.memberid && w.memberid.includes(work.tlink)
-  );
-
-  let selectedWorks = [];
-  if (currentIndex > 0) {
-    const previousTlinkWorks = matchingTlinkWorks.filter(
-      (w) => publicData.indexOf(w) < currentIndex
+  const currentTlinkIndex = publicData.findIndex(w => w.ylink === work.ylink);
+  const tlinkWorks = [];
+  
+  if (currentTlinkIndex !== -1) {
+    const previousTlinkWork = publicData.slice(0, currentTlinkIndex).reverse().find(
+      w => w.tlink === work.tlink
     );
-    if (previousTlinkWorks.length > 0) {
-      selectedWorks.push(previousTlinkWorks.slice(-1)[0]);
-    }
-
-    const nextTlinkWorks = matchingTlinkWorks.filter(
-      (w) => publicData.indexOf(w) > currentIndex
+    if (previousTlinkWork) tlinkWorks.push(previousTlinkWork);
+    
+    const nextTlinkWork = publicData.slice(currentTlinkIndex + 1).find(
+      w => w.tlink === work.tlink
     );
-    if (nextTlinkWorks.length > 0) {
-      selectedWorks.push(nextTlinkWorks[0]);
-    }
-  } else {
-    selectedWorks = matchingTlinkWorks.slice(0, 2);
+    if (nextTlinkWork) tlinkWorks.push(nextTlinkWork);
   }
 
-  const previousMemberidWorks = matchingMemberidWorks
-    .filter((w) => publicData.indexOf(w) < currentIndex)
-    .slice(-2);
-  const nextMemberidWorks = matchingMemberidWorks
-    .filter((w) => publicData.indexOf(w) > currentIndex)
+  // ②.tlinkと.memberidから取得できるidが一致する時系列が近い作品
+  const memberIds = work.memberid?.split(',').map(id => id.trim()).filter(Boolean) || [];
+  const tlinkInMemberidWorks = [];
+  
+  const workTime = new Date(work.time);
+  const relatedWorks = publicData
+    .filter(w => 
+      w.memberid?.split(',')
+        .map(id => id.trim())
+        .includes(work.tlink) && 
+      w.ylink !== work.ylink
+    )
+    .map(w => ({
+      ...w,
+      timeDiff: Math.abs(new Date(w.time) - workTime)
+    }))
+    .sort((a, b) => a.timeDiff - b.timeDiff)
     .slice(0, 2);
 
-  const memberIds = work.memberid.split(",").map((id) => id.trim());
-  let additionalUserWorks = [];
+  tlinkInMemberidWorks.push(...relatedWorks);
 
-  for (const memberId of memberIds) {
-    const userWorks = publicData.filter(
-      (w) =>
-        w.memberid && w.memberid.includes(memberId) && w.ylink !== work.ylink
-    );
-
-    const userMatchingTlinkWorks = userWorks.filter(
-      (w) => w.tlink === work.tlink
-    );
-    const userOtherWorks = userWorks.filter((w) => w.tlink !== work.tlink);
-
-    const userSelectedWorks = [
-      ...userMatchingTlinkWorks.slice(0, 2),
-      ...userOtherWorks.slice(0, 2),
-    ];
-
-    additionalUserWorks = [
-      ...additionalUserWorks,
-      ...userSelectedWorks.filter(
-        (u) =>
-          !additionalUserWorks.some((existing) => existing.ylink === u.ylink)
-      ),
-    ];
-  }
-
-  const allPreviousWorks = [
-    ...selectedWorks,
-    ...previousWorks,
-    ...previousMemberidWorks,
-  ];
-  const allNextWorks = [
-    ...nextWorks,
-    ...nextMemberidWorks,
-    ...additionalUserWorks,
+  // ③前後6作品ずつ
+  const surroundingWorks = [
+    ...publicData.slice(Math.max(0, currentIndex - 6), currentIndex),
+    ...publicData.slice(currentIndex + 1, currentIndex + 7)
   ];
 
-  const uniquePreviousWorks = Array.from(
-    new Set(allPreviousWorks.map((w) => w.ylink))
-  ).map((ylink) => allPreviousWorks.find((w) => w.ylink === ylink));
+  // ④.memberidとtlinkが一致する作品
+  const worksPerUser = publicData.length <= 25 ? 2 : 1;
+  const memberTlinkWorks = [];
+  memberIds.forEach(memberId => {
+    const userWorks = publicData.filter(w => 
+      w.tlink === memberId && 
+      w.ylink !== work.ylink
+    );
+    memberTlinkWorks.push(...getRandomWorks(userWorks, worksPerUser));
+  });
 
-  const uniqueNextWorks = Array.from(
-    new Set(allNextWorks.map((w) => w.ylink))
-  ).map((ylink) => allNextWorks.find((w) => w.ylink === ylink));
+  // ⑤.memberidで関連する作品
+  const memberRelatedWorks = [];
+  memberIds.forEach(memberId => {
+    const relatedWorks = publicData.filter(w => 
+      w.memberid?.includes(memberId) && 
+      w.ylink !== work.ylink &&
+      w.tlink !== work.tlink &&
+      !memberIds.includes(w.tlink)
+    );
+    memberRelatedWorks.push(...getRandomWorks(relatedWorks, worksPerUser));
+  });
 
-  const matchingCreditWorks = publicData
-    .filter(
-      (w) =>
-        w.credit &&
-        w.credit.toLowerCase() === work.credit?.toLowerCase() &&
-        w.ylink !== work.ylink
-    )
-    .slice(0, 4);
+  // ⑥.music完全一致作品
+  const matchingMusicWorks = getRandomWorks(
+    publicData.filter(w =>
+      typeof w.music === "string" &&
+      typeof work.music === "string" &&
+      w.music.toLowerCase() === work.music.toLowerCase() &&
+      w.ylink !== work.ylink
+    ),
+    4
+  );
 
-  const matchingMusicWorks = publicData
-    .filter(
-      (w) =>
-        w.music &&
-        typeof w.music === "string" &&
-        w.music.toLowerCase() === work.music?.toLowerCase() &&
-        w.ylink !== work.ylink
-    )
-    .slice(0, 4);
+  // ⑦.credit完全一致作品
+  const matchingCreditWorks = getRandomWorks(
+    publicData.filter(w =>
+      typeof w.credit === "string" &&
+      typeof work.credit === "string" &&
+      w.credit.toLowerCase() === work.credit.toLowerCase() &&
+      w.ylink !== work.ylink
+    ),
+    4
+  );
 
-  const finalNextWorks = [
-    ...uniqueNextWorks,
-    ...matchingCreditWorks,
+  // ⑧完全ランダム2作品
+  const randomWorks = getRandomWorks(
+    publicData.filter(w => w.ylink !== work.ylink),
+    2
+  );
+
+  // ⑨.deterministicScoreの上位50作品から2作品
+  const topScoreWorks = getRandomWorks(
+    publicData
+      .filter(w => w.ylink !== work.ylink && w.deterministicScore)
+      .sort((a, b) => b.deterministicScore - a.deterministicScore)
+      .slice(0, 50),
+    2
+  );
+
+  // すべての作品を新しい順序で結合して重複���除去
+  const allWorks = [
+    ...tlinkWorks,
+    ...tlinkInMemberidWorks,
+    ...surroundingWorks,
+    ...memberTlinkWorks,
+    ...memberRelatedWorks,
     ...matchingMusicWorks,
+    ...matchingCreditWorks,
+    ...randomWorks,
+    ...topScoreWorks
   ];
 
-  const uniqueFinalNextWorks = Array.from(
-    new Set(finalNextWorks.map((w) => w.ylink))
-  ).map((ylink) => finalNextWorks.find((w) => w.ylink === ylink));
+  const uniqueAllWorks = uniqueWorks(allWorks);
 
+  // 前後の作品に分割（半分ずつ）
+  const midPoint = Math.floor(uniqueAllWorks.length / 2);
+  
   return {
-    previousWorks: uniquePreviousWorks,
-    nextWorks: uniqueFinalNextWorks,
+    previousWorks: uniqueAllWorks.slice(0, midPoint),
+    nextWorks: uniqueAllWorks.slice(midPoint)
   };
 }
 
