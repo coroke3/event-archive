@@ -10,7 +10,6 @@ import Footer from "../../components/Footer";
 import styles from "../../styles/users.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXTwitter, faYoutube, faLock, faLink, faUser } from "@fortawesome/free-brands-svg-icons";
-
 const fetchUserData = async (username) => {
   const res = await fetch("https://pvsf-cash.vercel.app/api/users", {
     headers: {
