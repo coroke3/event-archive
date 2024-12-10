@@ -116,7 +116,7 @@ export default function WorkId({
     showTwitter: work.tlink?.trim() !== "",
     showYoutube: work.ylink?.trim() !== "",
     showMember: work.member?.trim() !== "" && work.memberid?.trim() !== "",
-    showMusic: work.music?.trim() !== "" && work.credit?.trim() !== "",
+    showMusic: work.music?.trim() !== "",
     showMusicLink: work.ymulink?.trim() !== "",
     showTime: work.time?.trim() !== "",
   }), [work]);
@@ -164,6 +164,13 @@ export default function WorkId({
       return { username, memberId, memberIconInfo, matchedUser };
     });
   }, [work?.member, work?.memberid, matchingIcon, externalData, workDetails.showMember]);
+
+  // 楽曲情報の処理を最適化
+  const musicInfo = useMemo(() => {
+    if (typeof work?.music !== 'string') return [];
+    return work.music.trim().split(",");
+  }, [work?.music]);
+
   return (
     <div>
       <Head>
@@ -206,9 +213,10 @@ export default function WorkId({
                 {workDetails.showIcon ? (
                   <Link href={`../user/${work.tlink?.toLowerCase() || ""}`}>
                     <Image
-                      src={`https://lh3.googleusercontent.com/d/${work.icon.slice(
-                        33
-                      )}`}
+                      src={work?.icon 
+                        ? `https://lh3.googleusercontent.com/d/${work.icon.slice(33)}`
+                        : "https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
+                      }
                       className={styles.icon}
                       alt={`${work.creator}のアイコン`}
                       width={50}
@@ -480,7 +488,7 @@ function getMemberIcons(memberIds, publicData2) {
   return matchingIcon;
 }
 
-// 関連動画を取得する関数
+// 関連動画を得する関数
 function getRelatedWorks(work, publicData, currentIndex) {
   // ヘモ化されたヘルパー関数
   const uniqueWorks = (works) => (
@@ -670,40 +678,28 @@ export async function getStaticProps({ params }) {
     };
   }
 }
-export async function getStaticPaths() {
+export const getStaticPaths = async () => {
   try {
-    const res = await fetch("https://pvsf-cash.vercel.app/api/videos");
-    if (!res.ok) {
-      throw new Error("Failed to fetch data");
-    }
-    const data = await res.json();
-
-    const uniquePaths = new Set(); // 重複を防ぐためのセット
-    const paths = data
-      .map((work) => {
-        const path = work.ylink.slice(17, 28);
-        if (!uniquePaths.has(path)) {
-          uniquePaths.add(path);
-          return { params: { id: path } };
-        }
-        return null;
-      })
-      .filter(Boolean); // nullを除去
-
-    // 重複パスがあった場合の警告
-    if (paths.length !== uniquePaths.size) {
-      console.warn("重複するパスが検出され、スキップされました。");
-    }
+    const data = await fetchWorksData();
+    
+    // データが配列であることを確認
+    const paths = Array.isArray(data) 
+      ? data
+          .filter(item => item && item.id) // 無効なデータを除外
+          .map(item => ({
+            params: { id: item.id.toString() }
+          }))
+      : [];
 
     return {
       paths,
-      fallback: false,
+      fallback: 'blocking' // SSRフォールバックを有効化
     };
   } catch (error) {
-    console.error(error);
+    console.error('Error in getStaticPaths:', error);
     return {
       paths: [],
-      fallback: false,
+      fallback: 'blocking'
     };
   }
-}
+};

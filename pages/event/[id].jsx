@@ -243,13 +243,21 @@ export const getStaticProps = async ({ params }) => {
     const event = eventsData.find((event) => event.eventid === id) || null;
     const worksData = await fetchWorksData();
 
-    const works = worksData.filter((work) => {
-      const workEventNames =
-        work.eventid?.split(",").map((name) => name.trim()) || [];
-      return event && workEventNames.includes(event.eventid);
-    });
+    // データが配列であることを確認
+    const works = Array.isArray(worksData) 
+      ? worksData.filter((work) => {
+          const workEventNames = work?.eventid?.split(",").map(name => name.trim()) || [];
+          return event && workEventNames.includes(event.eventid);
+        })
+      : [];
 
-    return { props: { event, works } };
+    return { 
+      props: { 
+        event, 
+        works 
+      },
+      revalidate: 60 // ISRを有効化
+    };
   } catch (error) {
     console.error("Error fetching static props:", error);
     return {
@@ -258,6 +266,7 @@ export const getStaticProps = async ({ params }) => {
         works: [],
         errorMessage: "データの取得に失敗しました。",
       },
+      revalidate: 60
     };
   }
 };
