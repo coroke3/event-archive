@@ -143,22 +143,87 @@ const fetchCollaborationWorksData = (worksData, id) => {
 };
 
 // メモ化されたWorkCardコンポーネント
-const WorkCard = React.memo(function WorkCard({ work }) {
+const WorkCard = React.memo(function WorkCard({ works, filter }) {
+  const displayedWorks = works.filter(
+    (item) =>
+      (filter.public && item.status === "public") ||
+      (filter.unlisted && item.status === "unlisted") ||
+      (filter.private && (item.status === "private" || item.status === "unknown"))
+  );
+
   return (
-    <div className={styles.ss1} key={work.ylink.slice(17, 28)}>
-      <div className={styles.ss12}>
-        <Link href={`/${work.ylink.slice(17, 28)}`}>
-          <img
-            src={work.smallThumbnail}
-            width="100%"
-            alt={`${work.title} - ${work.creator} | PVSF archive`}
-            loading="lazy"
-          />
-        </Link>
-      </div>
-      <div className={styles.ss13}>
-        <p className={styles.scc}>{work.title}</p>
-        <p className={styles.sc}>{work.creator}</p>
+    <div className="content">
+      <div className="work">
+        {displayedWorks.length > 0 ? (
+          displayedWorks.map((work) => {
+            const showIcon = work.icon && work.icon !== "";
+            const isPrivate = work.status === "private" || work.status === "unknown";
+
+            return (
+              <div
+                className={`works ${isPrivate ? "private" : ""} ${
+                  work.status === "unlisted" ? "unlisted" : ""
+                }`}
+                key={work.ylink}
+              >
+                <Link href={`/${work.ylink.slice(17, 28)}`}>
+                  <Image
+                    src={
+                      work.smallThumbnail ||
+                      `https://img.youtube.com/vi/${extractVideoId(work.ylink)}/mqdefault.jpg`
+                    }
+                    alt={`${work.title} - ${work.creator} | PVSF archive`}
+                    className="samune"
+                    width={640}
+                    height={360}
+                  />
+                </Link>
+                <h3>{work.title}</h3>
+                <div className="subtitle">
+                  <div className="insubtitle">
+                    {showIcon ? (
+                      <Image
+                        src={`https://lh3.googleusercontent.com/d/${work.icon.slice(33)}`}
+                        className="icon"
+                        alt={`${work.creator}のアイコン`}
+                        width={50}
+                        height={50}
+                      />
+                    ) : (
+                      <Image
+                        src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
+                        alt={`アイコン`}
+                        className="icon"
+                        width={50}
+                        height={50}
+                      />
+                    )}
+                    <p>{work.creator}</p>
+                  </div>
+                  <p className="status">
+                    {work.status === "public" ? null : work.status === "unlisted" ? (
+                      <span className="inunlisted">
+                        <span className="icon">
+                          <FontAwesomeIcon icon={faLink} />
+                        </span>
+                        限定公開
+                      </span>
+                    ) : (
+                      <span className="inprivate">
+                        <span className="sicon">
+                          <FontAwesomeIcon icon={faLock} />
+                        </span>
+                        非公開
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <p>作品が見つかりませんでした。</p>
+        )}
       </div>
     </div>
   );
