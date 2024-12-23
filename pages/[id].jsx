@@ -676,28 +676,33 @@ export async function getStaticProps({ params }) {
     };
   }
 }
-export const getStaticPaths = async () => {
+export async function getStaticPaths() {
   try {
-    const data = await fetchWorksData();
+    // すべての動画データを取得
+    const res = await fetch('https://pvsf-cash.vercel.app/api/videos');
+    if (!res.ok) throw new Error('Failed to fetch videos');
+    const works = await res.json();
     
-    // データが配列であることを確認
-    const paths = Array.isArray(data) 
-      ? data
-          .filter(item => item && item.id) // 無効なデータを除外
-          .map(item => ({
-            params: { id: item.id.toString() }
-          }))
-      : [];
+    // 公開されている動画のパスのみを生成
+    const paths = works
+      .filter(work => work.status !== 'private') // 非公開動画を除外
+      .map(work => ({
+        params: { 
+          id: work.ylink.slice(17, 28)
+        }
+      }));
+
+    console.log(`Generated ${paths.length} static paths`); // デバッグ用
 
     return {
       paths,
-      fallback: 'blocking' // SSRフォールバックを有効化
+      fallback: false // 存在しないパスは404を返す
     };
   } catch (error) {
     console.error('Error in getStaticPaths:', error);
     return {
       paths: [],
-      fallback: 'blocking'
+      fallback: false
     };
   }
-};
+}
