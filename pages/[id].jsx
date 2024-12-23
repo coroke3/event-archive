@@ -6,8 +6,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faXTwitter,
   faYoutube,
-  faUser,
 } from "@fortawesome/free-brands-svg-icons";
+import { faUser } from '@fortawesome/free-solid-svg-icons';
 import styles from "../styles/work.module.css";
 
 // メモ化されたコンポーネント
@@ -99,6 +99,12 @@ const MemberTableRow = React.memo(function MemberTableRow({ username, memberId, 
   );
 });
 
+// authプロパティのデフォルト値を設定
+const defaultAuth = {
+  auth: false,
+  user: null
+};
+
 export default function WorkId({
   work,
   previousWorks,
@@ -107,6 +113,7 @@ export default function WorkId({
   eventname,
   externalData,
   matchingIcon,
+  auth,
 }) {
   // workDetailsをuseMemoで最適化
   const workDetails = useMemo(() => ({
@@ -614,10 +621,20 @@ function getRelatedWorks(work, publicData, currentIndex) {
   };
 }
 
+// musicプロパティの型チェックを追加
+const processMusic = (work) => {
+  if (typeof work.music === 'string') {
+    return work.music.trim();
+  }
+  return '';
+};
+
 // getStaticPropsを更新
 export async function getStaticProps({ params }) {
   try {
-    const externalRes = await fetch("https://pvsf-cash.vercel.app/api/users");
+    const externalRes = await fetch("https://pvsf-cash.vercel.app/api/users", {
+      timeout: 30000 // タイムアウトを30秒に設定
+    });
     if (!externalRes.ok) {
       throw new Error("外部データの取得に失敗しました");
     }
@@ -636,6 +653,9 @@ export async function getStaticProps({ params }) {
     if (!work) {
       return { notFound: true };
     }
+
+    // musicプロパティの処理を追加
+    work.music = processMusic(work);
 
     const currentIndex = publicData.findIndex(
       (w) => w.ylink.slice(17, 28) === params.id
@@ -660,19 +680,23 @@ export async function getStaticProps({ params }) {
         nextWorks,
         eventname,
         icon,
+        auth: defaultAuth // デフォルト認証状態を追加
       },
     };
   } catch (error) {
-    console.error(error);
+    console.error('Error in getStaticProps:', error);
     return {
       props: {
-        work: {},
+        work: null,
         externalData: [],
+        matchingIcon: [],
         previousWorks: [],
         nextWorks: [],
         eventname: "",
         icon: "",
+        auth: defaultAuth // デフォルト認証状態を追加
       },
+      revalidate: 60 // 60秒後に再試行
     };
   }
 }
