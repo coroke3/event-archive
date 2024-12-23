@@ -282,7 +282,7 @@ export default function WorkId({
                           src={`https://lh3.googleusercontent.com/d/${icon
                             .split(",")
                             [index].slice(33)}`}
-                          alt={`${eventId.trim()}のアイコン`}
+                          alt={`${eventId.trim()}のアイコ��`}
                           className={styles.eventIcon}
                           width={50}
                           height={50}
@@ -629,101 +629,118 @@ const processMusic = (work) => {
   return '';
 };
 
-// getStaticPropsを更新
+// getStaticPropsの修正
 export async function getStaticProps({ params }) {
   try {
-    const externalRes = await fetch("https://pvsf-cash.vercel.app/api/users", {
-      timeout: 30000 // タイムアウトを30秒に設定
-    });
-    if (!externalRes.ok) {
-      throw new Error("外部データの取得に失敗しました");
+    // 再試行ロジックを追加
+    const fetchWithRetry = async (url, retries = 3) => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          const res = await fetch(url, {
+            timeout: 30000,
+            headers: {
+              'Cache-Control': 'public, max-age=3600'
+            }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            return data || null; // データが無い場合はnullを返す
+          }
+        } catch (err) {
+          if (i === retries - 1) throw err;
+          await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+        }
+      }
+      return null; // 全ての再試行が失敗した場合
+    };
+
+    // 並列でデータを取得し、デフォルト値を設定
+    const [videos, users, events] = await Promise.all([
+      fetchWithRetry("https://pvsf-cash.vercel.app/api/videos"),
+      fetchWithRetry("https://pvsf-cash.vercel.app/api/users"),
+      fetchWithRetry("https://pvsf-cash.vercel.app/api/events")
+    ]);
+
+    if (!videos) {
+      throw new Error('Failed to fetch videos data');
     }
-    const externalData = await externalRes.json();
 
-    const res = await fetch("https://pvsf-cash.vercel.app/api/videos");
-    if (!res.ok) {
-      throw new Error("Failed to fetch data");
-    }
-    const data = await res.json();
+    const publicData = videos.filter(w => w.status !== "private");
+    const work = publicData.find(w => w.ylink.slice(17, 28) === params.id);
 
-    const publicData = data.filter((w) => w.status !== "private");
-    const publicData2 = data;
-
-    const work = publicData.find((w) => w.ylink.slice(17, 28) === params.id);
     if (!work) {
+      console.error(`Work not found for ID: ${params.id}`);
       return { notFound: true };
     }
 
-    // musicプロパティの処理を追加
-    work.music = processMusic(work);
-
-    const currentIndex = publicData.findIndex(
-      (w) => w.ylink.slice(17, 28) === params.id
-    );
-
-    // 各機能を別関数から取得
-    const { eventname, icon } = await fetchEventData(work.eventid);
-    const memberIds = work.memberid.split(",").map((id) => id.trim());
-    const matchingIcon = getMemberIcons(memberIds, publicData2);
-    const { previousWorks, nextWorks } = getRelatedWorks(
-      work,
-      publicData,
-      currentIndex
-    );
+    // 必要なデータの取得（null/undefinedチェックを追加）
+    const currentIndex = publicData.findIndex(w => w.ylink.slice(17, 28) === params.id);
+    const { previousWorks, nextWorks } = getRelatedWorks(work, publicData, currentIndex);
+    const memberIds = work.memberid?.split(',').map(id => id.trim()).filter(Boolean) || [];
+    const matchingIcon = getMemberIcons(memberIds, publicData);
+    
+    // eventsのnullチェックを追加
+    const eventInfo = events && Array.isArray(events) 
+      ? events.find(e => e.eventid === work.eventid) || { eventname: "", icon: "" }
+      : { eventname: "", icon: "" };
 
     return {
       props: {
         work,
-        externalData,
+        externalData: users || [],
         matchingIcon,
-        previousWorks,
-        nextWorks,
-        eventname,
-        icon,
-        auth: defaultAuth // デフォルト認証状態を追加
-      },
+        previousWorks: previousWorks || [],
+        nextWorks: nextWorks || [],
+        eventname: eventInfo.eventname || "",
+        icon: eventInfo.icon || "",
+        auth: { auth: false, user: null }
+      }
     };
+
   } catch (error) {
-    console.error('Error in getStaticProps:', error);
-    return {
-      props: {
-        work: null,
-        externalData: [],
-        matchingIcon: [],
-        previousWorks: [],
-        nextWorks: [],
-        eventname: "",
-        icon: "",
-        auth: defaultAuth // デフォルト認証状態を追加
-      },
-      revalidate: 60 // 60秒後に再試行
-    };
+    console.error(`Error in getStaticProps for ID ${params.id}:`, error);
+    throw error; // ビルド時のエラーを明確にする
   }
 }
+
+// getStaticPathsの修正
 export async function getStaticPaths() {
   try {
-    // すべての動画データを取得
-    const res = await fetch('https://pvsf-cash.vercel.app/api/videos');
-    if (!res.ok) throw new Error('Failed to fetch videos');
+    // キャッシュ制御を追加
+    const res = await fetch("https://pvsf-cash.vercel.app/api/videos", {
+      timeout: 30000,
+      headers: {
+        'Cache-Control': 'public, max-age=3600'
+      }
+    });
+    
+    if (!res.ok) {
+      console.error('Failed to fetch videos in getStaticPaths');
+      return {
+        paths: [],
+        fallback: false
+      };
+    }
+
     const works = await res.json();
     
-    // 公開されている動画のパスのみを生成
+    // 有効なパスのみをフィルタリング
     const paths = works
-      .filter(work => work.status !== 'private') // 非公開動画を除外
+      .filter(work => (
+        work.status !== "private" && 
+        work.ylink && 
+        work.ylink.length >= 28
+      ))
       .map(work => ({
-        params: { 
-          id: work.ylink.slice(17, 28)
-        }
+        params: { id: work.ylink.slice(17, 28) }
       }));
 
-    console.log(`Generated ${paths.length} static paths`); // デバッグ用
+    console.log(`Generated ${paths.length} static paths`);
+    return { paths, fallback: false };
 
-    return {
-      paths,
-      fallback: false // 存在しないパスは404を返す
-    };
   } catch (error) {
     console.error('Error in getStaticPaths:', error);
+    // エラー時は空の配列を返す
     return {
       paths: [],
       fallback: false
