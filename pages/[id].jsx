@@ -116,17 +116,40 @@ export default function WorkId({
   auth,
 }) {
   // workDetailsをuseMemoで最適化
-  const workDetails = useMemo(() => ({
-    showComment: work.comment?.trim() !== "",
-    showIcon: work.icon?.trim() !== "",
-    showCreator: work.creator?.trim() !== "",
-    showTwitter: work.tlink?.trim() !== "",
-    showYoutube: work.ylink?.trim() !== "",
-    showMember: work.member?.trim() !== "" && work.memberid?.trim() !== "",
-    showMusic: work.music?.trim() !== "",
-    showMusicLink: work.ymulink?.trim() !== "",
-    showTime: work.time?.trim() !== "",
-  }), [work]);
+  const workDetails = useMemo(() => {
+    // 安全な文字列チェック関数
+    const safeString = (value) => {
+      if (typeof value === 'string') return value.trim();
+      if (Array.isArray(value)) return value.join(', ').trim();
+      return '';
+    };
+
+    if (!work) {
+      return {
+        showComment: false,
+        showIcon: false,
+        showCreator: false,
+        showTwitter: false,
+        showYoutube: false,
+        showMember: false,
+        showMusic: false,
+        showMusicLink: false,
+        showTime: false,
+      };
+    }
+
+    return {
+      showComment: safeString(work.comment) !== "",
+      showIcon: safeString(work.icon) !== "",
+      showCreator: safeString(work.creator) !== "",
+      showTwitter: safeString(work.tlink) !== "",
+      showYoutube: safeString(work.ylink) !== "",
+      showMember: safeString(work.member) !== "" && safeString(work.memberid) !== "",
+      showMusic: safeString(work.music) !== "",
+      showMusicLink: safeString(work.ymulink) !== "",
+      showTime: safeString(work.time) !== "",
+    };
+  }, [work]);
 
   // メタデータをuseMemoで最適化
   const metaData = useMemo(() => ({
@@ -282,7 +305,7 @@ export default function WorkId({
                           src={`https://lh3.googleusercontent.com/d/${icon
                             .split(",")
                             [index].slice(33)}`}
-                          alt={`${eventId.trim()}のアイコ��`}
+                          alt={`${eventId.trim()}のアイコン`}
                           className={styles.eventIcon}
                           width={50}
                           height={50}
@@ -495,6 +518,13 @@ function getMemberIcons(memberIds, publicData2) {
 
 // 関連動画を取得する関数
 function getRelatedWorks(work, publicData, currentIndex) {
+  // 安全な文字列比較関数
+  const safeCompare = (a, b) => {
+    if (!a || !b) return false;
+    if (typeof a !== 'string' || typeof b !== 'string') return false;
+    return a.toLowerCase() === b.toLowerCase();
+  };
+
   // ヘモ化されたヘルパー関数
   const uniqueWorks = (works) => (
     Array.from(new Set(works.map(w => w.ylink)))
@@ -537,12 +567,10 @@ function getRelatedWorks(work, publicData, currentIndex) {
     }
 
     // ⑥⑦.music/credit一致
-    if (typeof w.music === "string" && typeof work.music === "string" && 
-        w.music.toLowerCase() === work.music.toLowerCase()) {
+    if (safeCompare(w.music, work.music)) {
       acc.musicWorks.push(w);
     }
-    if (typeof w.credit === "string" && typeof work.credit === "string" && 
-        w.credit.toLowerCase() === work.credit.toLowerCase()) {
+    if (safeCompare(w.credit, work.credit)) {
       acc.creditWorks.push(w);
     }
 
@@ -623,9 +651,9 @@ function getRelatedWorks(work, publicData, currentIndex) {
 
 // musicプロパティの型チェックを追加
 const processMusic = (work) => {
-  if (typeof work.music === 'string') {
-    return work.music.trim();
-  }
+  if (!work) return '';
+  if (typeof work.music === 'string') return work.music.trim();
+  if (Array.isArray(work.music)) return work.music.join(', ').trim();
   return '';
 };
 
@@ -706,7 +734,6 @@ export async function getStaticProps({ params }) {
 // getStaticPathsの修正
 export async function getStaticPaths() {
   try {
-    // キャッシュ制御を追加
     const res = await fetch("https://pvsf-cash.vercel.app/api/videos", {
       timeout: 30000,
       headers: {
@@ -715,32 +742,37 @@ export async function getStaticPaths() {
     });
     
     if (!res.ok) {
-      console.error('Failed to fetch videos in getStaticPaths');
-      return {
-        paths: [],
-        fallback: false
-      };
+      throw new Error(`Failed to fetch videos: ${res.status}`);
     }
 
     const works = await res.json();
     
-    // 有効なパスのみをフィルタリング
+    // 重複を除去しながらパスを生成
+    const uniquePaths = new Set();
     const paths = works
-      .filter(work => (
-        work.status !== "private" && 
-        work.ylink && 
-        work.ylink.length >= 28
-      ))
+      .filter(work => {
+        try {
+          if (!work || work.status === "private" || !work.ylink) return false;
+          
+          const id = work.ylink.slice(17, 28);
+          if (uniquePaths.has(id)) return false;
+          
+          uniquePaths.add(id);
+          return true;
+        } catch (e) {
+          console.error(`Invalid work data:`, work);
+          return false;
+        }
+      })
       .map(work => ({
         params: { id: work.ylink.slice(17, 28) }
       }));
 
-    console.log(`Generated ${paths.length} static paths`);
+    console.log(`Generated ${paths.length} unique static paths`);
     return { paths, fallback: false };
 
   } catch (error) {
     console.error('Error in getStaticPaths:', error);
-    // エラー時は空の配列を返す
     return {
       paths: [],
       fallback: false
