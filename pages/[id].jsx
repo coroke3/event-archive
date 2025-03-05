@@ -516,7 +516,7 @@ function getMemberIcons(memberIds, publicData2) {
   return matchingIcon;
 }
 
-// 関連動画を取得する関数
+// getRelatedWorks関数を修正
 function getRelatedWorks(work, publicData, currentIndex) {
   // 安全な文字列比較関数
   const safeCompare = (a, b) => {
@@ -525,7 +525,7 @@ function getRelatedWorks(work, publicData, currentIndex) {
     return a.toLowerCase() === b.toLowerCase();
   };
 
-  // ヘモ化されたヘルパー関数
+  // ヘルパー関数
   const uniqueWorks = (works) => (
     Array.from(new Set(works.map(w => w.ylink)))
       .map(ylink => works.find(w => w.ylink === ylink))
@@ -542,7 +542,108 @@ function getRelatedWorks(work, publicData, currentIndex) {
   const workTime = new Date(work.time);
   const worksPerUser = publicData.length <= 25 ? 2 : 1;
 
-  // 各カテゴリの作品を一度に取得
+  // privateな動画の場合は、同じクリエイターの公開動画を優先的に表示
+  if (work.status === "private") {
+    const categorizedWorks = publicData.reduce((acc, w) => {
+      if (!baseFilter(w)) return acc;
+
+      // ①.tlink一致（同じクリエイター）
+      if (w.tlink === work.tlink) {
+        acc.tlinkWorks.push(w);
+      }
+
+      // ②.memberidにtlink一致
+      if (w.memberid?.split(',').map(id => id.trim()).includes(work.tlink)) {
+        acc.memberidWorks.push({
+          ...w,
+          timeDiff: Math.abs(new Date(w.time) - workTime)
+        });
+      }
+
+      // ④⑤.memberid関連
+      if (memberIds.some(id => w.tlink === id)) {
+        acc.memberTlinkWorks.push(w);
+      } else if (memberIds.some(id => w.memberid?.includes(id)) && w.tlink !== work.tlink) {
+        acc.memberRelatedWorks.push(w);
+      }
+
+      // ⑥⑦.music/credit一致
+      if (safeCompare(w.music, work.music)) {
+        acc.musicWorks.push(w);
+      }
+      if (safeCompare(w.credit, work.credit)) {
+        acc.creditWorks.push(w);
+      }
+
+      // ⑨.deterministicScore
+      if (w.deterministicScore) {
+        acc.scoreWorks.push(w);
+      }
+
+      return acc;
+    }, {
+      tlinkWorks: [],
+      memberidWorks: [],
+      memberTlinkWorks: [],
+      memberRelatedWorks: [],
+      musicWorks: [],
+      creditWorks: [],
+      scoreWorks: []
+    });
+
+    // 各カテゴリの作品を処理（privateの場合は同じクリエイターの作品を優先）
+    const processedWorks = {
+      // ①前後の作品（同じクリエイターを優先）
+      tlinkWorks: categorizedWorks.tlinkWorks
+        .sort((a, b) => Math.abs(new Date(a.time) - workTime) - 
+                        Math.abs(new Date(b.time) - workTime))
+        .slice(0, 4),
+
+      // ②時系列の近い作品
+      memberidWorks: categorizedWorks.memberidWorks
+        .sort((a, b) => a.timeDiff - b.timeDiff)
+        .slice(0, 2),
+
+      // ④⑤memberid関連
+      memberTlinkWorks: getRandomWorks(categorizedWorks.memberTlinkWorks, worksPerUser * memberIds.length),
+      memberRelatedWorks: getRandomWorks(categorizedWorks.memberRelatedWorks, worksPerUser * memberIds.length),
+
+      // ⑥⑦music/credit一致
+      musicWorks: getRandomWorks(categorizedWorks.musicWorks, 2),
+      creditWorks: getRandomWorks(categorizedWorks.creditWorks, 2),
+
+      // ⑧ランダム
+      randomWorks: getRandomWorks(publicData.filter(baseFilter), 2),
+
+      // ⑨スコア上位
+      scoreWorks: getRandomWorks(
+        categorizedWorks.scoreWorks
+          .sort((a, b) => b.deterministicScore - a.deterministicScore)
+          .slice(0, 50),
+        2
+      )
+    };
+
+    // 結果の結合と重複除去（privateの場合は同じクリエイターの作品を優先）
+    const uniqueAllWorks = uniqueWorks([
+      ...processedWorks.tlinkWorks,
+      ...processedWorks.memberidWorks,
+      ...processedWorks.memberTlinkWorks,
+      ...processedWorks.memberRelatedWorks,
+      ...processedWorks.musicWorks,
+      ...processedWorks.creditWorks,
+      ...processedWorks.randomWorks,
+      ...processedWorks.scoreWorks
+    ]);
+
+    const midPoint = Math.floor(uniqueAllWorks.length / 2);
+    return {
+      previousWorks: uniqueAllWorks.slice(0, midPoint),
+      nextWorks: uniqueAllWorks.slice(midPoint)
+    };
+  }
+
+  // 通常の公開動画の場合は既存のロジックを使用
   const categorizedWorks = publicData.reduce((acc, w) => {
     if (!baseFilter(w)) return acc;
 
@@ -693,15 +794,18 @@ export async function getStaticProps({ params }) {
       throw new Error('Failed to fetch videos data');
     }
 
+    // publicDataの定義を変更（関連動画用）
     const publicData = videos.filter(w => w.status !== "private");
-    const work = publicData.find(w => w.ylink.slice(17, 28) === params.id);
+    
+    // workの検索時はprivateフィルターを削除
+    const work = videos.find(w => w.ylink.slice(17, 28) === params.id);
 
     if (!work) {
       console.error(`Work not found for ID: ${params.id}`);
       return { notFound: true };
     }
 
-    // 必要なデータの取得（null/undefinedチェックを追加）
+    // 関連動画の取得時にはpublicDataを使用（privateを除外）
     const currentIndex = publicData.findIndex(w => w.ylink.slice(17, 28) === params.id);
     const { previousWorks, nextWorks } = getRelatedWorks(work, publicData, currentIndex);
     const memberIds = work.memberid?.split(',').map(id => id.trim()).filter(Boolean) || [];
@@ -727,7 +831,7 @@ export async function getStaticProps({ params }) {
 
   } catch (error) {
     console.error(`Error in getStaticProps for ID ${params.id}:`, error);
-    throw error; // ビルド時のエラーを明確にする
+    throw error;
   }
 }
 
@@ -747,12 +851,12 @@ export async function getStaticPaths() {
 
     const works = await res.json();
     
-    // 重複を除去しながらパスを生成
+    // privateフィルターを削除
     const uniquePaths = new Set();
     const paths = works
       .filter(work => {
         try {
-          if (!work || work.status === "private" || !work.ylink) return false;
+          if (!work || !work.ylink) return false;
           
           const id = work.ylink.slice(17, 28);
           if (uniquePaths.has(id)) return false;
