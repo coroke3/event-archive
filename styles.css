@@ -7,12 +7,14 @@
   --headback: rgb(20, 20, 20);
   --foreground: rgb(255, 255, 255);
   --taga: rgb(125, 181, 234);
+  --background-secondary:rgb(17, 17, 17);
 }
 [data-theme="light"] {
   --background: rgb(255, 255, 255);
   --headback: rgb(245, 245, 245);
   --foreground: rgb(0, 0, 0);
   --taga: rgb(55, 128, 144);
+  --background-secondary:rgb(242, 242, 242);
 }
 a {
   color: var(--taga);

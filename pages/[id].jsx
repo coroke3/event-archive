@@ -37,7 +37,7 @@ const UserIcon = React.memo(function UserIcon({ work }) {
   return (
     <Link href={`../user/${work.tlink?.toLowerCase() || ""}`}>
       <Image
-        src={work.icon ? 
+        src={work.icon ?
           `https://lh3.googleusercontent.com/d/${work.icon.slice(33)}` :
           "https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
         }
@@ -114,6 +114,8 @@ export default function WorkId({
   externalData,
   matchingIcon,
   auth,
+  events,
+  videos,
 }) {
   // workDetailsをuseMemoで最適化
   const workDetails = useMemo(() => {
@@ -175,7 +177,7 @@ export default function WorkId({
   }, [work.time]);
 
   // YouTube URL
-  const youtubeEmbedUrl = useMemo(() => 
+  const youtubeEmbedUrl = useMemo(() =>
     work.ylink ? `https://www.youtube.com/embed/${work.ylink.slice(17, 28)}?vq=hd1080&autoplay=1` : null,
     [work.ylink]
   );
@@ -200,6 +202,74 @@ export default function WorkId({
     if (typeof work?.music !== 'string') return [];
     return work.music.trim().split(",");
   }, [work?.music]);
+
+  // イベント情報の処理を最適化
+  const eventInfo = useMemo(() => {
+    if (!work?.eventid || !events) return [];
+
+    return work.eventid.split(',').map(eventId => {
+      const trimmedEventId = eventId.trim();
+      const matchedEvent = events.find(e => e.eventid === trimmedEventId);
+
+      return matchedEvent ? {
+        eventid: trimmedEventId,
+        eventname: matchedEvent.eventname,
+        explanation: matchedEvent.explanation,
+        icon: matchedEvent.icon
+      } : {
+        eventid: trimmedEventId,
+        eventname: trimmedEventId,
+        explanation: "",
+        icon: ""
+      };
+    });
+  }, [work?.eventid, events]);
+
+  // イベント内の前後作品情報の処理を追加
+  const eventWorks = useMemo(() => {
+    if (!work?.eventid || !videos) return [];
+
+    // 各イベントIDに対して前後の作品を取得
+    return work.eventid.split(',').map(eventId => {
+      const trimmedEventId = eventId.trim();
+
+      // イベントに属する全作品を取得し、時系列順にソート
+      const eventVideos = videos
+        .filter(v => v.eventid?.split(',').some(e => e.trim() === trimmedEventId))
+        .sort((a, b) => new Date(a.time) - new Date(b.time));
+
+      // 現在の作品のインデックスを取得
+      const currentIndex = eventVideos.findIndex(v => v.ylink === work.ylink);
+
+      // 前後の作品を探す
+      let prevWork = null;
+      let nextWork = null;
+
+      if (currentIndex !== -1) {
+        // 前の作品を探す
+        for (let i = currentIndex - 1; i >= 0; i--) {
+          if (eventVideos[i]) {
+            prevWork = eventVideos[i];
+            break;
+          }
+        }
+
+        // 次の作品を探す
+        for (let i = currentIndex + 1; i < eventVideos.length; i++) {
+          if (eventVideos[i]) {
+            nextWork = eventVideos[i];
+            break;
+          }
+        }
+      }
+
+      return {
+        eventId: trimmedEventId,
+        prevWork,
+        nextWork
+      };
+    });
+  }, [work?.eventid, work?.ylink, videos]);
 
   return (
     <div>
@@ -243,7 +313,7 @@ export default function WorkId({
                 {workDetails.showIcon ? (
                   <Link href={`../user/${work.tlink?.toLowerCase() || ""}`}>
                     <Image
-                      src={work?.icon 
+                      src={work?.icon
                         ? `https://lh3.googleusercontent.com/d/${work.icon.slice(33)}`
                         : "https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
                       }
@@ -296,25 +366,70 @@ export default function WorkId({
               </div>
 
               <div className={styles.eventInfo}>
-                {work.eventid &&
-                  work.eventid.split(",").map((eventId, index) => (
-                    <Link key={index} href={`../../event/${eventId.trim()}`}>
-                      {/* アイコンの取得 */}
-                      {icon && icon.split(",")[index] && (
-                        <Image
-                          src={`https://lh3.googleusercontent.com/d/${icon
-                            .split(",")
-                            [index].slice(33)}`}
-                          alt={`${eventId.trim()}のアイコン`}
-                          className={styles.eventIcon}
-                          width={50}
-                          height={50}
-                        />
+                {eventInfo.map((event, index) => (
+                  <div key={index} className={styles.eventSection}>
+
+                    <div className={styles.eventCard}>
+
+                      {event.icon && (
+                        <Link href={`../../event/${event.eventid}`}>
+                          <Image
+                            src={`https://lh3.googleusercontent.com/d/${event.icon.slice(33)}`}
+                            alt={`${event.eventname}のアイコン`}
+                            className={styles.eventIcon}
+                            width={40}
+                            height={40}
+                          />
+                        </Link>
                       )}
-                      {/* イベント名の表示 */}
-                      <h4 className={styles.eventTitle}>{eventId.trim()}</h4>
-                    </Link>
-                  ))}
+                      <div className={styles.eventDetails}>
+                        <Link href={`../../event/${event.eventid}`}>
+                          <h4 className={styles.eventTitle}>{event.eventname}</h4>
+                          {event.explanation && (
+                            <p className={styles.eventExplanation}>{event.explanation}</p>
+                          )}</Link>
+                      </div>
+
+
+                    </div>
+
+                    {/* イベント内の前後作品 */}
+                    <div className={styles.eventNavigation}>
+                      {eventWorks[index]?.prevWork && (
+                        <Link href={`/${eventWorks[index].prevWork.ylink.slice(17, 28)}`} className={styles.eventNavItem}>
+                          <div className={styles.eventNavThumb}>
+                            <img
+                              src={eventWorks[index].prevWork.smallThumbnail}
+                              alt={`前の作品: ${eventWorks[index].prevWork.title}`}
+                              width={160}
+                              height={90}
+                            />
+                          </div>
+                          <div className={styles.eventNavInfo}>
+                            <span className={styles.eventNavLabel}>前の作品</span>
+                            <span className={styles.eventNavTitle}>{eventWorks[index].prevWork.title}</span>
+                          </div>
+                        </Link>
+                      )}
+                      {eventWorks[index]?.nextWork && (
+                        <Link href={`/${eventWorks[index].nextWork.ylink.slice(17, 28)}`} className={styles.eventNavItem}>
+                          <div className={styles.eventNavThumb}>
+                            <img
+                              src={eventWorks[index].nextWork.smallThumbnail}
+                              alt={`次の作品: ${eventWorks[index].nextWork.title}`}
+                              width={160}
+                              height={90}
+                            />
+                          </div>
+                          <div className={styles.eventNavInfo}>
+                            <span className={styles.eventNavLabel}>次の作品</span>
+                            <span className={styles.eventNavTitle}>{eventWorks[index].nextWork.title}</span>
+                          </div>
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
 
               {workDetails.showMusic && (
@@ -487,7 +602,7 @@ async function fetchEventData(eventId) {
 
   const eventData = await eventRes.json();
   const eventInfo = eventData.find((event) => event.eventid === eventId);
-  
+
   return {
     eventname: eventInfo?.eventname || "Unknown Event",
     icon: eventInfo?.icon || "",
@@ -532,8 +647,8 @@ function getRelatedWorks(work, publicData, currentIndex) {
   );
 
   const getRandomWorks = (works, count) => (
-    works.length <= count ? works : 
-    works.sort(() => 0.5 - Math.random()).slice(0, count)
+    works.length <= count ? works :
+      works.sort(() => 0.5 - Math.random()).slice(0, count)
   );
 
   // 共通のフィルター条件
@@ -595,8 +710,8 @@ function getRelatedWorks(work, publicData, currentIndex) {
     const processedWorks = {
       // ①前後の作品（同じクリエイターを優先）
       tlinkWorks: categorizedWorks.tlinkWorks
-        .sort((a, b) => Math.abs(new Date(a.time) - workTime) - 
-                        Math.abs(new Date(b.time) - workTime))
+        .sort((a, b) => Math.abs(new Date(a.time) - workTime) -
+          Math.abs(new Date(b.time) - workTime))
         .slice(0, 4),
 
       // ②時系列の近い作品
@@ -695,8 +810,8 @@ function getRelatedWorks(work, publicData, currentIndex) {
   const processedWorks = {
     // ①前後の作品
     tlinkWorks: categorizedWorks.tlinkWorks
-      .sort((a, b) => Math.abs(currentIndex - publicData.indexOf(a)) - 
-                      Math.abs(currentIndex - publicData.indexOf(b)))
+      .sort((a, b) => Math.abs(currentIndex - publicData.indexOf(a)) -
+        Math.abs(currentIndex - publicData.indexOf(b)))
       .slice(0, 2),
 
     // ②時系列の近い作品
@@ -787,7 +902,7 @@ export async function getStaticProps({ params }) {
     const [videos, users, events] = await Promise.all([
       fetchWithRetry("https://pvsf-cash.vercel.app/api/videos"),
       fetchWithRetry("https://pvsf-cash.vercel.app/api/users"),
-      fetchWithRetry("https://pvsf-cash.vercel.app/api/events")
+      fetchWithRetry("https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec")
     ]);
 
     if (!videos) {
@@ -796,7 +911,7 @@ export async function getStaticProps({ params }) {
 
     // publicDataの定義を変更（関連動画用）
     const publicData = videos.filter(w => w.status !== "private");
-    
+
     // workの検索時はprivateフィルターを削除
     const work = videos.find(w => w.ylink.slice(17, 28) === params.id);
 
@@ -810,9 +925,9 @@ export async function getStaticProps({ params }) {
     const { previousWorks, nextWorks } = getRelatedWorks(work, publicData, currentIndex);
     const memberIds = work.memberid?.split(',').map(id => id.trim()).filter(Boolean) || [];
     const matchingIcon = getMemberIcons(memberIds, publicData);
-    
+
     // eventsのnullチェックを追加
-    const eventInfo = events && Array.isArray(events) 
+    const eventInfo = events && Array.isArray(events)
       ? events.find(e => e.eventid === work.eventid) || { eventname: "", icon: "" }
       : { eventname: "", icon: "" };
 
@@ -823,9 +938,9 @@ export async function getStaticProps({ params }) {
         matchingIcon,
         previousWorks: previousWorks || [],
         nextWorks: nextWorks || [],
-        eventname: eventInfo.eventname || "",
-        icon: eventInfo.icon || "",
-        auth: { auth: false, user: null }
+        events: events || [],
+        auth: { auth: false, user: null },
+        videos
       }
     };
 
@@ -844,23 +959,23 @@ export async function getStaticPaths() {
         'Cache-Control': 'public, max-age=3600'
       }
     });
-    
+
     if (!res.ok) {
       throw new Error(`Failed to fetch videos: ${res.status}`);
     }
 
     const works = await res.json();
-    
+
     // privateフィルターを削除
     const uniquePaths = new Set();
     const paths = works
       .filter(work => {
         try {
           if (!work || !work.ylink) return false;
-          
+
           const id = work.ylink.slice(17, 28);
           if (uniquePaths.has(id)) return false;
-          
+
           uniquePaths.add(id);
           return true;
         } catch (e) {

@@ -128,6 +128,134 @@
   margin: auto;
 }
 
+.table .userlink {
+  padding: 0;
+  margin: 5px auto;
+  height: min-content;
+  display: flex;
+  justify-self: start;
+}
+.userlis {
+  margin: auto 0;
+  padding: 2px 5px;
+  border-radius: 10px;
+}
+
+.eventInfo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.eventSection{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--background-secondary);
+  transition: background-color 0.2s;
+  margin: 0;
+}
+.eventCard {
+  width: 100%;
+  display: flex;
+  padding: 10px 10px;
+  gap: 10px;
+}
+
+.eventCard:hover {
+  background: var(--background-hover);
+}
+
+.eventIcon {
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.eventDetails {
+  display: flex;
+  flex-direction: column;
+}
+
+.eventTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.eventExplanation {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.eventSection {
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+.eventNavigation {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.eventNavItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem;
+  border-radius: 8px;
+  background: var(--background-secondary);
+  transition: all 0.2s;
+  width: calc(50% - 1rem);
+  text-decoration: none;
+  color: inherit;
+}
+
+.eventNavItem:hover {
+  background: var(--background-hover);
+  transform: translateY(-2px);
+}
+
+.eventNavThumb {
+  width: 160px;
+  flex-shrink: 0;
+}
+
+.eventNavThumb img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.eventNavInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.eventNavLabel {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.eventNavTitle {
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+
 @media screen and (max-width: 1300px) {
   .contentr {
     width: 95%;
@@ -153,13 +281,13 @@
 }
 @media screen and (max-width: 700px) {
   .s1ftext p,
-  .s1ftext div,
   .s1ftext h2,
-  .table {
+  .table ,.userinfo,.eventSection{
     width: 93%;
     margin-left: auto;
     margin-right: auto;
   }
+
   .s1ftext {
     width: 100%;
     margin: 0;
@@ -182,7 +310,7 @@
     line-height: 1.1rem;
   }
   .s1f p,
-  .s1f div {
+  .s1f div,.eventNavTitle {
     font-size: 0.7rem;
   }
   .s1f p div {
@@ -210,6 +338,7 @@
     margin: 55px 0%;
     margin-left: 0px;
   }
+
 
   @media (max-aspect-ratio: 9 / 14) {
     .yf {
@@ -300,16 +429,4 @@
     margin: 10px 0;
     text-align: left;
   }
-}
-.table .userlink {
-  padding: 0;
-  margin: 5px auto;
-  height: min-content;
-  display: flex;
-  justify-self: start;
-}
-.userlis {
-  margin: auto 0;
-  padding: 2px 5px;
-  border-radius: 10px;
 }
