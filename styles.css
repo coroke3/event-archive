@@ -84,6 +84,7 @@ th {
 .work h2 {
   width: 100%;
   text-align: center;
+  border: none;
 }
 .works {
   width: 400px;

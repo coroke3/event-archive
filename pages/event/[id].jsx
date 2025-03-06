@@ -116,15 +116,20 @@ export default function EventPage({ event, works = [], errorMessage = "" }) {
                         <li key={index}>
                           <p>
                             <strong>{member}</strong>{" "}
+
+                            {memberPosts[index] && (
+                              <>
+                                {memberPosts[index]}
+                              </>
+                            )}
                             {memberIds[index] && (
                               <>
-                                <span> </span>
                                 <Link
                                   href={`https://twitter.com/${memberIds[index]}`}
                                   className={styles.snsicon}
                                 >
                                   <FontAwesomeIcon icon={faXTwitter} />
-                                  icon
+
                                 </Link>
                               </>
                             )}
@@ -158,9 +163,8 @@ export default function EventPage({ event, works = [], errorMessage = "" }) {
           {Array.isArray(works) && works.length > 0 ? (
             works.map((work) => (
               <div
-                className={`works ${
-                  work.status === "private" ? "private" : ""
-                } ${work.status === "unlisted" ? "unlisted" : ""}`}
+                className={`works ${work.status === "private" ? "private" : ""
+                  } ${work.status === "unlisted" ? "unlisted" : ""}`}
                 key={work.ylink}
               >
                 <Link href={`../${work.ylink.slice(17, 28)}`}>
@@ -244,17 +248,17 @@ export const getStaticProps = async ({ params }) => {
     const worksData = await fetchWorksData();
 
     // データが配列であることを確認
-    const works = Array.isArray(worksData) 
+    const works = Array.isArray(worksData)
       ? worksData.filter((work) => {
-          const workEventNames = work?.eventid?.split(",").map(name => name.trim()) || [];
-          return event && workEventNames.includes(event.eventid);
-        })
+        const workEventNames = work?.eventid?.split(",").map(name => name.trim()) || [];
+        return event && workEventNames.includes(event.eventid);
+      })
       : [];
 
-    return { 
-      props: { 
-        event, 
-        works 
+    return {
+      props: {
+        event,
+        works
       },
       revalidate: 60 // ISRを有効化
     };

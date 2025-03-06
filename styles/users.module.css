@@ -13,7 +13,7 @@
 .first::before {
   content: "";
   background-color: var(--background);
-  opacity: 0.4;
+  opacity: 0.6;
   position: fixed;
   width: 500px;
   height: 100vh;
@@ -28,7 +28,7 @@
   width: 400px;
   display: flex;
   flex-wrap: wrap;
-  justify-self: start;
+  position: fixed;
 }
 .uicon {
   width: 200px;
@@ -51,7 +51,9 @@
 .textblock h2 {
   border: 0;
   padding: 0;
-  margin: auto 0;
+  letter-spacing: 1px;
+  margin: 10px 0;
+  text-align: center;
 }
 .textblock a {
   color: var(--foreground);
@@ -63,6 +65,7 @@
 }
 .uwork {
   width: calc(100% - 500px);
+  margin-left: 500px;
 }
 
 @keyframes scroll {
@@ -79,36 +82,43 @@
   .first::before {
     content: "";
     background-color: var(--background);
-    opacity: 0.4;
-    position: relative;
+    opacity: 0.6;
+    position: absolute;
     width: 100%;
-    height: auto;
-    top: 75px;
+    height: 400px;
+    top: 45px;
     left: 0;
     z-index: -99;
   }
   .first {
     height: min-content;
-    padding: 100px 50px;
+    padding: 60px 50px;
+    
     width: auto;
     margin: auto;
     display: flex;
     flex-wrap: wrap;
     justify-self: start;
+    position: static;
   }
+
+
   .uback {
     z-index: -100;
     width: 100%;
-    height: auto;
+    height: 320px;
+    -o-object-fit: cover;
     object-fit: cover;
-    position: relative;
+    position: absolute;
     top: 75px;
     left: 0;
+    object-fit: cover;
   }
   .content {
     display: block;
   }
   .uwork {
+    margin: 50px 0;
     width: 100%;
   }
   .uicon {
@@ -117,8 +127,7 @@
 }
 @media screen and (max-width: 900px) {
 }
-@media screen and (max-width: 800px) {
-}
+
 @media screen and (min-width: 1150px) {
   @media (min-aspect-ratio: 16 / 9) {
   }
@@ -128,4 +137,25 @@
   height: 1em;
   font-size: inherit;
   vertical-align: middle;
+}
+@media screen and (max-width: 700px) {
+  .uback {
+
+    top: 45px;
+
+  }
+}
+@media screen and (max-width: 600px) {
+.textblock{
+  width: 100%;
+}
+.first::before {
+
+  height: 500px;
+
+}
+.uback{
+  height: 400px;
+}
+
 }
