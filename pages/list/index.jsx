@@ -56,7 +56,8 @@ export default function Home({ work }) {
           content="https://i.gyazo.com/35170e03ec321fb94276ca1c918efabc.jpg"
         />
       </Head>
-
+      <h1 className="entitle">LIST</h1>
+      <h1 className="jatitle">作品一覧</h1>
       {/* チェックボックスによるフィルタリング */}
       <div className={styles.filteroptions}>
         <label>
@@ -89,6 +90,7 @@ export default function Home({ work }) {
       </div>
 
       <div className="content">
+
         <div className="work">
           {displayedWorks.length > 0 ? (
             displayedWorks.map((work) => {

@@ -91,6 +91,8 @@ export default function Home({ work }) {
       </div>
 
       <div className="content">
+        <h1 className="entitle">RECOMMEND</h1>
+        <h1 className="jatitle">おすすめ</h1>
         <div className="work">
           {displayedWorks.length > 0 ? (
             displayedWorks.map((work) => {
@@ -100,9 +102,8 @@ export default function Home({ work }) {
 
               return (
                 <div
-                  className={`works ${isPrivate ? "private" : ""} ${
-                    work.status === "unlisted" ? "unlisted" : ""
-                  }`}
+                  className={`works ${isPrivate ? "private" : ""} ${work.status === "unlisted" ? "unlisted" : ""
+                    }`}
                   key={work.ylink}
                 >
                   <Link href={`../${work.ylink.slice(17, 28)}`}>

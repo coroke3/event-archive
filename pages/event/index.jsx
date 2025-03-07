@@ -48,7 +48,8 @@ export default function EventPage({ events = [] }) {
         <meta name="description" content="イベントの一覧です。" />
       </Head>
       <div className={styles.levent}>
-        <h1>イベント一覧</h1>
+        <h1 className="entitle">EVENT</h1>
+        <h1 className="jatitle">イベント一覧</h1>
         <div className={styles.eventList}>
           {events.length > 0 ? (
             events.map((event) => (

@@ -64,6 +64,10 @@
   font-size: 0.7rem;
   text-align: center;
 }
+.select{
+  margin: 0 calc(50% - 47px);
+  text-align: center;
+}
 
 @keyframes scroll {
   0% {

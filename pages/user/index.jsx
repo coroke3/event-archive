@@ -172,8 +172,9 @@ export default function UserPage({ users = [], icons = [] }) {
         />
       </Head>
       <div className="content">
-        <h1>ユーザー一覧</h1>
-        <select
+        <h1 className="entitle">CREATOR</h1>
+        <h1 className="jatitle">クリエイター一覧</h1>
+        <select className={styles.select}
           value={sortOption}
           onChange={(e) => setSortOption(e.target.value)}
         >
