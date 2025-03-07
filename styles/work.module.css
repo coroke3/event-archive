@@ -282,7 +282,7 @@
 @media screen and (max-width: 700px) {
   .s1ftext p,
   .s1ftext h2,
-  .table ,.userinfo,.eventSection{
+  .table ,.userinfo,.eventInfo{
     width: 93%;
     margin-left: auto;
     margin-right: auto;

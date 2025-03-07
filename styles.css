@@ -456,3 +456,113 @@ body.dark-mode .custom-switch[data-state="unchecked"] svg {
     width: 94%;
   }
 }
+
+/* テーマスイッチのスタイル */
+.theme-switch-wrapper {
+  display: flex;
+  align-items: center;
+  margin: auto 20px;
+  position: fixed;
+  top: 22.5px;
+  right: 10px;
+}
+
+.theme-switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 30px;
+}
+
+.theme-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+  z-index: 2;
+}
+
+.slider-icons {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 8px;
+  box-sizing: border-box;
+}
+
+.slider-icons .sun,
+.slider-icons .moon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:checked + .slider:before {
+  transform: translateX(30px);
+}
+
+/* レスポンシブ対応 */
+@media screen and (max-width: 900px) {
+
+  
+}
+
+@media screen and (max-width: 700px) {
+  .theme-switch {
+    width: 50px;
+    height: 25px;
+  }
+  .theme-switch-wrapper {
+    position: fixed;
+    top: 9px;
+    right: 43px;
+  }
+  .slider:before {
+    height: 18px;
+    width: 18px;
+    left: 4px;
+    bottom: 3.5px;
+  }
+
+  input:checked + .slider:before {
+    transform: translateX(24px);
+  }
+
+  .slider-icons {
+    padding: 0 6px;
+  }
+
+  .slider-icons .sun,
+  .slider-icons .moon {
+    font-size: 12px;
+  }
+}

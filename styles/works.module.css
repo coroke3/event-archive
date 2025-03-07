@@ -56,13 +56,15 @@
 .sectionHeader h2 {
 	font-size: 1.8rem;
 	font-weight: 600;
+	 margin: 10px auto 10px auto;
+
 }
 
 .viewMoreLink {
     display: flex;
     position: absolute;
     right: calc(50vw - 700px);
-	margin-top: 80px;
+	margin-top: 40px;
     align-items: center;
     gap: 0.5rem;
     color: var(--accent);
@@ -253,6 +255,7 @@
 	font-size: 1.4rem;
 	font-weight: 600;
 	margin: 0;
+	height: auto;
 }
 
 .eventVideosGrid {
@@ -339,6 +342,18 @@
 	
 	.eventTitle {
 		font-size: 1.2rem;
+	}
+	.viewMoreLink{
+		font-size: 0.8rem;
+	}
+	.sectionContainer{
+		margin: 1rem auto;
+	}
+	.eventVideoTitle{
+		font-size: 0.75rem;
+	}
+	.eventVideoCreator{
+		font-size: 0.6rem;
 	}
 }
 

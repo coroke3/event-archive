@@ -94,45 +94,53 @@ export default function EventPage({ event, works = [], errorMessage = "" }) {
           <>
             <div className={styles.eventDetails}>
               <div className={styles.ineventDetails}>
-                <h1>{event.eventname}</h1>
-                {event.icon && (
-                  <Image
-                    src={`https://lh3.googleusercontent.com/d/${event.icon.slice(
-                      33
-                    )}`}
-                    className={styles.eicon}
-                    alt={`${event.eventname}のアイコン`}
-                    width={150}
-                    height={150}
-                  />
-                )}
                 <p>{event.explanation}</p>
+                <div className={styles.ine}>
+                  {event.icon && (
+                    <Image
+                      src={`https://lh3.googleusercontent.com/d/${event.icon.slice(
+                        33
+                      )}`}
+                      className={styles.eicon}
+                      alt={`${event.eventname}のアイコン`}
+                      width={150}
+                      height={150}
+                    />
+                  )}  <h1> {event.eventname}</h1>
+                </div>
+
+
 
                 {/* Displaying the members only if they exist */}
                 {members.length > 0 && (
+
                   <div className={styles.members}>
+                    <p>関係スタッフ</p>
                     <ul>
                       {members.map((member, index) => (
                         <li key={index}>
                           <p>
-                            <strong>{member}</strong>{" "}
+                            <span>  {member}</span>
+                            <span>
+                              {memberPosts[index] && (
+                                <>
+                                  {memberPosts[index]}
+                                </>
+                              )}
+                            </span>
+                            <span>
+                              {memberIds[index] && (
+                                <>
+                                  <Link
+                                    href={`https://twitter.com/${memberIds[index]}`}
+                                    className={styles.snsicon}
+                                  >
+                                    <FontAwesomeIcon icon={faXTwitter} />
 
-                            {memberPosts[index] && (
-                              <>
-                                {memberPosts[index]}
-                              </>
-                            )}
-                            {memberIds[index] && (
-                              <>
-                                <Link
-                                  href={`https://twitter.com/${memberIds[index]}`}
-                                  className={styles.snsicon}
-                                >
-                                  <FontAwesomeIcon icon={faXTwitter} />
-
-                                </Link>
-                              </>
-                            )}
+                                  </Link>
+                                </>
+                              )}
+                            </span>
                           </p>
                         </li>
                       ))}
