@@ -15,7 +15,7 @@ export default function Home({ videos, users, events }) {
     return [...videos]
       .filter(video => video.status !== "private")
       .sort((a, b) => (b.videoScore || 0) - (a.videoScore || 0))
-      .slice(0, 30)
+      .slice(0, 40)
       .sort(() => 0.5 - Math.random()); // ランダムに並び替え
   }, [videos]);
 
@@ -23,11 +23,13 @@ export default function Home({ videos, users, events }) {
   const popularCreators = useMemo(() => {
     // 1. すべてのユーザーの作品数をカウント（合作を含む）
     const creatorCounts = {};
+    const creatorCounts2 = {};
     videos.forEach(video => {
       // tlink からの集計
       if (video.tlink) {
         const tlink = video.tlink.toLowerCase();
         creatorCounts[tlink] = (creatorCounts[tlink] || 0) + 1;
+        creatorCounts2[tlink] = (creatorCounts[tlink] || 0) + 1;
       }
 
       // memberid からの集計（合作参加）
@@ -43,7 +45,7 @@ export default function Home({ videos, users, events }) {
 
     // 2. 4作品以上のクリエイター
     const frequentCreators = Object.keys(creatorCounts)
-      .filter(tlink => creatorCounts[tlink] >= 4)
+      .filter(tlink => creatorCounts2[tlink] >= 4)
       .map(tlink => getCreatorInfo(tlink, videos, users));
 
     // 3. videoScore上位作品のクリエイター（2作品以上）
@@ -60,8 +62,8 @@ export default function Home({ videos, users, events }) {
 
     // 4. 両方のリストからランダムに選出
     return [
-      ...shuffleArray(frequentCreators).slice(0, 10),
-      ...shuffleArray(topCreators).slice(0, 10)
+      ...shuffleArray(frequentCreators).slice(0, 20),
+      ...shuffleArray(topCreators).slice(0, 20)
     ];
   }, [videos, users]);
 
