@@ -132,7 +132,7 @@ export default function Home({ videos, users, events }) {
 
       {/* ②おすすめ動画 */}
       <ScrollSection
-        title="おすすめ作品"
+        title="おすすめ"
         viewMoreLink={
           <Link href="/recommend" className={styles.viewMoreLink}>
             もっと見る <FontAwesomeIcon icon={faArrowRight} />
@@ -172,7 +172,7 @@ export default function Home({ videos, users, events }) {
 
       {/* ③人気クリエイター */}
       <ScrollSection
-        title="人気クリエイター"
+        title="クリエイター"
         viewMoreLink={
           <Link href="/user" className={styles.viewMoreLink}>
             もっと見る <FontAwesomeIcon icon={faArrowRight} />
@@ -198,7 +198,6 @@ export default function Home({ videos, users, events }) {
               </div>
               <div className={styles.creatorDetails}>
                 <h3 className={styles.creatorTitle}>{creator.creator}</h3>
-                <p className={styles.videoCount}>{creator.videoCount}作品</p>
               </div>
             </Link>
           </div>
