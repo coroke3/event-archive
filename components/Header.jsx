@@ -26,6 +26,12 @@ function Header() {
             <div className="menubars">
               <Link href="../../../../">
                 <div className="en">TOP</div>
+                トップページ
+              </Link>
+            </div>
+            <div className="menubars">
+              <Link href="../../../../list">
+                <div className="en">LIST</div>
                 一覧から探す
               </Link>
             </div>

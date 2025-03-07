@@ -1,55 +1,120 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import Header from "../components/Header";
 import Footer from "../components/Footer";
 import styles from "../styles/works.module.css";
 import Head from "next/head";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faLock, faLink } from "@fortawesome/free-solid-svg-icons";
+import { faArrowRight } from "@fortawesome/free-solid-svg-icons";
+import ScrollSection from "../components/ScrollSection";
 
 // メインコンポーネント
-export default function Home({ work }) {
-  const [filter, setFilter] = useState({
-    public: true,
-    unlisted: true,
-    private: false,
-  });
+export default function Home({ videos, users, events }) {
+  // ②おすすめ動画（videoScoreの上位30作品をランダムに並び替え）
+  const recommendedVideos = useMemo(() => {
+    return [...videos]
+      .filter(video => video.status !== "private")
+      .sort((a, b) => (b.videoScore || 0) - (a.videoScore || 0))
+      .slice(0, 30)
+      .sort(() => 0.5 - Math.random()); // ランダムに並び替え
+  }, [videos]);
 
-  // チェックボックスの変更をハンドルする関数
-  const handleFilterChange = (event) => {
-    const { name, checked } = event.target;
-    setFilter((prev) => ({ ...prev, [name]: checked }));
-  };
+  // ③4作品以上のクリエイターをランダムで20人
+  const popularCreators = useMemo(() => {
+    // 1. すべてのユーザーの作品数をカウント（合作を含む）
+    const creatorCounts = {};
+    videos.forEach(video => {
+      // tlink からの集計
+      if (video.tlink) {
+        const tlink = video.tlink.toLowerCase();
+        creatorCounts[tlink] = (creatorCounts[tlink] || 0) + 1;
+      }
 
-  // 表示する作品をフィルタリング
-  const displayedWorks = work.filter(
-    (item) =>
-      (filter.public && item.status === "public") ||
-      (filter.unlisted && item.status === "unlisted") ||
-      (filter.private &&
-        (item.status === "private" || item.status === "unknown"))
-  );
+      // memberid からの集計（合作参加）
+      if (video.memberid) {
+        video.memberid.split(',').forEach(memberId => {
+          const id = memberId.trim().toLowerCase();
+          if (id) {
+            creatorCounts[id] = (creatorCounts[id] || 0) + 1;
+          }
+        });
+      }
+    });
+
+    // 2. 4作品以上のクリエイター
+    const frequentCreators = Object.keys(creatorCounts)
+      .filter(tlink => creatorCounts[tlink] >= 4)
+      .map(tlink => getCreatorInfo(tlink, videos, users));
+
+    // 3. videoScore上位作品のクリエイター（2作品以上）
+    const topScoredVideos = [...videos]
+      .filter(video => video.status !== "private")
+      .sort((a, b) => (b.videoScore || 0) - (a.videoScore || 0))
+      .slice(0, 30);
+
+    const topCreators = [...new Set(topScoredVideos
+      .map(video => video.tlink?.toLowerCase())
+      .filter(Boolean))]
+      .filter(tlink => creatorCounts[tlink] >= 2)
+      .map(tlink => getCreatorInfo(tlink, videos, users));
+
+    // 4. 両方のリストからランダムに選出
+    return [
+      ...shuffleArray(frequentCreators).slice(0, 10),
+      ...shuffleArray(topCreators).slice(0, 10)
+    ];
+  }, [videos, users]);
+
+  // ④直近3イベントの作品
+  const recentEvents = useMemo(() => {
+    if (!events || !Array.isArray(events)) return [];
+
+    // イベントを配列の上から3つ取得
+    const topEvents = events.slice(0, 3);
+
+    return topEvents.map(event => {
+      // イベントに関連する作品を取得
+      const eventVideos = videos
+        .filter(video =>
+          video.eventid &&
+          video.eventid.split(',').some(id => id.trim() === event.eventid) &&
+          video.status !== "private"
+        )
+        .slice(0, 8); // 各イベント最大8作品
+
+      return {
+        ...event,
+        videos: eventVideos
+      };
+    });
+  }, [events, videos]);
+
+  // ⑤最新の30作品
+  const latestVideos = useMemo(() => {
+    return [...videos]
+      .filter(video => video.status !== "private")
+      .sort((a, b) => new Date(b.time) - new Date(a.time))
+      .slice(0, 30);
+  }, [videos]);
 
   return (
-    <div>
+    <div className={styles.homeContainer}>
       <Head>
-        <title>過去の投稿作品 - オンライン映像イベント / PVSF archive</title>
+        <title>EventArchives - 映像イベントアーカイブ</title>
         <meta
           name="description"
-          content={`過去の投稿作品です。ぜひご覧ください。`}
+          content="様々な映像イベントに投稿された動画や合作を掲載。"
         />
         <meta name="twitter:card" content="summary" />
         <meta name="twitter:site" content="@pvscreeningfes" />
-        <meta name="twitter:creator" content="@coroke3" />
-        <meta property="og:url" content="pvsf.jp/work" />
+        <meta property="og:url" content="pvsf.jp" />
         <meta
           property="og:title"
-          content="過去の投稿作品 - オンライン映像イベント / PVSF archive"
+          content="EventArchives - 映像イベントアーカイブ"
         />
         <meta
           property="og:description"
-          content="過去の投稿作品です。ぜひご覧ください。"
+          content="様々な映像イベントに投稿された動画や合作を掲載。"
         />
         <meta
           property="og:image"
@@ -57,146 +122,271 @@ export default function Home({ work }) {
         />
       </Head>
 
-      {/* チェックボックスによるフィルタリング */}
-      <div className={styles.filteroptions}>
-        <label>
-          <input
-            type="checkbox"
-            name="public"
-            checked={filter.public}
-            onChange={handleFilterChange}
-          />
-          公開作品
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            name="unlisted"
-            checked={filter.unlisted}
-            onChange={handleFilterChange}
-          />
-          限定公開作品
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            name="private"
-            checked={filter.private}
-            onChange={handleFilterChange}
-          />
-          非公開作品
-        </label>
-      </div>
+      {/* ①タイトルセクション */}
+      <section className={styles.heroSection}>
+        <div className={styles.heroContent}>
+          <h1>EventArchives</h1>
+          <p>様々な映像イベントに投稿された動画や合作を掲載。</p>
+        </div>
+      </section>
 
-      <div className="content">
-        <div className="work">
-          {displayedWorks.length > 0 ? (
-            displayedWorks.map((work) => {
-              const showIcon = work.icon && work.icon !== "";
-              const isPrivate =
-                work.status === "private" || work.status === "unknown"; // 非公開かどうかを判定
-
-              return (
-                <div
-                  className={`works ${isPrivate ? "private" : ""} ${
-                    work.status === "unlisted" ? "unlisted" : ""
-                  }`}
-                  key={work.ylink}
-                >
-                  <Link href={`../${work.ylink.slice(17, 28)}`}>
+      {/* ②おすすめ動画 */}
+      <ScrollSection
+        title="おすすめ作品"
+        viewMoreLink={
+          <Link href="/recommend" className={styles.viewMoreLink}>
+            もっと見る <FontAwesomeIcon icon={faArrowRight} />
+          </Link>
+        }
+      >
+        {recommendedVideos.map((video) => (
+          <div className={styles.videoCard} key={video.ylink}>
+            <Link href={`/${video.ylink.slice(17, 28)}`}>
+              <div className={styles.thumbnailContainer}>
+                <img
+                  src={video.smallThumbnail}
+                  alt={`${video.title} - ${video.creator}`}
+                  className={styles.thumbnail}
+                  loading="lazy"
+                />
+              </div>
+              <div className={styles.videoInfo}>
+                <h3 className={styles.videoTitle}>{video.title}</h3>
+                <div className={styles.creatorInfo}>
+                  {video.icon ? (
                     <Image
-                      src={
-                        work.smallThumbnail ||
-                        `https://img.youtube.com/vi/${extractVideoId(
-                          work.ylink
-                        )}/mqdefault.jpg`
-                      } // smallThumbnailが無い場合はデフォルトサムネイル
-                      alt={`${work.title} - ${work.creator} | PVSF archive`}
-                      className="samune"
-                      width={640}
-                      height={360}
+                      src={`https://lh3.googleusercontent.com/d/${video.icon.slice(33)}`}
+                      alt={`${video.creator}のアイコン`}
+                      width={24}
+                      height={24}
+                      className={styles.creatorIcon}
                     />
-                  </Link>
-                  <h3>{work.title}</h3>
-                  <div className="subtitle">
-                    <div className="insubtitle">
-                      {showIcon ? (
-                        <Image
-                          src={`https://lh3.googleusercontent.com/d/${work.icon.slice(
-                            33
-                          )}`}
-                          className="icon"
-                          alt={`${work.creator}のアイコン`}
-                          width={50}
-                          height={50}
-                        />
-                      ) : (
-                        <Image
-                          src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
-                          alt={`アイコン`}
-                          className="icon"
-                          width={50}
-                          height={50}
-                        />
-                      )}
-                      <p>{work.creator}</p>
-                    </div>
-                    <p className="status">
-                      {work.status === "public" ? null : work.status === // 公開状態のときは何も表示しない
-                        "unlisted" ? (
-                        <span className="inunlisted">
-                          <span className="icon">
-                            <FontAwesomeIcon icon={faLink} />
-                          </span>
-                          限定公開
-                        </span>
-                      ) : (
-                        <span className="inprivate">
-                          <span className="sicon">
-                            <FontAwesomeIcon icon={faLock} />
-                          </span>
-                          非公開
-                        </span>
-                      )}
-                    </p>
-                  </div>
+                  ) : null}
+                  <span className={styles.creatorName}>{video.creator}</span>
                 </div>
-              );
-            })
+              </div>
+            </Link>
+          </div>
+        ))}
+      </ScrollSection>
+
+      {/* ③人気クリエイター */}
+      <ScrollSection
+        title="人気クリエイター"
+        viewMoreLink={
+          <Link href="/user" className={styles.viewMoreLink}>
+            もっと見る <FontAwesomeIcon icon={faArrowRight} />
+          </Link>
+        }
+        reverseScroll={true} // 逆方向スクロール
+      >
+        {popularCreators.map((creator) => (
+          <div className={styles.creatorCard} key={creator.tlink}>
+            <Link href={`/user/${creator.tlink}`}>
+              <div className={styles.creatorIconLarge}>
+                {creator.icon ? (
+                  <Image
+                    src={`https://lh3.googleusercontent.com/d/${creator.icon.slice(33)}`}
+                    alt={`${creator.creator}のアイコン`}
+                    width={80}
+                    height={80}
+                    className={styles.creatorAvatar}
+                  />
+                ) : (
+                  <div className={styles.placeholderIcon}></div>
+                )}
+              </div>
+              <div className={styles.creatorDetails}>
+                <h3 className={styles.creatorTitle}>{creator.creator}</h3>
+                <p className={styles.videoCount}>{creator.videoCount}作品</p>
+              </div>
+            </Link>
+          </div>
+        ))}
+      </ScrollSection>
+
+      {/* ④イベント */}
+      <section className={styles.sectionContainer}>
+        <div className={styles.sectionHeader}>
+          <h2>イベント</h2>
+          <Link href="/event" className={styles.viewMoreLink}>
+            もっと見る <FontAwesomeIcon icon={faArrowRight} />
+          </Link>
+        </div>
+        <div className={styles.eventsGrid}>
+          {recentEvents.length > 0 ? (
+            recentEvents.map((event) => (
+              <div className={styles.eventSection} key={event.eventid}>
+                <div className={styles.eventHeader}>
+                  <Link href={`/event/${event.eventid}`} className={styles.eventTitleLink}>
+                    {event.icon && (
+                      <Image
+                        src={`https://lh3.googleusercontent.com/d/${event.icon.slice(33)}`}
+                        alt={`${event.eventname}のアイコン`}
+                        width={40}
+                        height={40}
+                        className={styles.eventIcon}
+                      />
+                    )}
+                    <h3 className={styles.eventTitle}>{event.eventname || event.eventid}</h3>
+                  </Link>
+                </div>
+                <div className={styles.eventVideosGrid}>
+                  {event.videos && event.videos.length > 0 ? (
+                    event.videos.map((video) => (
+                      <div className={styles.eventVideoCard} key={video.ylink}>
+                        <Link href={`/${video.ylink.slice(17, 28)}`}>
+                          <div className={styles.eventThumbnailContainer}>
+                            <img
+                              src={video.smallThumbnail}
+                              alt={`${video.title} - ${video.creator}`}
+                              className={styles.eventThumbnail}
+                              loading="lazy"
+                            />
+                          </div>
+                          <div className={styles.eventVideoInfo}>
+                            <h4 className={styles.eventVideoTitle}>{video.title}</h4>
+                            <p className={styles.eventVideoCreator}>{video.creator}</p>
+                          </div>
+                        </Link>
+                      </div>
+                    ))
+                  ) : (
+                    <p>このイベントには作品がありません</p>
+                  )}
+                </div>
+              </div>
+            ))
           ) : (
-            <p>作品が見つかりませんでした。</p> // 作品が無い場合のメッセージ
+            <p>イベント情報を読み込み中...</p>
           )}
         </div>
-      </div>
+      </section>
+
+      {/* ⑤最新の作品 */}
+      <ScrollSection
+        title="最新の作品"
+        viewMoreLink={
+          <Link href="/list" className={styles.viewMoreLink}>
+            もっと見る <FontAwesomeIcon icon={faArrowRight} />
+          </Link>
+        }
+      >
+        {latestVideos.map((video) => (
+          <div className={styles.videoCard} key={video.ylink}>
+            <Link href={`/${video.ylink.slice(17, 28)}`}>
+              <div className={styles.thumbnailContainer}>
+                <img
+                  src={video.smallThumbnail}
+                  alt={`${video.title} - ${video.creator}`}
+                  className={styles.thumbnail}
+                  loading="lazy"
+                />
+              </div>
+              <div className={styles.videoInfo}>
+                <h3 className={styles.videoTitle}>{video.title}</h3>
+                <div className={styles.creatorInfo}>
+                  {video.icon ? (
+                    <Image
+                      src={`https://lh3.googleusercontent.com/d/${video.icon.slice(33)}`}
+                      alt={`${video.creator}のアイコン`}
+                      width={24}
+                      height={24}
+                      className={styles.creatorIcon}
+                    />
+                  ) : null}
+                  <span className={styles.creatorName}>{video.creator}</span>
+                </div>
+              </div>
+            </Link>
+          </div>
+        ))}
+      </ScrollSection>
+
       <Footer />
     </div>
   );
 }
 
-// 新しいエンドポイントからデータを取得
+// データ取得
 export const getStaticProps = async () => {
-  const res = await fetch(`https://pvsf-cash.vercel.app/api/videos`, {
-    // フルURLを使用
-    headers: {
-      "Cache-Control": "no-cache", // キャッシュを使用しない
-    },
-  });
+  try {
+    // 並列でデータを取得
+    const [videosRes, usersRes, eventsRes] = await Promise.all([
+      fetch('https://pvsf-cash.vercel.app/api/videos', {
+        headers: { 'Cache-Control': 'no-cache' }
+      }),
+      fetch('https://pvsf-cash.vercel.app/api/users', {
+        headers: { 'Cache-Control': 'no-cache' }
+      }),
+      fetch('https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec', {
+        headers: { 'Cache-Control': 'no-cache' }
+      })
+    ]);
 
-  if (!res.ok) {
-    console.error(`Failed to fetch work data: ${res.statusText}`);
-    return { props: { work: [] } }; // エラー時は空の配列を返す
+    // データの取得と変換
+    const videos = videosRes.ok ? await videosRes.json() : [];
+    const users = usersRes.ok ? await usersRes.json() : [];
+    const events = eventsRes.ok ? await eventsRes.json() : [];
+
+    console.log(`Fetched ${videos.length} videos, ${users.length} users, and ${events.length} events`);
+
+    return {
+      props: {
+        videos,
+        users,
+        events
+      },
+      revalidate: 86400, // 1日ごとに再生成
+    };
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    return {
+      props: {
+        videos: [],
+        users: [],
+        events: []
+      },
+      revalidate: 3600, // エラー時は1時間後に再試行
+    };
   }
-
-  const work = await res.json();
-
-  return {
-    props: { work },
-    revalidate: 172800, // 2日ごとに再生成
-  };
 };
 
-// ylinkから動画IDを抽出する関数
-function extractVideoId(url) {
-  const match = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
-  return match ? match[1] : null;
+// ヘルパー関数
+function getCreatorInfo(tlink, videos, users) {
+  const creatorVideos = videos.filter(v => v.tlink?.toLowerCase() === tlink);
+  const latestVideo = creatorVideos.sort((a, b) => new Date(b.time) - new Date(a.time))[0];
+  const userInfo = users.find(u => u.tlink?.toLowerCase() === tlink);
+
+  // user/[id].tsx の処理を参考に
+  let creator = userInfo?.name;
+  if (!creator && latestVideo) {
+    const personalWorks = creatorVideos.filter(w => w.type === "個人");
+    const firstWork = personalWorks.length > 0 ? personalWorks[0] : latestVideo;
+
+    if (firstWork.type === "個人") {
+      creator = firstWork.creator;
+    } else {
+      // memberid と member から名前を探す
+      const memberIds = firstWork.memberid?.split(',') || [];
+      const memberNames = firstWork.member?.split(',') || [];
+      const memberIndex = memberIds.findIndex(id =>
+        id.trim().toLowerCase() === tlink
+      );
+      if (memberIndex !== -1) {
+        creator = memberNames[memberIndex].trim();
+      }
+    }
+  }
+
+  return {
+    tlink,
+    creator: creator || tlink,
+    icon: userInfo?.icon || latestVideo?.icon,
+    videoCount: creatorVideos.length
+  };
+}
+
+function shuffleArray(array) {
+  return [...array].sort(() => 0.5 - Math.random());
 }
