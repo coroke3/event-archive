@@ -364,7 +364,6 @@ export default function WorkId({
                   <p className={styles.time}>{formattedDate}</p>
                 )}
               </div>
-
               <div className={styles.eventInfo}>
                 {eventInfo.map((event, index) => (
                   <div key={index} className={styles.eventSection}>
