@@ -59,13 +59,16 @@
 }
 
 .viewMoreLink {
-	display: flex;
-	align-items: center;
-	gap: 0.5rem;
-	color: var(--accent);
-	text-decoration: none;
-	font-weight: 500;
-	transition: color 0.2s;
+    display: flex;
+    position: absolute;
+    right: calc(50vw - 700px);
+	margin-top: 80px;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
 }
 
 .viewMoreLink:hover {
@@ -366,7 +369,11 @@
 		transform: translateX(-100%); 
 	}
 }
-@media screen and (max-width:1550px) {
+@media screen and (max-width:1490px) {
+	.viewMoreLink{
+		right: calc(3%);
+
+	}
 
 }
 @media screen and (max-width:1230px) {
@@ -498,7 +505,7 @@
 @media (max-width: 768px) {
   .scrollWrapper::before,
   .scrollWrapper::after {
-    width: 60px;
+    width: 0px;
   }
 
   .scrollButtonLeft {
@@ -517,5 +524,34 @@
 	margin-left: calc(-50vw + 50%);
 	margin-right: calc(-50vw + 50%);
 
+  }
+  .creatorIcon{
+	width:15px;
+	height: 15px;
+  }
+  .creatorName{
+	font-size: 0.6rem;
+  }
+  .creatorTitle{
+	font-size: 0.7rem;
+  }
+  .videoCard{
+	width: 150px;
+  }
+  .videoTitle{
+	font-size: 0.8rem;
+	margin: 0 0 0.4rem 0;
+	line-height: 0.8rem;
+	height: auto;
+  }
+  .scrollContainer{
+	gap: 0.5rem;
+  }
+  .scrollButton{
+	width: 30px;
+	height: 30px;
+  }
+  .creatorCard{
+	width: 100px;
   }
 }

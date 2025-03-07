@@ -79,8 +79,8 @@ const getLatestWorkByTlink = (icons, tlink) => {
       const latestIcon =
         tlinkLatestWork.length > 0
           ? tlinkLatestWork.reduce((prev, current) =>
-              new Date(prev.date) > new Date(current.date) ? prev : current
-            ).icon
+            new Date(prev.date) > new Date(current.date) ? prev : current
+          ).icon
           : matchedIcon.icon;
 
       return { creator: matchedMemberName, icon: latestIcon };
@@ -213,28 +213,32 @@ export default function UserPage({ users = [], icons = [] }) {
 
               return (
                 <div className={styles.users} key={user.username}>
-                  {latestWork && latestWork.icon ? (
-                    <Image
-                      src={`https://lh3.googleusercontent.com/d/${latestWork.icon.slice(
-                        33
-                      )}`}
-                      className={styles.iconuse}
-                      alt={`${user.username}のアイコン`}
-                      width={50}
-                      height={50}
-                    />
-                  ) : (
-                    <Image
-                      src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
-                      alt={`アイコン`}
-                      className={styles.iconuse}
-                      width={50}
-                      height={50}
-                    />
-                  )}
                   <Link href={`/user/${user.username}`} passHref>
-                    <h4>{creatorName}</h4> {/* ここでcreatorNameを表示 */}
-                    <p className="id">@{user.username}</p>
+                    <div className={styles.userbox}>
+                      {latestWork && latestWork.icon ? (
+                        <Image
+                          src={`https://lh3.googleusercontent.com/d/${latestWork.icon.slice(
+                            33
+                          )}`}
+                          className={styles.iconuse}
+                          alt={`${user.username}のアイコン`}
+                          width={50}
+                          height={50}
+                        />
+                      ) : (
+                        <Image
+                          src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
+                          alt={`アイコン`}
+                          className={styles.iconuse}
+                          width={50}
+                          height={50}
+                        />
+                      )}
+                      <div className={styles.namebox}>
+                        <h4>{creatorName}</h4> {/* ここでcreatorNameを表示 */}
+                        <p className="id">@{user.username}</p>
+                      </div>
+                    </div>
                     <div className={styles.countb}>
                       <div className={styles.counts}>
                         <p>個人 {matchingWorksCount1.length}</p>

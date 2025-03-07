@@ -140,7 +140,7 @@ export default function Home({ videos, users, events }) {
         title="おすすめ"
         viewMoreLink={
           <Link href="/recommend" className={styles.viewMoreLink}>
-            もっと見る <FontAwesomeIcon icon={faArrowRight} />
+
           </Link>
         }
       >
@@ -208,7 +208,44 @@ export default function Home({ videos, users, events }) {
           </div>
         ))}
       </ScrollSection>
-
+      <ScrollSection
+        title="最新の作品"
+        viewMoreLink={
+          <Link href="/list" className={styles.viewMoreLink}>
+            もっと見る <FontAwesomeIcon icon={faArrowRight} />
+          </Link>
+        }
+      >
+        {latestVideos.map((video) => (
+          <div className={styles.videoCard} key={video.ylink}>
+            <Link href={`/${video.ylink.slice(17, 28)}`}>
+              <div className={styles.thumbnailContainer}>
+                <img
+                  src={video.smallThumbnail}
+                  alt={`${video.title} - ${video.creator}`}
+                  className={styles.thumbnail}
+                  loading="lazy"
+                />
+              </div>
+              <div className={styles.videoInfo}>
+                <h3 className={styles.videoTitle}>{video.title}</h3>
+                <div className={styles.creatorInfo}>
+                  {video.icon ? (
+                    <Image
+                      src={`https://lh3.googleusercontent.com/d/${video.icon.slice(33)}`}
+                      alt={`${video.creator}のアイコン`}
+                      width={24}
+                      height={24}
+                      className={styles.creatorIcon}
+                    />
+                  ) : null}
+                  <span className={styles.creatorName}>{video.creator}</span>
+                </div>
+              </div>
+            </Link>
+          </div>
+        ))}
+      </ScrollSection>
       {/* ④イベント */}
       <section className={styles.sectionContainer}>
         <div className={styles.sectionHeader}>
@@ -268,44 +305,7 @@ export default function Home({ videos, users, events }) {
       </section>
 
       {/* ⑤最新の作品 */}
-      <ScrollSection
-        title="最新の作品"
-        viewMoreLink={
-          <Link href="/list" className={styles.viewMoreLink}>
-            もっと見る <FontAwesomeIcon icon={faArrowRight} />
-          </Link>
-        }
-      >
-        {latestVideos.map((video) => (
-          <div className={styles.videoCard} key={video.ylink}>
-            <Link href={`/${video.ylink.slice(17, 28)}`}>
-              <div className={styles.thumbnailContainer}>
-                <img
-                  src={video.smallThumbnail}
-                  alt={`${video.title} - ${video.creator}`}
-                  className={styles.thumbnail}
-                  loading="lazy"
-                />
-              </div>
-              <div className={styles.videoInfo}>
-                <h3 className={styles.videoTitle}>{video.title}</h3>
-                <div className={styles.creatorInfo}>
-                  {video.icon ? (
-                    <Image
-                      src={`https://lh3.googleusercontent.com/d/${video.icon.slice(33)}`}
-                      alt={`${video.creator}のアイコン`}
-                      width={24}
-                      height={24}
-                      className={styles.creatorIcon}
-                    />
-                  ) : null}
-                  <span className={styles.creatorName}>{video.creator}</span>
-                </div>
-              </div>
-            </Link>
-          </div>
-        ))}
-      </ScrollSection>
+
 
       <Footer />
     </div>
