@@ -23,13 +23,16 @@ export default function Home({ videos, users, events }) {
   const popularCreators = useMemo(() => {
     // 1. すべてのユーザーの作品数をカウント（合作を含む）
     const creatorCounts = {};
-    const creatorCounts2 = {};
+    const creatorCounts2 = {}; // 個人作品のみのカウント
+
     videos.forEach(video => {
-      // tlink からの集計
+      // tlink からの集計（個人作品）
       if (video.tlink) {
         const tlink = video.tlink.toLowerCase();
         creatorCounts[tlink] = (creatorCounts[tlink] || 0) + 1;
-        creatorCounts2[tlink] = (creatorCounts[tlink] || 0) + 1;
+        if (video.type === "個人") {
+          creatorCounts2[tlink] = (creatorCounts2[tlink] || 0) + 1;
+        }
       }
 
       // memberid からの集計（合作参加）
@@ -43,8 +46,8 @@ export default function Home({ videos, users, events }) {
       }
     });
 
-    // 2. 4作品以上のクリエイター
-    const frequentCreators = Object.keys(creatorCounts)
+    // 2. 4作品以上のクリエイター（個人作品で判定）
+    const frequentCreators = Object.keys(creatorCounts2)
       .filter(tlink => creatorCounts2[tlink] >= 4)
       .map(tlink => getCreatorInfo(tlink, videos, users));
 
@@ -353,26 +356,38 @@ export const getStaticProps = async () => {
   }
 };
 
-// ヘルパー関数
+// ヘルパー関数を改善
 function getCreatorInfo(tlink, videos, users) {
-  const creatorVideos = videos.filter(v => v.tlink?.toLowerCase() === tlink);
-  const latestVideo = creatorVideos.sort((a, b) => new Date(b.time) - new Date(a.time))[0];
-  const userInfo = users.find(u => u.tlink?.toLowerCase() === tlink);
+  // 作品を取得（tlinkで完全一致）
+  const matchedWorksByTlink = videos.filter(
+    work => work.tlink?.toLowerCase() === tlink.toLowerCase()
+  );
 
-  // user/[id].tsx の処理を参考に
+  // ユーザー情報を取得
+  const userInfo = users.find(u => u.tlink?.toLowerCase() === tlink.toLowerCase());
+
+  // アイコンの取得
+  let icon = userInfo?.icon || "";
+  if (!icon && matchedWorksByTlink.length > 0) {
+    const personalWorks = matchedWorksByTlink.filter(work => work.type === "個人");
+    const firstWork = personalWorks.length > 0 ? personalWorks[0] : matchedWorksByTlink[0];
+    icon = firstWork.icon || "";
+  }
+
+  // クリエイター名の取得
   let creator = userInfo?.name;
-  if (!creator && latestVideo) {
-    const personalWorks = creatorVideos.filter(w => w.type === "個人");
-    const firstWork = personalWorks.length > 0 ? personalWorks[0] : latestVideo;
+  if (!creator && matchedWorksByTlink.length > 0) {
+    const personalWorks = matchedWorksByTlink.filter(work => work.type === "個人");
+    const firstWork = personalWorks.length > 0 ? personalWorks[0] : matchedWorksByTlink[0];
 
     if (firstWork.type === "個人") {
       creator = firstWork.creator;
     } else {
-      // memberid と member から名前を探す
+      // 合作の場合、memberidとmemberから名前を探す
       const memberIds = firstWork.memberid?.split(',') || [];
       const memberNames = firstWork.member?.split(',') || [];
-      const memberIndex = memberIds.findIndex(id =>
-        id.trim().toLowerCase() === tlink
+      const memberIndex = memberIds.findIndex(
+        id => id.trim().toLowerCase() === tlink.toLowerCase()
       );
       if (memberIndex !== -1) {
         creator = memberNames[memberIndex].trim();
@@ -380,11 +395,30 @@ function getCreatorInfo(tlink, videos, users) {
     }
   }
 
+  // 作品数のカウント（個人作品と合作参加を含む）
+  const workCount = videos.reduce((count, video) => {
+    let isCreator = false;
+
+    // tlinkでの一致
+    if (video.tlink?.toLowerCase() === tlink.toLowerCase()) {
+      isCreator = true;
+    }
+    // memberidでの一致（合作参加）
+    else if (video.memberid) {
+      const memberIds = video.memberid.split(',');
+      if (memberIds.some(id => id.trim().toLowerCase() === tlink.toLowerCase())) {
+        isCreator = true;
+      }
+    }
+
+    return count + (isCreator ? 1 : 0);
+  }, 0);
+
   return {
     tlink,
     creator: creator || tlink,
-    icon: userInfo?.icon || latestVideo?.icon,
-    videoCount: creatorVideos.length
+    icon,
+    workCount
   };
 }
 
