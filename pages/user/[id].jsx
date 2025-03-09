@@ -210,9 +210,8 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
 
                 return (
                   <div
-                    className={`works ${isPrivate ? "private" : ""} ${
-                      work.status === "unlisted" ? "unlisted" : ""
-                    }`}
+                    className={`works ${isPrivate ? "private" : ""} ${work.status === "unlisted" ? "unlisted" : ""
+                      }`}
                     key={work.ylink}
                   >
                     <Link href={`../${work.ylink.slice(17, 28)}`}>
@@ -277,13 +276,12 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
           </div>
 
           <div className="work">
-            <h2>参加した合作</h2>
+            <h2>参加した作品等</h2>
             {collaborationWorks.length > 0 ? (
               collaborationWorks.map((work) => (
                 <div
-                  className={`works ${
-                    work.status === "private" ? "private" : ""
-                  } ${work.status === "unlisted" ? "unlisted" : ""}`}
+                  className={`works ${work.status === "private" ? "private" : ""
+                    } ${work.status === "unlisted" ? "unlisted" : ""}`}
                   key={work.ylink}
                 >
                   <Link href={`../${work.ylink.slice(17, 28)}`}>

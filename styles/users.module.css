@@ -66,6 +66,8 @@
 .uwork {
   width: calc(100% - 500px);
   margin-left: 500px;
+  position: relative;
+  top: 50px;
 }
 
 @keyframes scroll {

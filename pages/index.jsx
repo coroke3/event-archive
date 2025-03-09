@@ -358,67 +358,63 @@ export const getStaticProps = async () => {
 
 // ヘルパー関数を改善
 function getCreatorInfo(tlink, videos, users) {
-  // 作品を取得（tlinkで完全一致）
+  // tlinkが一致する作品をフィルタリング
   const matchedWorksByTlink = videos.filter(
     work => work.tlink?.toLowerCase() === tlink.toLowerCase()
   );
 
-  // ユーザー情報を取得
-  const userInfo = users.find(u => u.tlink?.toLowerCase() === tlink.toLowerCase());
-
   // アイコンの取得
-  let icon = userInfo?.icon || "";
-  if (!icon && matchedWorksByTlink.length > 0) {
+  let icon = "";
+  if (matchedWorksByTlink.length > 0) {
     const personalWorks = matchedWorksByTlink.filter(work => work.type === "個人");
     const firstWork = personalWorks.length > 0 ? personalWorks[0] : matchedWorksByTlink[0];
     icon = firstWork.icon || "";
   }
 
   // クリエイター名の取得
-  let creator = userInfo?.name;
-  if (!creator && matchedWorksByTlink.length > 0) {
+  let creator = null;
+  if (matchedWorksByTlink.length > 0) {
     const personalWorks = matchedWorksByTlink.filter(work => work.type === "個人");
     const firstWork = personalWorks.length > 0 ? personalWorks[0] : matchedWorksByTlink[0];
-
     if (firstWork.type === "個人") {
       creator = firstWork.creator;
-    } else {
-      // 合作の場合、memberidとmemberから名前を探す
-      const memberIds = firstWork.memberid?.split(',') || [];
-      const memberNames = firstWork.member?.split(',') || [];
-      const memberIndex = memberIds.findIndex(
-        id => id.trim().toLowerCase() === tlink.toLowerCase()
-      );
-      if (memberIndex !== -1) {
-        creator = memberNames[memberIndex].trim();
+    }
+  }
+
+  // creatorが未設定の場合、memberidとmemberから探す
+  if (!creator) {
+    for (const work of videos) {
+      if (work.memberid) {
+        const memberIds = work.memberid.split(",");
+        const memberNames = work.member.split(",");
+
+        const matchedMemberIndex = memberIds.findIndex(
+          memberId => memberId.trim().toLowerCase() === tlink.toLowerCase()
+        );
+
+        if (matchedMemberIndex !== -1) {
+          creator = memberNames[matchedMemberIndex].trim();
+          break;
+        }
       }
     }
   }
 
+  // それでもcreatorが見つからない場合はtlinkを使用
+  if (!creator) {
+    creator = tlink;
+  }
+
   // 作品数のカウント（個人作品と合作参加を含む）
-  const workCount = videos.reduce((count, video) => {
-    let isCreator = false;
-
-    // tlinkでの一致
-    if (video.tlink?.toLowerCase() === tlink.toLowerCase()) {
-      isCreator = true;
-    }
-    // memberidでの一致（合作参加）
-    else if (video.memberid) {
-      const memberIds = video.memberid.split(',');
-      if (memberIds.some(id => id.trim().toLowerCase() === tlink.toLowerCase())) {
-        isCreator = true;
-      }
-    }
-
-    return count + (isCreator ? 1 : 0);
-  }, 0);
+  const totalWorks = videos.filter(work =>
+    (work.tlink?.toLowerCase() === tlink.toLowerCase()) ||
+    (work.memberid && work.memberid.toLowerCase().includes(tlink.toLowerCase()))
+  ).length;
 
   return {
-    tlink,
-    creator: creator || tlink,
     icon,
-    workCount
+    creator,
+    totalWorks
   };
 }
 
