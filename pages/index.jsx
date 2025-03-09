@@ -412,6 +412,7 @@ function getCreatorInfo(tlink, videos, users) {
   ).length;
 
   return {
+    tlink,
     icon,
     creator,
     totalWorks
