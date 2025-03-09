@@ -60,39 +60,40 @@ export default function Home({ work }) {
       </Head>
 
       {/* チェックボックスによるフィルタリング */}
-      <div className={styles.filteroptions}>
-        <label>
-          <input
-            type="checkbox"
-            name="public"
-            checked={filter.public}
-            onChange={handleFilterChange}
-          />
-          公開作品
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            name="unlisted"
-            checked={filter.unlisted}
-            onChange={handleFilterChange}
-          />
-          限定公開作品
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            name="private"
-            checked={filter.private}
-            onChange={handleFilterChange}
-          />
-          非公開作品
-        </label>
-      </div>
+
 
       <div className="content">
         <h1 className="entitle">RECOMMEND</h1>
         <h1 className="jatitle">おすすめ</h1>
+        <div className={styles.filteroptions}>
+          <label>
+            <input
+              type="checkbox"
+              name="public"
+              checked={filter.public}
+              onChange={handleFilterChange}
+            />
+            公開作品
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              name="unlisted"
+              checked={filter.unlisted}
+              onChange={handleFilterChange}
+            />
+            限定公開作品
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              name="private"
+              checked={filter.private}
+              onChange={handleFilterChange}
+            />
+            非公開作品
+          </label>
+        </div>
         <div className="work">
           {displayedWorks.length > 0 ? (
             displayedWorks.map((work) => {

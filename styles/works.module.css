@@ -8,6 +8,9 @@
 	justify-content: center;
 	transition: all 0.5s;
 	transition-delay: 1s;
+    position: relative;
+    top: -50px;
+
 }
 .filteroptions:hover{
 	opacity: 1;

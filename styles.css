@@ -80,6 +80,7 @@ th {
 .work {
   width: calc(100% - 50px);
   margin: auto;
+  margin-top: -50px;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
