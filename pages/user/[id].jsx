@@ -201,8 +201,13 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
 
         <div className={styles.uwork}>
           <div className="work">
-            {Array.isArray(works) && works.length > 0 ? (
-              works.map((work) => {
+            {/* 通常の作品（PVSFSummary以外）を表示 */}
+            {Array.isArray(works) && works.filter(work =>
+              !work.eventid?.split(',').some(id => id.includes('PVSFSummary'))
+            ).length > 0 ? (
+              works.filter(work =>
+                !work.eventid?.split(',').some(id => id.includes('PVSFSummary'))
+              ).map((work) => {
                 const showIcon = work.icon !== undefined && work.icon !== "";
                 const isPrivate =
                   work.status === "private" || work.status === "unknown";
@@ -275,10 +280,15 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
             )}
           </div>
 
+          {/* 参加作品セクション（PVSFSummary以外）*/}
           <div className="work">
             <h2>参加した作品等</h2>
-            {collaborationWorks.length > 0 ? (
-              collaborationWorks.map((work) => (
+            {collaborationWorks.filter(work =>
+              !work.eventid?.split(',').some(id => id.includes('PVSFSummary'))
+            ).length > 0 ? (
+              collaborationWorks.filter(work =>
+                !work.eventid?.split(',').some(id => id.includes('PVSFSummary'))
+              ).map((work) => (
                 <div
                   className={`works ${work.status === "private" ? "private" : ""
                     } ${work.status === "unlisted" ? "unlisted" : ""}`}
@@ -343,6 +353,136 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
               <p>このユーザーは参加した合作作品を持っていません。</p>
             )}
           </div>
+
+          {/* PVSFSummary作品セクション（個人作品）*/}
+          {works.filter(work =>
+            work.eventid?.split(',').some(id => id.includes('PVSFSummary'))
+          ).length > 0 && (
+              <div className={styles.summarySection}>
+                <h2 className={styles.summaryTitle}>まとめ動画</h2>
+                <div className={styles.summaryWorks}>
+                  {works.filter(work =>
+                    work.eventid?.split(',').some(id => id.includes('PVSFSummary'))
+                  ).map((work) => (
+                    <div
+                      className={`works ${styles.summaryWork} ${work.status === "private" ? "private" : ""} ${work.status === "unlisted" ? "unlisted" : ""}`}
+                      key={work.ylink}
+                    >
+                      <Link href={`../${work.ylink.slice(17, 28)}`}>
+                        <Image
+                          src={work.largeThumbnail}
+                          alt={`${work.title} - ${work.creator} | PVSF archive`}
+                          className="samune"
+                          width={640}
+                          height={360}
+                        />
+                      </Link>
+                      <h3>{work.title}</h3>
+                      <div className="subtitle">
+                        <div className="insubtitle">
+                          {work.icon ? (
+                            <Image
+                              src={`https://lh3.googleusercontent.com/d/${work.icon.slice(33)}`}
+                              className={styles.sicon}
+                              alt={`${work.creator}のアイコン`}
+                              width={50}
+                              height={50}
+                            />
+                          ) : (
+                            <Image
+                              src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
+                              alt={`アイコン`}
+                              className="icon"
+                              width={50}
+                              height={50}
+                            />
+                          )}
+                          <p>{work.creator}</p>
+                        </div>
+                        <p className="status">
+                          {work.status === "public" ? null : work.status === "unlisted" ? (
+                            <span className="inunlisted">
+                              <FontAwesomeIcon icon={faLink} />
+                              限定公開
+                            </span>
+                          ) : (
+                            <span className="inprivate">
+                              <FontAwesomeIcon icon={faLock} />
+                              非公開
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+          {/* PVSFSummary作品セクション（参加作品）*/}
+          {collaborationWorks.filter(work =>
+            work.eventid?.split(',').some(id => id.includes('PVSFSummary'))
+          ).length > 0 && (
+              <div className={styles.summarySection}>
+                <h2 className={styles.summaryTitle}>その他の動画</h2>
+                <div className={styles.summaryWorks}>
+                  {collaborationWorks.filter(work =>
+                    work.eventid?.split(',').some(id => id.includes('PVSFSummary'))
+                  ).map((work) => (
+                    <div
+                      className={`works ${styles.summaryWork} ${work.status === "private" ? "private" : ""} ${work.status === "unlisted" ? "unlisted" : ""}`}
+                      key={work.ylink}
+                    >
+                      <Link href={`../${work.ylink.slice(17, 28)}`}>
+                        <Image
+                          src={work.largeThumbnail}
+                          alt={`${work.title} - ${work.creator} | PVSF archive`}
+                          className="samune"
+                          width={640}
+                          height={360}
+                        />
+                      </Link>
+                      <h3>{work.title}</h3>
+                      <div className="subtitle">
+                        <div className="insubtitle">
+                          {work.icon ? (
+                            <Image
+                              src={`https://lh3.googleusercontent.com/d/${work.icon.slice(33)}`}
+                              className={styles.sicon}
+                              alt={`${work.creator}のアイコン`}
+                              width={50}
+                              height={50}
+                            />
+                          ) : (
+                            <Image
+                              src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
+                              alt={`アイコン`}
+                              className="icon"
+                              width={50}
+                              height={50}
+                            />
+                          )}
+                          <p>{work.creator}</p>
+                        </div>
+                        <p className="status">
+                          {work.status === "public" ? null : work.status === "unlisted" ? (
+                            <span className="inunlisted">
+                              <FontAwesomeIcon icon={faLink} />
+                              限定公開
+                            </span>
+                          ) : (
+                            <span className="inprivate">
+                              <FontAwesomeIcon icon={faLock} />
+                              非公開
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
         </div>
       </div>
       <Footer />

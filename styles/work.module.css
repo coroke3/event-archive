@@ -34,6 +34,7 @@
   margin: 6px auto 10px auto;
   padding: 11px 0;
   border-bottom: solid 2px var(--foreground);
+  text-align: left;
 }
 .time {
   font-weight: 500;

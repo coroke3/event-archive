@@ -77,3 +77,20 @@ grid-template-columns: 50% 40% 10%;
   @media (min-aspect-ratio: 16 / 9) {
   }
 }
+
+.summary-section {
+  margin-top: 40px;
+  border-top: 1px solid var(--foreground);
+  padding-top: 20px;
+}
+
+.summary-works {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+}
+
+.summary {
+  max-width: 500px;
+}

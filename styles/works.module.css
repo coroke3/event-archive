@@ -413,7 +413,7 @@
   display: flex;
   gap: 1.5rem;
   overflow-x: auto;
-  scroll-behavior: auto; /* スムーズスクロールを無効化（カスタム実装を使用） */
+  scroll-behavior: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
   padding: 1rem calc((100vw - 1400px) / 2);
@@ -535,14 +535,20 @@
   }
 
   .scrollContainer {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(2, auto);
+    gap: 0.5rem;
     padding: 1rem 60px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
   }
-  .scrollWrapper {
-	width: 98vw;
-	margin-left: calc(-50vw + 50%);
-	margin-right: calc(-50vw + 50%);
 
+  /* 2行目を0.5枠分ずらす */
+  .scrollContainer > *:nth-child(2n) {
+    transform: translateX(50%);
   }
+
   .creatorIcon{
 	width:15px;
 	height: 15px;
@@ -555,6 +561,7 @@
   }
   .videoCard{
 	width: 150px;
+    margin-bottom: 1rem;
   }
   .videoTitle{
 	font-size: 0.8rem;
@@ -571,5 +578,6 @@
   }
   .creatorCard{
 	width: 100px;
+    margin-bottom: 1rem;
   }
 }

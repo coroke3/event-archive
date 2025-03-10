@@ -161,3 +161,48 @@
 }
 
 }
+
+.summarySection {
+  margin-top: 40px;
+  padding-top: 20px;
+  width: 100%;
+}
+
+.summaryTitle {
+  width: 100%;
+  text-align: center;
+  border: none;
+  font-size: 1rem;
+  letter-spacing: 3px;
+}
+
+.summaryWorks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.summaryWorks h3{
+  font-size:0.9rem;
+  margin: 2px auto 5px 5px;
+}
+.summaryWorks p{
+  font-size: 0.7rem;
+}
+.sicon{
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  margin: auto 5px auto 0;
+}
+
+.summaryWork {
+  width: 200px;
+  max-width: 500px;
+}
+
+@media screen and (max-width: 450px) {
+  .summaryWork {
+    width:46%;
+    margin: 20px 1%;
+  }
+}
