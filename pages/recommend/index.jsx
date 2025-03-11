@@ -36,7 +36,7 @@ export default function Home({ work }) {
   return (
     <div>
       <Head>
-        <title>過去の投稿作品 - オンライン映像イベント / PVSF archive</title>
+        <title>おすすめの作品 - EventArchives</title>
         <meta
           name="description"
           content={`過去の投稿作品です。ぜひご覧ください。`}
@@ -47,15 +47,15 @@ export default function Home({ work }) {
         <meta property="og:url" content="pvsf.jp/work" />
         <meta
           property="og:title"
-          content="過去の投稿作品 - オンライン映像イベント / PVSF archive"
+          content="おすすめの作品  - EventArchives"
         />
         <meta
           property="og:description"
-          content="過去の投稿作品です。ぜひご覧ください。"
+          content="おすすめの作品 です。ぜひご覧ください。"
         />
         <meta
           property="og:image"
-          content="https://i.gyazo.com/35170e03ec321fb94276ca1c918efabc.jpg"
+          content="https://i.gyazo.com/6d5407792094cb1437714af28f272f98.png"
         />
       </Head>
 

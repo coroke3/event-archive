@@ -165,7 +165,7 @@ export default function UserPage({ users = [], icons = [] }) {
   return (
     <div>
       <Head>
-        <title>ユーザー一覧 - PVSF Archive</title>
+        <title>ユーザー一覧 - EventArchives</title>
         <meta
           name="description"
           content="ユーザーの名前とアイコンの一覧です。"

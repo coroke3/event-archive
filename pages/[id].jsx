@@ -274,22 +274,22 @@ export default function WorkId({
   return (
     <div>
       <Head>
-        <title>{`${work.title} - ${work.creator} - オンライン映像イベント / PVSF archive`}</title>
+        <title>{`${work.title} - ${work.creator} - EventArchives`}</title>
         <meta
           name="description"
-          content={`PVSFへの出展作品です。  ${work.title} - ${work.creator}`}
+          content={`  ${work.title} - ${work.creator}`}
         />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@pvscreeningfes" />
         <meta name="twitter:creator" content="@coroke3" />
-        <meta property="og:url" content="pvsf.jp" />
+        <meta property="og:url" content="event" />
         <meta
           property="og:title"
-          content={`${work.title} - ${work.creator} / PVSF archive`}
+          content={`${work.title} - ${work.creator} / EventArchives`}
         />
         <meta
           property="og:description"
-          content={`PVSF 出展作品  ${work.title} - ${work.creator}  music:${work.music} - ${work.credit}`}
+          content={`EventArchives  ${work.title} - ${work.creator}  music:${work.music} - ${work.credit}`}
         />
         <meta property="og:image" content={work.largeThumbnail} />
       </Head>

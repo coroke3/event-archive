@@ -75,7 +75,7 @@ export default function EventPage({ event, works = [], errorMessage = "" }) {
       <Head>
         <title>
           {event?.eventname
-            ? `${event.eventname} - PVSF Archive`
+            ? `${event.eventname} - EventArchives`
             : "イベント一覧"}
         </title>
         <meta

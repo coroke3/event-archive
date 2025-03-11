@@ -44,7 +44,7 @@ export default function EventPage({ events = [] }) {
   return (
     <div>
       <Head>
-        <title>イベント一覧 - PVSF Archive</title>
+        <title>イベント一覧 - EventArchives</title>
         <meta name="description" content="イベントの一覧です。" />
       </Head>
       <div className={styles.levent}>

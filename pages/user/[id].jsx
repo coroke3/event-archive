@@ -147,7 +147,7 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
     <div>
       <Head>
         <title>
-          {user ? `${user.username}の作品 - PVSF Archive` : "作品一覧"}
+          {user ? `${user.username}の作品 - EventArchives` : "作品一覧"}
         </title>
         <meta
           name="description"

@@ -123,7 +123,7 @@ export default function Home({ videos, users, events }) {
         />
         <meta
           property="og:image"
-          content="https://i.gyazo.com/35170e03ec321fb94276ca1c918efabc.jpg"
+          content="https://i.gyazo.com/6d5407792094cb1437714af28f272f98.png"
         />
       </Head>
 
