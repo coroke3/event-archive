@@ -48,6 +48,7 @@ function MyApp({ Component, pageProps }) {
           `,
         }}
       />
+      <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "4b272192915543f3a990635833701f0b"}'></script>
     </>
   );
 }
