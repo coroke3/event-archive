@@ -64,23 +64,10 @@ export default function Home({ videos, users, events }) {
       .map(tlink => getCreatorInfo(tlink, videos, users));
 
     // 4. 両方のリストからランダムに選出
-    const combinedCreators = [
+    return [
       ...shuffleArray(frequentCreators).slice(0, 20),
       ...shuffleArray(topCreators).slice(0, 20)
     ];
-
-    // 重複を削除
-    const uniqueCreators = [];
-    const seenTlinks = new Set();
-
-    for (const creator of combinedCreators) {
-      if (!seenTlinks.has(creator.tlink)) {
-        seenTlinks.add(creator.tlink);
-        uniqueCreators.push(creator);
-      }
-    }
-
-    return uniqueCreators;
   }, [videos, users]);
 
   // ④直近3イベントの作品
@@ -201,29 +188,21 @@ export default function Home({ videos, users, events }) {
         {popularCreators.map((creator) => (
           <div className={styles.creatorCard} key={creator.tlink}>
             <Link href={`/user/${creator.tlink}`}>
-              <div className={styles.creatorImageContainer}>
-                {creator.icon && creator.personalWorks > 0 ? (
+              <div className={styles.creatorIconLarge}>
+                {creator.icon ? (
                   <Image
                     src={`https://lh3.googleusercontent.com/d/${creator.icon.slice(33)}`}
                     alt={`${creator.creator}のアイコン`}
                     width={80}
                     height={80}
-                    className={styles.creatorImage}
+                    className={styles.creatorAvatar}
                   />
                 ) : (
-                  <div className={styles.creatorImagePlaceholder}>
-                    <span>{creator.creator.charAt(0)}</span>
-                  </div>
+                  <div className={styles.placeholderIcon}></div>
                 )}
               </div>
-              <div className={styles.creatorInfo}>
+              <div className={styles.creatorDetails}>
                 <h3 className={styles.creatorTitle}>{creator.creator}</h3>
-                <p className={styles.creatorStats}>
-                  作品数: {creator.totalWorks}
-                  {creator.personalWorks > 0 && creator.collaborationWorks > 0 && (
-                    <span>（個人: {creator.personalWorks}, 合作: {creator.collaborationWorks}）</span>
-                  )}
-                </p>
               </div>
             </Link>
           </div>
@@ -379,8 +358,6 @@ export const getStaticProps = async () => {
 
 // ヘルパー関数を改善
 function getCreatorInfo(tlink, videos, users) {
-  if (!tlink) return { tlink: "", icon: "", creator: "不明", totalWorks: 0 };
-
   // tlinkが一致する作品をフィルタリング
   const matchedWorksByTlink = videos.filter(
     work => work.tlink?.toLowerCase() === tlink.toLowerCase()
@@ -406,27 +383,20 @@ function getCreatorInfo(tlink, videos, users) {
 
   // creatorが未設定の場合、memberidとmemberから探す
   if (!creator) {
-    let latestWork = null;
     for (const work of videos) {
       if (work.memberid) {
         const memberIds = work.memberid.split(",");
-        const memberNames = work.member ? work.member.split(",") : [];
+        const memberNames = work.member.split(",");
 
         const matchedMemberIndex = memberIds.findIndex(
           memberId => memberId.trim().toLowerCase() === tlink.toLowerCase()
         );
 
-        if (matchedMemberIndex !== -1 && memberNames[matchedMemberIndex]) {
-          latestWork = work;
+        if (matchedMemberIndex !== -1) {
           creator = memberNames[matchedMemberIndex].trim();
-          break; // 最初に見つかった一致を優先
+          break;
         }
       }
-    }
-
-    // 最新作が見つかっていない場合、ユーザー名を使用
-    if (!creator && latestWork) {
-      creator = tlink;
     }
   }
 
@@ -436,24 +406,15 @@ function getCreatorInfo(tlink, videos, users) {
   }
 
   // 作品数のカウント（個人作品と合作参加を含む）
-  const personalWorks = videos.filter(work =>
-    work.tlink?.toLowerCase() === tlink.toLowerCase()
+  const totalWorks = videos.filter(work =>
+    (work.tlink?.toLowerCase() === tlink.toLowerCase()) ||
+    (work.memberid && work.memberid.toLowerCase().includes(tlink.toLowerCase()))
   ).length;
-
-  const collaborationWorks = videos.filter(work =>
-    work.memberid && work.memberid.split(",").some(
-      memberId => memberId.trim().toLowerCase() === tlink.toLowerCase()
-    )
-  ).length;
-
-  const totalWorks = personalWorks + collaborationWorks;
 
   return {
     tlink,
     icon,
     creator,
-    personalWorks,
-    collaborationWorks,
     totalWorks
   };
 }
