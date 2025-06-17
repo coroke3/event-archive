@@ -771,8 +771,8 @@ const processMusic = (work) => {
   return '';
 };
 
-// getStaticPropsをgetServerSidePropsに変更
-export async function getServerSideProps({ params }) {
+// getStaticPropsの修正
+export async function getStaticProps({ params }) {
   try {
     // 再試行ロジックを追加
     const fetchWithRetry = async (url, retries = 3) => {
@@ -781,19 +781,19 @@ export async function getServerSideProps({ params }) {
           const res = await fetch(url, {
             timeout: 30000,
             headers: {
-              'Cache-Control': 'no-cache'
+              'Cache-Control': 'public, max-age=3600'
             }
           });
           if (res.ok) {
             const data = await res.json();
-            return data || null;
+            return data || null; // データが無い場合はnullを返す
           }
         } catch (err) {
           if (i === retries - 1) throw err;
           await new Promise(r => setTimeout(r, 1000 * (i + 1)));
         }
       }
-      return null;
+      return null; // 全ての再試行が失敗した場合
     };
 
     // 並列でデータを取得し、デフォルト値を設定
@@ -843,9 +843,56 @@ export async function getServerSideProps({ params }) {
     };
 
   } catch (error) {
-    console.error(`Error in getServerSideProps for ID ${params.id}:`, error);
+    console.error(`Error in getStaticProps for ID ${params.id}:`, error);
+    throw error;
+  }
+}
 
-    // エラー時は404を返す
-    return { notFound: true };
+// getStaticPathsの修正
+export async function getStaticPaths() {
+  try {
+    const res = await fetch("https://pvsf-cash.vercel.app/api/videos", {
+      timeout: 30000,
+      headers: {
+        'Cache-Control': 'public, max-age=3600'
+      }
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to fetch videos: ${res.status}`);
+    }
+
+    const works = await res.json();
+
+    // privateフィルターを削除
+    const uniquePaths = new Set();
+    const paths = works
+      .filter(work => {
+        try {
+          if (!work || !work.ylink) return false;
+
+          const id = work.ylink.slice(17, 28);
+          if (uniquePaths.has(id)) return false;
+
+          uniquePaths.add(id);
+          return true;
+        } catch (e) {
+          console.error(`Invalid work data:`, work);
+          return false;
+        }
+      })
+      .map(work => ({
+        params: { id: work.ylink.slice(17, 28) }
+      }));
+
+    console.log(`Generated ${paths.length} unique static paths`);
+    return { paths, fallback: false };
+
+  } catch (error) {
+    console.error('Error in getStaticPaths:', error);
+    return {
+      paths: [],
+      fallback: false
+    };
   }
 }
