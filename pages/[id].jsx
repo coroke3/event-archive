@@ -15,11 +15,12 @@ const WorkCard = React.memo(({ work }) => (
   <div className={styles.ss1}>
     <div className={styles.ss12}>
       <Link href={`/${work.ylink.slice(17, 28)}`}>
-        <img
+        <Image
           src={work.smallThumbnail}
-          width="100%"
+          width={200}
+          height={113}
           alt={`${work.title} - ${work.creator} | PVSF archive`}
-          loading="lazy"
+          style={{ width: '100%', height: 'auto' }}
         />
       </Link>
     </div>
@@ -29,6 +30,7 @@ const WorkCard = React.memo(({ work }) => (
     </div>
   </div>
 ));
+WorkCard.displayName = 'WorkCard';
 
 // メモ化されたユーザーアイコンコンポーネント
 const UserIcon = React.memo(({ work }) => {
@@ -50,6 +52,7 @@ const UserIcon = React.memo(({ work }) => {
     </Link>
   );
 });
+UserIcon.displayName = 'UserIcon';
 
 // メモ化されたメンバーテーブル行コンポーネント
 const MemberTableRow = React.memo(({ username, memberId, memberIconInfo, matchedUser, index }) => {
@@ -88,12 +91,29 @@ const MemberTableRow = React.memo(({ username, memberId, memberIconInfo, matched
     </tr>
   );
 });
+MemberTableRow.displayName = 'MemberTableRow';
 
 // authプロパティのデフォルト値を設定
 const defaultAuth = {
   auth: false,
   user: null
 };
+
+// 決定論的なシャッフル関数（シード値を使用）
+function deterministicShuffle(array, seed = 1) {
+  const shuffled = [...array];
+  let currentSeed = seed;
+
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    // 線形合同法を使用して疑似乱数を生成
+    currentSeed = (currentSeed * 9301 + 49297) % 233280;
+    const randomValue = currentSeed / 233280;
+    const j = Math.floor(randomValue * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  return shuffled;
+}
 
 export default function WorkId({
   work,
@@ -276,7 +296,7 @@ export default function WorkId({
                       {eventWorks[index]?.prevWork && (
                         <Link href={`/${eventWorks[index].prevWork.ylink.slice(17, 28)}`} className={styles.eventNavItem}>
                           <div className={styles.eventNavThumb}>
-                            <img
+                            <Image
                               src={eventWorks[index].prevWork.smallThumbnail}
                               alt={`前の作品: ${eventWorks[index].prevWork.title}`}
                               width={160}
@@ -292,7 +312,7 @@ export default function WorkId({
                       {eventWorks[index]?.nextWork && (
                         <Link href={`/${eventWorks[index].nextWork.ylink.slice(17, 28)}`} className={styles.eventNavItem}>
                           <div className={styles.eventNavThumb}>
-                            <img
+                            <Image
                               src={eventWorks[index].nextWork.smallThumbnail}
                               alt={`次の作品: ${eventWorks[index].nextWork.title}`}
                               width={160}
@@ -401,7 +421,7 @@ function getMemberIcons(memberIds, publicData2) {
 function getRelatedWorks(work, publicData, currentIndex) {
   const safeCompare = (a, b) => a && b && typeof a === 'string' && typeof b === 'string' && a.toLowerCase() === b.toLowerCase();
   const uniqueWorks = (works) => Array.from(new Set(works.map(w => w.ylink))).map(ylink => works.find(w => w.ylink === ylink));
-  const getRandomWorks = (works, count) => works.length <= count ? works : works.sort(() => 0.5 - Math.random()).slice(0, count);
+  const getRandomWorks = (works, count, seed = 1) => works.length <= count ? works : deterministicShuffle(works, seed).slice(0, count);
   const baseFilter = w => w.ylink !== work.ylink;
   const memberIds = work.memberid?.split(',').map(id => id.trim()).filter(Boolean) || [];
   const workTime = new Date(work.time);
@@ -421,22 +441,22 @@ function getRelatedWorks(work, publicData, currentIndex) {
   const processedWorks = work.status === "private" ? {
     tlink: categorizedWorks.tlink.sort((a, b) => Math.abs(new Date(a.time) - workTime) - Math.abs(new Date(b.time) - workTime)).slice(0, 4),
     memberid: categorizedWorks.memberid.sort((a, b) => a.timeDiff - b.timeDiff).slice(0, 2),
-    memberTlink: getRandomWorks(categorizedWorks.memberTlink, memberIds.length),
-    memberRelated: getRandomWorks(categorizedWorks.memberRelated, memberIds.length),
-    music: getRandomWorks(categorizedWorks.music, 2),
-    credit: getRandomWorks(categorizedWorks.credit, 2),
-    random: getRandomWorks(publicData.filter(baseFilter), 2),
-    score: getRandomWorks(categorizedWorks.score.sort((a, b) => b.deterministicScore - a.deterministicScore).slice(0, 50), 2)
+    memberTlink: getRandomWorks(categorizedWorks.memberTlink, memberIds.length, 111),
+    memberRelated: getRandomWorks(categorizedWorks.memberRelated, memberIds.length, 222),
+    music: getRandomWorks(categorizedWorks.music, 2, 333),
+    credit: getRandomWorks(categorizedWorks.credit, 2, 444),
+    random: getRandomWorks(publicData.filter(baseFilter), 2, 555),
+    score: getRandomWorks(categorizedWorks.score.sort((a, b) => b.deterministicScore - a.deterministicScore).slice(0, 50), 2, 666)
   } : {
     tlink: categorizedWorks.tlink.sort((a, b) => Math.abs(currentIndex - publicData.indexOf(a)) - Math.abs(currentIndex - publicData.indexOf(b))).slice(0, 2),
     memberid: categorizedWorks.memberid.sort((a, b) => a.timeDiff - b.timeDiff).slice(0, 2),
     surrounding: [...publicData.slice(Math.max(0, currentIndex - 6), currentIndex), ...publicData.slice(currentIndex + 1, currentIndex + 7)],
-    memberTlink: getRandomWorks(categorizedWorks.memberTlink, memberIds.length),
-    memberRelated: getRandomWorks(categorizedWorks.memberRelated, memberIds.length),
-    music: getRandomWorks(categorizedWorks.music, 4),
-    credit: getRandomWorks(categorizedWorks.credit, 4),
-    random: getRandomWorks(publicData.filter(baseFilter), 2),
-    score: getRandomWorks(categorizedWorks.score.sort((a, b) => b.deterministicScore - a.deterministicScore).slice(0, 50), 2)
+    memberTlink: getRandomWorks(categorizedWorks.memberTlink, memberIds.length, 777),
+    memberRelated: getRandomWorks(categorizedWorks.memberRelated, memberIds.length, 888),
+    music: getRandomWorks(categorizedWorks.music, 4, 999),
+    credit: getRandomWorks(categorizedWorks.credit, 4, 1111),
+    random: getRandomWorks(publicData.filter(baseFilter), 2, 1222),
+    score: getRandomWorks(categorizedWorks.score.sort((a, b) => b.deterministicScore - a.deterministicScore).slice(0, 50), 2, 1333)
   };
 
   const allWorks = uniqueWorks(Object.values(processedWorks).flat());

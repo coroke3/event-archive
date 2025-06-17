@@ -8,15 +8,32 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowRight } from "@fortawesome/free-solid-svg-icons";
 import ScrollSection from "../components/ScrollSection";
 
+// 決定論的なシャッフル関数（シード値を使用）
+function deterministicShuffle(array, seed = 1) {
+  const shuffled = [...array];
+  let currentSeed = seed;
+
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    // 線形合同法を使用して疑似乱数を生成
+    currentSeed = (currentSeed * 9301 + 49297) % 233280;
+    const randomValue = currentSeed / 233280;
+    const j = Math.floor(randomValue * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  return shuffled;
+}
+
 // メインコンポーネント
 export default function Home({ videos, users, events }) {
   // ②おすすめ動画（videoScoreの上位30作品をランダムに並び替え）
   const recommendedVideos = useMemo(() => {
-    return [...videos]
+    const topVideos = [...videos]
       .filter(video => video.status !== "private")
       .sort((a, b) => (b.videoScore || 0) - (a.videoScore || 0))
-      .slice(0, 40)
-      .sort(() => 0.5 - Math.random()); // ランダムに並び替え
+      .slice(0, 40);
+
+    return deterministicShuffle(topVideos, 12345); // 固定シード値を使用
   }, [videos]);
 
   // ③4作品以上のクリエイターをランダムで20人
@@ -63,10 +80,10 @@ export default function Home({ videos, users, events }) {
       .filter(tlink => creatorCounts[tlink] >= 2)
       .map(tlink => getCreatorInfo(tlink, videos, users));
 
-    // 4. 両方のリストからランダムに選出
+    // 4. 両方のリストからランダムに選出（決定論的）
     return [
-      ...shuffleArray(frequentCreators).slice(0, 20),
-      ...shuffleArray(topCreators).slice(0, 20)
+      ...deterministicShuffle(frequentCreators, 54321).slice(0, 20),
+      ...deterministicShuffle(topCreators, 67890).slice(0, 20)
     ];
   }, [videos, users]);
 
@@ -148,11 +165,12 @@ export default function Home({ videos, users, events }) {
           <div className={styles.videoCard} key={video.ylink}>
             <Link href={`/${video.ylink.slice(17, 28)}`}>
               <div className={styles.thumbnailContainer}>
-                <img
+                <Image
                   src={video.smallThumbnail}
                   alt={`${video.title} - ${video.creator}`}
                   className={styles.thumbnail}
-                  loading="lazy"
+                  width={320}
+                  height={180}
                 />
               </div>
               <div className={styles.videoInfo}>
@@ -220,11 +238,12 @@ export default function Home({ videos, users, events }) {
           <div className={styles.videoCard} key={video.ylink}>
             <Link href={`/${video.ylink.slice(17, 28)}`}>
               <div className={styles.thumbnailContainer}>
-                <img
+                <Image
                   src={video.smallThumbnail}
                   alt={`${video.title} - ${video.creator}`}
                   className={styles.thumbnail}
-                  loading="lazy"
+                  width={320}
+                  height={180}
                 />
               </div>
               <div className={styles.videoInfo}>
@@ -278,11 +297,12 @@ export default function Home({ videos, users, events }) {
                       <div className={styles.eventVideoCard} key={video.ylink}>
                         <Link href={`/${video.ylink.slice(17, 28)}`}>
                           <div className={styles.eventThumbnailContainer}>
-                            <img
+                            <Image
                               src={video.smallThumbnail}
                               alt={`${video.title} - ${video.creator}`}
                               className={styles.eventThumbnail}
-                              loading="lazy"
+                              width={320}
+                              height={180}
                             />
                           </div>
                           <div className={styles.eventVideoInfo}>
@@ -420,5 +440,5 @@ function getCreatorInfo(tlink, videos, users) {
 }
 
 function shuffleArray(array) {
-  return [...array].sort(() => 0.5 - Math.random());
+  return deterministicShuffle(array, 98765);
 }
