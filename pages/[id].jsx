@@ -115,6 +115,49 @@ function deterministicShuffle(array, seed = 1) {
   return shuffled;
 }
 
+// 安全なリンクコンポーネント
+const SafeLink = ({ href, children, ...props }) => {
+  const validateAndCleanUrl = (url) => {
+    if (!url || typeof url !== 'string') return null;
+
+    // 複数のURLが含まれている場合は最初のものを使用
+    const urls = url.split(/\s+/).filter(u => u.trim().length > 0);
+    if (urls.length > 1) {
+      console.warn(`Multiple URLs found, using first one: ${urls[0]}`);
+      url = urls[0].trim();
+    }
+
+    // 不正な文字を除去（日本語文字も考慮）
+    const cleanUrl = url.replace(/[^\w\-._~:/?#[\]@!$&'()*+,;=%\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '');
+
+    // プロトコルが含まれていない場合は追加
+    if (cleanUrl && !cleanUrl.startsWith('http')) {
+      return `https://${cleanUrl}`;
+    }
+
+    // URLの妥当性を簡単にチェック
+    try {
+      new URL(cleanUrl);
+      return cleanUrl;
+    } catch (error) {
+      console.warn(`Invalid URL detected: ${cleanUrl}`);
+      return null;
+    }
+  };
+
+  const cleanHref = validateAndCleanUrl(href);
+
+  if (!cleanHref) {
+    return <span>{children}</span>;
+  }
+
+  return (
+    <a href={cleanHref} {...props}>
+      {children}
+    </a>
+  );
+};
+
 export default function WorkId({
   work,
   previousWorks,
@@ -126,7 +169,23 @@ export default function WorkId({
   auth,
   events,
   videos,
+  error,
 }) {
+  // エラー状態の処理
+  if (error) {
+    return (
+      <div>
+        <Head>
+          <title>エラー - PVSF Archive</title>
+        </Head>
+        <div className="content">
+          <h1>エラーが発生しました</h1>
+          <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
+
   const safeString = (value) => typeof value === 'string' ? value.trim() : Array.isArray(value) ? value.join(', ').trim() : '';
 
   const details = useMemo(() => work ? {
@@ -201,184 +260,160 @@ export default function WorkId({
       <Head>
         <title>{metaData.title}</title>
         <meta name="description" content={metaData.description} />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:site" content="@pvscreeningfes" />
-        <meta name="twitter:creator" content="@coroke3" />
-        <meta property="og:url" content="event" />
         <meta property="og:title" content={metaData.title} />
         <meta property="og:description" content={metaData.ogDescription} />
-        <meta property="og:image" content={work.largeThumbnail} />
+        <meta property="og:image" content={work?.largeThumbnail || ""} />
+        <meta property="og:url" content={`https://pvsf-archive.vercel.app/${work?.ylink?.slice(17, 28) || ""}`} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={metaData.title} />
+        <meta name="twitter:description" content={metaData.ogDescription} />
+        <meta name="twitter:image" content={work?.largeThumbnail || ""} />
       </Head>
 
-      <div className={styles.contentr}>
-        <div className={styles.bf}>
-          <div className={styles.s1f}>
-            {work.ylink && (
-              <iframe
-                src={`https://www.youtube.com/embed/${work.ylink.slice(17, 28)}?vq=hd1080&autoplay=1`}
-                title="YouTube video player"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                className={styles.yf}
-              ></iframe>
+      <div className="content">
+        {/* 作品情報 */}
+        <div className={styles.workInfo}>
+          <div className={styles.workThumbnail}>
+            {work?.largeThumbnail && (
+              <Image
+                src={work.largeThumbnail}
+                alt={`${work?.title || ''} - ${work?.creator || ''}`}
+                width={640}
+                height={360}
+                priority
+              />
             )}
-            <div className={styles.s1ftext}>
-              <h1 className={styles.title}>{work.title}</h1>
-              <div className={styles.userinfo}>
-                <Link href={`../user/${work.tlink?.toLowerCase() || ""}`}>
-                  <Image
-                    src={userIconSrc}
-                    className={styles.icon}
-                    alt={`${work.creator}のアイコン`}
-                    width={50}
-                    height={50}
-                  />
-                </Link>
+          </div>
 
-                {details.creator && (
-                  <h3 className={styles.creator}>
-                    <Link href={`../user/${work.tlink?.toLowerCase() || ""}`}>
-                      {work.creator}{" "}
-                    </Link>
-                    {details.ylink && (
-                      <a
-                        href={`${work.ylink}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <FontAwesomeIcon icon={faYoutube} />
-                      </a>
-                    )}
-                    {details.tlink && (
-                      <a
-                        href={`https://twitter.com/${work.tlink}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <FontAwesomeIcon icon={faXTwitter} />
-                      </a>
-                    )}
-                  </h3>
-                )}
-                {details.time && (
-                  <p className={styles.time}>{formattedDate}</p>
-                )}
+          <div className={styles.workDetails}>
+            <h1>{work?.title || 'タイトル不明'}</h1>
+            <div className={styles.creatorInfo}>
+              <UserIcon work={work} />
+              <div className={styles.creatorText}>
+                <p className={styles.creatorName}>{work?.creator || '作者不明'}</p>
+                <div className={styles.socialLinks}>
+                  {work?.tlink && (
+                    <SafeLink
+                      href={`https://twitter.com/${work.tlink}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.socialLink}
+                    >
+                      <FontAwesomeIcon icon={faXTwitter} />
+                    </SafeLink>
+                  )}
+                  {work?.ychlink && (
+                    <SafeLink
+                      href={work.ychlink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.socialLink}
+                    >
+                      <FontAwesomeIcon icon={faYoutube} />
+                    </SafeLink>
+                  )}
+                </div>
               </div>
+            </div>
 
-              <div className={styles.eventInfo}>
-                {eventInfo.map((event, index) => (
-                  <div key={index} className={styles.eventSection}>
-                    <div className={styles.eventCard}>
-                      {event.icon && (
-                        <Link href={`../../event/${event.eventid}`}>
-                          <Image
-                            src={`https://lh3.googleusercontent.com/d/${event.icon.slice(33)}`}
-                            alt={`${event.eventname}のアイコン`}
-                            className={styles.eventIcon}
-                            width={40}
-                            height={40}
-                          />
-                        </Link>
-                      )}
-                      <div className={styles.eventDetails}>
-                        <Link href={`../../event/${event.eventid}`}>
-                          <h4 className={styles.eventTitle}>{event.eventname}</h4>
-                          {event.explanation && (
-                            <p className={styles.eventExplanation}>{event.explanation}</p>
-                          )}
-                        </Link>
-                      </div>
-                    </div>
-
-                    {/* イベント内の前後作品 */}
-                    <div className={styles.eventNavigation}>
-                      {eventWorks[index]?.prevWork && (
-                        <Link href={`/${eventWorks[index].prevWork.ylink.slice(17, 28)}`} className={styles.eventNavItem}>
-                          <div className={styles.eventNavThumb}>
-                            <Image
-                              src={eventWorks[index].prevWork.smallThumbnail}
-                              alt={`前の作品: ${eventWorks[index].prevWork.title}`}
-                              width={160}
-                              height={90}
-                            />
-                          </div>
-                          <div className={styles.eventNavInfo}>
-                            <span className={styles.eventNavLabel}>前の作品</span>
-                            <span className={styles.eventNavTitle}>{eventWorks[index].prevWork.title}</span>
-                          </div>
-                        </Link>
-                      )}
-                      {eventWorks[index]?.nextWork && (
-                        <Link href={`/${eventWorks[index].nextWork.ylink.slice(17, 28)}`} className={styles.eventNavItem}>
-                          <div className={styles.eventNavThumb}>
-                            <Image
-                              src={eventWorks[index].nextWork.smallThumbnail}
-                              alt={`次の作品: ${eventWorks[index].nextWork.title}`}
-                              width={160}
-                              height={90}
-                            />
-                          </div>
-                          <div className={styles.eventNavInfo}>
-                            <span className={styles.eventNavLabel}>次の作品</span>
-                            <span className={styles.eventNavTitle}>{eventWorks[index].nextWork.title}</span>
-                          </div>
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {details.music && (
-                <p
-                  dangerouslySetInnerHTML={{
-                    __html: `楽曲:${work.music} - ${work.credit}<br> `,
-                  }}
-                />
+            {/* 作品詳細情報 */}
+            <div className={styles.workMeta}>
+              {formattedDate && (
+                <p><strong>投稿日時:</strong> {formattedDate}</p>
               )}
-              {details.ymulink && (
+              {details.music && (
+                <p><strong>使用楽曲:</strong> {details.music}</p>
+              )}
+              {work?.ymulink && (
                 <p>
-                  <Link href={work.ymulink}>楽曲リンク＞</Link>
+                  <strong>楽曲リンク:</strong>{' '}
+                  <SafeLink
+                    href={work.ymulink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {work.ymulink}
+                  </SafeLink>
                 </p>
               )}
               {details.comment && (
-                <p>
-                  <div
-                    dangerouslySetInnerHTML={{ __html: `${work.comment}` }}
-                  />
-                </p>
+                <div className={styles.comment}>
+                  <strong>コメント:</strong>
+                  <p>{details.comment}</p>
+                </div>
               )}
-              {details.member && details.memberid && memberInfo.length > 0 && (
-                <table className={styles.table}>
+            </div>
+
+            {/* メンバー情報 */}
+            {memberInfo.length > 0 && (
+              <div className={styles.memberSection}>
+                <h3>メンバー</h3>
+                <table className={styles.memberTable}>
                   <thead>
-                    <tr><th>No</th><th>Name</th><th>ID</th><th>LINK</th></tr>
+                    <tr>
+                      <th>No.</th>
+                      <th>名前</th>
+                      <th>プロフィール</th>
+                      <th>Twitter</th>
+                    </tr>
                   </thead>
                   <tbody>
-                    {memberInfo.map((member, i) => (
+                    {memberInfo.map((member, index) => (
                       <MemberTableRow
-                        key={i}
+                        key={index}
                         username={member.username}
                         memberId={member.memberId}
                         memberIconInfo={member.memberIconInfo}
                         matchedUser={member.matchedUser}
-                        index={i}
+                        index={index}
                       />
                     ))}
                   </tbody>
                 </table>
-              )}
-            </div>
-          </div>
-          <div className={styles.s2f}>
-            {previousWorks?.map((prevWork) => (
-              <WorkCard key={`prev-${prevWork.ylink.slice(17, 28)}`} work={prevWork} />
-            ))}
-            {nextWorks?.map((nextWork) => (
-              <WorkCard key={`next-${nextWork.ylink.slice(17, 28)}`} work={nextWork} />
-            ))}
+              </div>
+            )}
+
+            {/* イベント情報 */}
+            {eventInfo.length > 0 && (
+              <div className={styles.eventSection}>
+                <h3>関連イベント</h3>
+                {eventInfo.map((event, index) => (
+                  <div key={index} className={styles.eventItem}>
+                    <Link href={`/event/${event.eventid}`}>
+                      <div className={styles.eventLink}>
+                        {event.icon && (
+                          <Image
+                            src={`https://lh3.googleusercontent.com/d/${event.icon.slice(33)}`}
+                            alt={event.eventname}
+                            width={50}
+                            height={50}
+                            className={styles.eventIcon}
+                          />
+                        )}
+                        <div>
+                          <h4>{event.eventname}</h4>
+                          {event.explanation && <p>{event.explanation}</p>}
+                        </div>
+                      </div>
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
+
+        {/* 関連作品 */}
+        {(previousWorks.length > 0 || nextWorks.length > 0) && (
+          <div className={styles.relatedWorks}>
+            <h2>関連作品</h2>
+            <div className={styles.worksGrid}>
+              {previousWorks.concat(nextWorks).map((relatedWork) => (
+                <WorkCard key={relatedWork.ylink} work={relatedWork} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -474,87 +509,247 @@ const processMusic = (work) => {
 
 // getStaticPropsの修正
 export async function getStaticProps({ params }) {
-  const fetchData = async (url) => {
-    const res = await fetch(url, { timeout: 30000, headers: { 'Cache-Control': 'public, max-age=3600' } });
-    return res.ok ? await res.json() : null;
-  };
+  const fetchData = async (url, timeout = 30000) => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-  const [videos, users, events] = await Promise.all([
-    fetchData("https://pvsf-cash.vercel.app/api/videos"),
-    fetchData("https://pvsf-cash.vercel.app/api/users"),
-    fetchData("https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec")
-  ]);
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: {
+          'Cache-Control': 'no-cache',
+          'User-Agent': 'Mozilla/5.0 (compatible; PVSF-Archive/1.0)',
+        },
+        cache: 'no-store',
+      });
 
-  if (!videos) return { notFound: true };
+      clearTimeout(timeoutId);
 
-  const work = videos.find(w => w.ylink.slice(17, 28) === params.id);
-  if (!work) return { notFound: true };
+      if (!response.ok) {
+        console.error(`HTTP Error: ${response.status} ${response.statusText} for ${url}`);
+        return { error: true, status: response.status, statusText: response.statusText };
+      }
 
-  const publicData = videos.filter(w => w.status !== "private");
-  const currentIndex = publicData.findIndex(w => w.ylink.slice(17, 28) === params.id);
-  const { previousWorks, nextWorks } = getRelatedWorks(work, publicData, currentIndex);
+      const text = await response.text();
+      if (!text || text.trim() === '') {
+        console.error(`Empty response from ${url}`);
+        return { error: true, message: 'Empty response' };
+      }
 
-  const memberIds = work.memberid?.split(',').map(id => id.trim()).filter(Boolean) || [];
-  const matchingIcon = getMemberIcons(memberIds, publicData);
-
-  return {
-    props: {
-      work,
-      previousWorks: previousWorks || [],
-      nextWorks: nextWorks || [],
-      events: events || [],
-      videos,
-      matchingIcon,
-      externalData: users || []
+      try {
+        return JSON.parse(text);
+      } catch (parseError) {
+        console.error(`JSON Parse Error for ${url}:`, parseError.message);
+        console.error('Response text:', text.substring(0, 200));
+        return { error: true, message: 'Invalid JSON response' };
+      }
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.error(`Request timeout for ${url}`);
+        return { error: true, message: 'Request timeout' };
+      }
+      console.error(`Fetch error for ${url}:`, error.message);
+      return { error: true, message: error.message };
     }
   };
+
+  try {
+    const id = params.id;
+
+    // 並列でデータを取得（エラーハンドリング付き）
+    const [videosResult, usersResult, eventsResult] = await Promise.allSettled([
+      fetchData("https://pvsf-cash.vercel.app/api/videos"),
+      fetchData("https://pvsf-cash.vercel.app/api/users"),
+      fetchData("https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec")
+    ]);
+
+    // 結果を安全に処理
+    const videos = videosResult.status === 'fulfilled' && !videosResult.value?.error
+      ? videosResult.value
+      : [];
+
+    const externalData = usersResult.status === 'fulfilled' && !usersResult.value?.error
+      ? usersResult.value
+      : [];
+
+    const events = eventsResult.status === 'fulfilled' && !eventsResult.value?.error
+      ? eventsResult.value
+      : [];
+
+    // 作品を検索
+    const work = videos.find((video) => video.ylink?.slice(17, 28) === id);
+
+    if (!work) {
+      console.warn(`Work not found for ID: ${id}`);
+      return {
+        notFound: true,
+      };
+    }
+
+    // 安全な文字列処理
+    const safeString = (value) => {
+      if (typeof value === 'string') return value.trim();
+      if (Array.isArray(value)) return value.join(', ').trim();
+      return '';
+    };
+
+    // URLの検証と修正
+    const validateUrl = (url) => {
+      if (!url || typeof url !== 'string') return '';
+
+      // 複数のURLが含まれている場合は最初のものを使用
+      const urls = url.split(/\s+/).filter(u => u.trim().length > 0);
+      if (urls.length > 1) {
+        console.warn(`Multiple URLs found, using first one: ${urls[0]}`);
+        return urls[0].trim();
+      }
+
+      // 不正な文字を除去
+      const cleanUrl = url.replace(/[^\w\-._~:/?#[\]@!$&'()*+,;=%]/g, '');
+
+      // プロトコルが含まれていない場合は追加
+      if (cleanUrl && !cleanUrl.startsWith('http')) {
+        return `https://${cleanUrl}`;
+      }
+
+      return cleanUrl;
+    };
+
+    // 作品データの安全な処理
+    const processedWork = {
+      ...work,
+      title: safeString(work.title),
+      creator: safeString(work.creator),
+      comment: safeString(work.comment),
+      member: safeString(work.member),
+      memberid: safeString(work.memberid),
+      music: safeString(work.music),
+      ymulink: validateUrl(work.ymulink),
+      tlink: safeString(work.tlink),
+      ychlink: validateUrl(work.ychlink),
+      credit: safeString(work.credit),
+    };
+
+    const { previousWorks, nextWorks } = getRelatedWorks(processedWork, videos, videos.indexOf(work));
+    const matchingIcon = getMemberIcons(processedWork.memberid, externalData);
+
+    return {
+      props: {
+        work: processedWork,
+        previousWorks: previousWorks || [],
+        nextWorks: nextWorks || [],
+        externalData: externalData || [],
+        matchingIcon: matchingIcon || [],
+        events: events || [],
+        videos: videos || [],
+      },
+      revalidate: 3600, // 1時間ごとに再生成
+    };
+  } catch (error) {
+    console.error('Error in getStaticProps:', error);
+    return {
+      props: {
+        work: null,
+        previousWorks: [],
+        nextWorks: [],
+        externalData: [],
+        matchingIcon: [],
+        events: [],
+        videos: [],
+        error: 'データの取得に失敗しました',
+      },
+      revalidate: 300, // エラー時は5分後に再試行
+    };
+  }
 }
 
 // getStaticPathsの修正
 export async function getStaticPaths() {
   try {
-    const res = await fetch("https://pvsf-cash.vercel.app/api/videos", {
-      timeout: 30000,
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60秒のタイムアウト
+
+    const response = await fetch("https://pvsf-cash.vercel.app/api/videos", {
+      signal: controller.signal,
       headers: {
-        'Cache-Control': 'public, max-age=3600'
-      }
+        'Cache-Control': 'no-cache',
+        'User-Agent': 'Mozilla/5.0 (compatible; PVSF-Archive/1.0)',
+      },
+      cache: 'no-store',
     });
 
-    if (!res.ok) {
-      throw new Error(`Failed to fetch videos: ${res.status}`);
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      console.error(`Failed to fetch videos for getStaticPaths: ${response.status} ${response.statusText}`);
+      return {
+        paths: [],
+        fallback: 'blocking', // フォールバックを有効にしてランタイムで生成
+      };
     }
 
-    const works = await res.json();
+    const text = await response.text();
+    if (!text || text.trim() === '') {
+      console.error('Empty response from videos API in getStaticPaths');
+      return {
+        paths: [],
+        fallback: 'blocking',
+      };
+    }
 
-    // privateフィルターを削除
-    const uniquePaths = new Set();
-    const paths = works
-      .filter(work => {
+    let videos;
+    try {
+      videos = JSON.parse(text);
+    } catch (parseError) {
+      console.error('JSON Parse Error in getStaticPaths:', parseError.message);
+      console.error('Response text:', text.substring(0, 200));
+      return {
+        paths: [],
+        fallback: 'blocking',
+      };
+    }
+
+    if (!Array.isArray(videos)) {
+      console.error('Videos data is not an array in getStaticPaths');
+      return {
+        paths: [],
+        fallback: 'blocking',
+      };
+    }
+
+    // パスを安全に生成
+    const paths = videos
+      .filter(video => video?.ylink && typeof video.ylink === 'string')
+      .map(video => {
         try {
-          if (!work || !work.ylink) return false;
-
-          const id = work.ylink.slice(17, 28);
-          if (uniquePaths.has(id)) return false;
-
-          uniquePaths.add(id);
-          return true;
-        } catch (e) {
-          console.error(`Invalid work data:`, work);
-          return false;
+          const id = video.ylink.slice(17, 28);
+          if (id && id.length === 11) { // YouTube IDの長さをチェック
+            return { params: { id } };
+          }
+          return null;
+        } catch (error) {
+          console.warn(`Invalid video ylink: ${video.ylink}`);
+          return null;
         }
       })
-      .map(work => ({
-        params: { id: work.ylink.slice(17, 28) }
-      }));
+      .filter(Boolean); // nullを除去
 
-    console.log(`Generated ${paths.length} unique static paths`);
-    return { paths, fallback: false };
+    console.log(`Generated ${paths.length} static paths out of ${videos.length} videos`);
 
+    return {
+      paths: paths.slice(0, 100), // 最初の100個のパスのみ事前生成
+      fallback: 'blocking', // 残りはオンデマンドで生成
+    };
   } catch (error) {
-    console.error('Error in getStaticPaths:', error);
+    if (error.name === 'AbortError') {
+      console.error('getStaticPaths request timeout');
+    } else {
+      console.error('Error in getStaticPaths:', error);
+    }
+
     return {
       paths: [],
-      fallback: false
+      fallback: 'blocking', // エラー時もフォールバックを有効に
     };
   }
 }

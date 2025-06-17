@@ -11,39 +11,92 @@ import { faXTwitter, faYoutube } from "@fortawesome/free-brands-svg-icons";
 // データ取得関数（イベント）
 const fetchEventsData = async () => {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
     const res = await fetch(
       "https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec",
       {
-        headers: { "Cache-Control": "no-cache" },
+        signal: controller.signal,
+        headers: {
+          "Cache-Control": "no-cache",
+          "User-Agent": "Mozilla/5.0 (compatible; PVSF-Archive/1.0)",
+        },
         cache: "no-store",
       }
     );
+
+    clearTimeout(timeoutId);
+
     if (!res.ok) {
-      throw new Error(`イベントデータの取得に失敗しました (${res.statusText})`);
+      throw new Error(`イベントデータの取得に失敗しました (${res.status} ${res.statusText})`);
     }
-    const data = await res.json();
-    return data;
+
+    const text = await res.text();
+    if (!text || text.trim() === '') {
+      throw new Error('空のレスポンスが返されました');
+    }
+
+    try {
+      const data = JSON.parse(text);
+      return data;
+    } catch (parseError) {
+      console.error('JSON解析エラー:', parseError.message);
+      console.error('レスポンステキスト:', text.substring(0, 200));
+      throw new Error('無効なJSONレスポンス');
+    }
   } catch (error) {
+    if (error.name === 'AbortError') {
+      console.error("イベントデータ取得タイムアウト");
+      throw new Error('リクエストがタイムアウトしました');
+    }
     console.error("イベントデータ取得エラー:", error);
-    return { error: true, message: "イベントデータの取得に失敗しました。" };
+    throw error;
   }
 };
 
 // データ取得関数（作品）
 const fetchWorksData = async () => {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
     const res = await fetch("https://pvsf-cash.vercel.app/api/videos", {
+      signal: controller.signal,
+      headers: {
+        "Cache-Control": "no-cache",
+        "User-Agent": "Mozilla/5.0 (compatible; PVSF-Archive/1.0)",
+      },
       cache: "no-store",
     });
+
+    clearTimeout(timeoutId);
+
     if (!res.ok) {
-      throw new Error(`作品データの取得に失敗しました (${res.statusText})`);
+      throw new Error(`作品データの取得に失敗しました (${res.status} ${res.statusText})`);
     }
-    const data = await res.json();
-    console.log("Fetched Works Data:");
-    return data;
+
+    const text = await res.text();
+    if (!text || text.trim() === '') {
+      throw new Error('空のレスポンスが返されました');
+    }
+
+    try {
+      const data = JSON.parse(text);
+      console.log("Fetched Works Data:");
+      return data;
+    } catch (parseError) {
+      console.error('JSON解析エラー:', parseError.message);
+      console.error('レスポンステキスト:', text.substring(0, 200));
+      throw new Error('無効なJSONレスポンス');
+    }
   } catch (error) {
+    if (error.name === 'AbortError') {
+      console.error("作品データ取得タイムアウト");
+      throw new Error('リクエストがタイムアウトしました');
+    }
     console.error("作品データ取得エラー:", error);
-    return { error: true, message: "作品データの取得に失敗しました。" };
+    throw error;
   }
 };
 
@@ -236,49 +289,171 @@ export default function EventPage({ event, works = [], errorMessage = "" }) {
 }
 
 export const getStaticPaths = async () => {
-  const eventsData = await fetchEventsData();
-  if (eventsData.error) {
-    return { paths: [], fallback: false };
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+    const response = await fetch(
+      "https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec",
+      {
+        signal: controller.signal,
+        headers: {
+          "Cache-Control": "no-cache",
+          "User-Agent": "Mozilla/5.0 (compatible; PVSF-Archive/1.0)",
+        },
+        cache: "no-store",
+      }
+    );
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      console.error(`Failed to fetch events for getStaticPaths: ${response.status} ${response.statusText}`);
+      return {
+        paths: [],
+        fallback: 'blocking',
+      };
+    }
+
+    const text = await response.text();
+    if (!text || text.trim() === '') {
+      console.error('Empty response from events API in getStaticPaths');
+      return {
+        paths: [],
+        fallback: 'blocking',
+      };
+    }
+
+    let events;
+    try {
+      events = JSON.parse(text);
+    } catch (parseError) {
+      console.error('JSON Parse Error in getStaticPaths:', parseError.message);
+      console.error('Response text:', text.substring(0, 200));
+      return {
+        paths: [],
+        fallback: 'blocking',
+      };
+    }
+
+    if (!Array.isArray(events)) {
+      console.error('Events data is not an array in getStaticPaths');
+      return {
+        paths: [],
+        fallback: 'blocking',
+      };
+    }
+
+    const paths = events
+      .filter(event => event?.eventid && typeof event.eventid === 'string')
+      .map(event => ({
+        params: { id: event.eventid.trim() }
+      }));
+
+    console.log(`Generated ${paths.length} event static paths out of ${events.length} events`);
+
+    return {
+      paths,
+      fallback: 'blocking',
+    };
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      console.error('getStaticPaths request timeout for events');
+    } else {
+      console.error('Error in getStaticPaths for events:', error);
+    }
+
+    return {
+      paths: [],
+      fallback: 'blocking',
+    };
   }
-
-  const paths = eventsData.map((event) => ({
-    params: { id: event.eventid },
-  }));
-
-  return { paths, fallback: false };
 };
 
 export const getStaticProps = async ({ params }) => {
   try {
-    const { id } = params;
-    const eventsData = await fetchEventsData();
-    const event = eventsData.find((event) => event.eventid === id) || null;
-    const worksData = await fetchWorksData();
+    const eventId = params.id;
 
-    // データが配列であることを確認
-    const works = Array.isArray(worksData)
-      ? worksData.filter((work) => {
-        const workEventNames = work?.eventid?.split(",").map(name => name.trim()) || [];
-        return event && workEventNames.includes(event.eventid);
+    // 並列でデータを取得（エラーハンドリング付き）
+    const [eventsResult, worksResult] = await Promise.allSettled([
+      fetchEventsData(),
+      fetchWorksData()
+    ]);
+
+    // 結果を安全に処理
+    let events = [];
+    let works = [];
+    let errorMessage = "";
+
+    if (eventsResult.status === 'fulfilled') {
+      events = eventsResult.value;
+    } else {
+      console.error('イベントデータ取得失敗:', eventsResult.reason);
+      errorMessage += `イベントデータの取得に失敗しました: ${eventsResult.reason.message}. `;
+    }
+
+    if (worksResult.status === 'fulfilled') {
+      works = worksResult.value;
+    } else {
+      console.error('作品データ取得失敗:', worksResult.reason);
+      errorMessage += `作品データの取得に失敗しました: ${worksResult.reason.message}. `;
+    }
+
+    // イベントを検索
+    const event = Array.isArray(events) ? events.find((event) => event.eventid === eventId) : null;
+
+    if (!event && !errorMessage) {
+      console.warn(`Event not found for ID: ${eventId}`);
+      return {
+        notFound: true,
+      };
+    }
+
+    // 該当するイベントの作品をフィルタリング
+    const eventWorks = Array.isArray(works)
+      ? works.filter((work) => {
+        if (work.eventid) {
+          const eventIds = work.eventid.split(",").map((id) => id.trim());
+          return eventIds.includes(eventId);
+        }
+        return false;
       })
       : [];
 
+    // 安全な文字列処理
+    const safeString = (value) => {
+      if (typeof value === 'string') return value.trim();
+      if (Array.isArray(value)) return value.join(', ').trim();
+      return '';
+    };
+
+    // イベントデータの安全な処理
+    const processedEvent = event ? {
+      ...event,
+      eventname: safeString(event.eventname),
+      explanation: safeString(event.explanation),
+      member: safeString(event.member),
+      memberid: safeString(event.memberid),
+      menberpost: safeString(event.menberpost),
+    } : null;
+
     return {
       props: {
-        event,
-        works
+        event: processedEvent,
+        works: eventWorks,
+        errorMessage: errorMessage.trim(),
       },
-      revalidate: 60 // ISRを有効化
+      revalidate: 3600, // 1時間ごとに再生成
     };
   } catch (error) {
-    console.error("Error fetching static props:", error);
+    console.error('Error in getStaticProps:', error);
     return {
       props: {
         event: null,
         works: [],
-        errorMessage: "データの取得に失敗しました。",
+        errorMessage: `予期しないエラーが発生しました: ${error.message}`,
       },
-      revalidate: 60
+      revalidate: 300, // エラー時は5分後に再試行
     };
   }
 };

@@ -12,123 +12,184 @@ import { faXTwitter, faYoutube } from "@fortawesome/free-brands-svg-icons";
 import { faLock, faLink } from "@fortawesome/free-solid-svg-icons";
 
 const fetchUserData = async (username) => {
-  const res = await fetch("https://pvsf-cash.vercel.app/api/users", {
-    headers: {
-      "Cache-Control": "no-cache",
-    },
-    cache: "no-store",
-  });
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-  if (!res.ok) {
-    console.error(`Failed to fetch user data: ${res.statusText}`);
-    return null;
-  }
+    const res = await fetch("https://pvsf-cash.vercel.app/api/users", {
+      signal: controller.signal,
+      headers: {
+        "Cache-Control": "no-cache",
+        "User-Agent": "Mozilla/5.0 (compatible; PVSF-Archive/1.0)",
+      },
+      cache: "no-store",
+    });
 
-  const usersData = await res.json();
-  const user = usersData.find((user) => user.username === username);
+    clearTimeout(timeoutId);
 
-  if (user) {
-    // 全ての作品データを取得
-    const allWorksData = await fetchWorksData();
-
-    // .tlinkが一致する作品をフィルタリング
-    const matchedWorksByTlink = allWorksData.filter(
-      (work) => work.tlink?.toLowerCase() === username.toLowerCase()
-    );
-
-    // .icon の取得
-    if (matchedWorksByTlink.length > 0) {
-      const personalWorks = matchedWorksByTlink.filter(
-        (work) => work.type === "個人"
-      );
-      const firstWork =
-        personalWorks.length > 0 ? personalWorks[0] : matchedWorksByTlink[0];
-      user.icon = firstWork.icon || "";
-    } else {
-      user.icon = "";
+    if (!res.ok) {
+      console.error(`Failed to fetch user data: ${res.status} ${res.statusText}`);
+      return null;
     }
 
-    // .creator の取得
-    if (matchedWorksByTlink.length > 0) {
-      const personalWorks = matchedWorksByTlink.filter(
-        (work) => work.type === "個人"
-      );
-      const firstWork =
-        personalWorks.length > 0 ? personalWorks[0] : matchedWorksByTlink[0];
-      if (firstWork.type === "個人") {
-        user.creator = firstWork.creator;
+    const text = await res.text();
+    if (!text || text.trim() === '') {
+      console.error('Empty response from user API');
+      return null;
+    }
+
+    let usersData;
+    try {
+      usersData = JSON.parse(text);
+    } catch (parseError) {
+      console.error('JSON Parse Error for user data:', parseError.message);
+      console.error('Response text:', text.substring(0, 200));
+      return null;
+    }
+
+    const user = Array.isArray(usersData) ? usersData.find((user) => user.username === username) : null;
+
+    if (user) {
+      // 全ての作品データを取得
+      const allWorksData = await fetchWorksData();
+
+      // .tlinkが一致する作品をフィルタリング
+      const matchedWorksByTlink = Array.isArray(allWorksData)
+        ? allWorksData.filter((work) => work.tlink?.toLowerCase() === username.toLowerCase())
+        : [];
+
+      // .icon の取得
+      if (matchedWorksByTlink.length > 0) {
+        const personalWorks = matchedWorksByTlink.filter(
+          (work) => work.type === "個人"
+        );
+        const firstWork =
+          personalWorks.length > 0 ? personalWorks[0] : matchedWorksByTlink[0];
+        user.icon = firstWork.icon || "";
+      } else {
+        user.icon = "";
       }
-    }
 
-    if (!user.creator) {
-      // .creator が未設定の場合、.memberid と .member を使って最新の一致を探す
-      let latestWork = null;
-      for (const work of allWorksData) {
-        if (work.memberid) {
-          const memberIds = work.memberid.split(",");
-          const memberNames = work.member.split(",");
-
-          const matchedMemberIndex = memberIds.findIndex(
-            (memberId) =>
-              memberId.trim().toLowerCase() === username.toLowerCase()
-          );
-
-          if (matchedMemberIndex !== -1) {
-            latestWork = work; // 最新作を更新
-            user.creator = memberNames[matchedMemberIndex].trim();
-            break; // 最初に見つかった一致を優先
-          }
+      // .creator の取得
+      if (matchedWorksByTlink.length > 0) {
+        const personalWorks = matchedWorksByTlink.filter(
+          (work) => work.type === "個人"
+        );
+        const firstWork =
+          personalWorks.length > 0 ? personalWorks[0] : matchedWorksByTlink[0];
+        if (firstWork.type === "個人") {
+          user.creator = firstWork.creator;
         }
       }
 
-      // 最新作が見つかっていない場合、ユーザー名を使用
-      if (!user.creator && latestWork) {
-        user.creator = username;
+      if (!user.creator) {
+        // .creator が未設定の場合、.memberid と .member を使って最新の一致を探す
+        let latestWork = null;
+        for (const work of allWorksData) {
+          if (work.memberid) {
+            const memberIds = work.memberid.split(",");
+            const memberNames = work.member.split(",");
+
+            const matchedMemberIndex = memberIds.findIndex(
+              (memberId) =>
+                memberId.trim().toLowerCase() === username.toLowerCase()
+            );
+
+            if (matchedMemberIndex !== -1) {
+              latestWork = work; // 最新作を更新
+              user.creator = memberNames[matchedMemberIndex].trim();
+              break; // 最初に見つかった一致を優先
+            }
+          }
+        }
+
+        // 最新作が見つかっていない場合、ユーザー名を使用
+        if (!user.creator && latestWork) {
+          user.creator = username;
+        }
+      }
+
+      // .largeThumbnail の取得
+      if (matchedWorksByTlink.length > 0) {
+        const personalWorks = matchedWorksByTlink.filter(
+          (work) => work.type === "個人"
+        );
+        const firstWork =
+          personalWorks.length > 0 ? personalWorks[0] : matchedWorksByTlink[0];
+        user.largeThumbnail = firstWork.largeThumbnail || "";
+      } else {
+        user.largeThumbnail = "";
+      }
+
+      // .tlink の代入
+      user.tlink = username;
+
+      // .ychlink の取得
+      if (matchedWorksByTlink.length > 0) {
+        const personalWorks = matchedWorksByTlink.filter(
+          (work) => work.type === "個人"
+        );
+        const firstWork =
+          personalWorks.length > 0 ? personalWorks[0] : matchedWorksByTlink[0];
+        user.ychlink = firstWork.ychlink || "";
+      } else {
+        user.ychlink = "";
       }
     }
 
-    // .largeThumbnail の取得
-    if (matchedWorksByTlink.length > 0) {
-      const personalWorks = matchedWorksByTlink.filter(
-        (work) => work.type === "個人"
-      );
-      const firstWork =
-        personalWorks.length > 0 ? personalWorks[0] : matchedWorksByTlink[0];
-      user.largeThumbnail = firstWork.largeThumbnail || "";
-    } else {
-      user.largeThumbnail = "";
+    return user;
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      console.error('User data fetch timeout');
+      return null;
     }
-
-    // .tlink の代入
-    user.tlink = username;
-
-    // .ychlink の取得
-    if (matchedWorksByTlink.length > 0) {
-      const personalWorks = matchedWorksByTlink.filter(
-        (work) => work.type === "個人"
-      );
-      const firstWork =
-        personalWorks.length > 0 ? personalWorks[0] : matchedWorksByTlink[0];
-      user.ychlink = firstWork.ychlink || "";
-    } else {
-      user.ychlink = "";
-    }
+    console.error('Error fetching user data:', error);
+    return null;
   }
-
-  return user;
 };
 
 const fetchWorksData = async () => {
-  const res = await fetch("https://pvsf-cash.vercel.app/api/videos", {
-    cache: "no-store", // キャッシュを無効にする
-  });
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-  if (!res.ok) {
-    console.error(`Failed to fetch works data: ${res.statusText}`);
+    const res = await fetch("https://pvsf-cash.vercel.app/api/videos", {
+      signal: controller.signal,
+      headers: {
+        "Cache-Control": "no-cache",
+        "User-Agent": "Mozilla/5.0 (compatible; PVSF-Archive/1.0)",
+      },
+      cache: "no-store",
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      console.error(`Failed to fetch works data: ${res.status} ${res.statusText}`);
+      return [];
+    }
+
+    const text = await res.text();
+    if (!text || text.trim() === '') {
+      console.error('Empty response from works API');
+      return [];
+    }
+
+    try {
+      return JSON.parse(text);
+    } catch (parseError) {
+      console.error('JSON Parse Error for works data:', parseError.message);
+      console.error('Response text:', text.substring(0, 200));
+      return [];
+    }
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      console.error('Works data fetch timeout');
+      return [];
+    }
+    console.error('Error fetching works data:', error);
     return [];
   }
-
-  return await res.json();
 };
 
 const fetchCollaborationWorksData = (worksData, id) => {
@@ -491,46 +552,143 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
 }
 
 export const getStaticPaths = async () => {
-  const res = await fetch("https://pvsf-cash.vercel.app/api/users");
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
 
-  if (!res.ok) {
-    console.error(`Failed to fetch users data: ${res.statusText}`);
+    const response = await fetch("https://pvsf-cash.vercel.app/api/users", {
+      signal: controller.signal,
+      headers: {
+        "Cache-Control": "no-cache",
+        "User-Agent": "Mozilla/5.0 (compatible; PVSF-Archive/1.0)",
+      },
+      cache: "no-store",
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      console.error(`Failed to fetch users for getStaticPaths: ${response.status} ${response.statusText}`);
+      return {
+        paths: [],
+        fallback: 'blocking',
+      };
+    }
+
+    const text = await response.text();
+    if (!text || text.trim() === '') {
+      console.error('Empty response from users API in getStaticPaths');
+      return {
+        paths: [],
+        fallback: 'blocking',
+      };
+    }
+
+    let users;
+    try {
+      users = JSON.parse(text);
+    } catch (parseError) {
+      console.error('JSON Parse Error in getStaticPaths:', parseError.message);
+      console.error('Response text:', text.substring(0, 200));
+      return {
+        paths: [],
+        fallback: 'blocking',
+      };
+    }
+
+    if (!Array.isArray(users)) {
+      console.error('Users data is not an array in getStaticPaths');
+      return {
+        paths: [],
+        fallback: 'blocking',
+      };
+    }
+
+    const paths = users
+      .filter(user => user?.username && typeof user.username === 'string')
+      .map(user => ({
+        params: { id: user.username.trim() }
+      }));
+
+    console.log(`Generated ${paths.length} user static paths out of ${users.length} users`);
+
+    return {
+      paths,
+      fallback: 'blocking',
+    };
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      console.error('getStaticPaths request timeout for users');
+    } else {
+      console.error('Error in getStaticPaths for users:', error);
+    }
+
     return {
       paths: [],
-      fallback: false, // 動的生成に切り替え
+      fallback: 'blocking',
     };
   }
-
-  const usersData = await res.json();
-  const paths = usersData.map((user) => ({
-    params: { id: user.username },
-  }));
-
-  return { paths, fallback: false }; // 動的生成を有効に
 };
 
 export const getStaticProps = async ({ params }) => {
-  const { id } = params;
+  try {
+    const { id } = params;
 
-  const user = await fetchUserData(id);
-  const worksData = await fetchWorksData();
+    // データを取得（エラーハンドリング付き）
+    const [userResult, worksResult] = await Promise.allSettled([
+      fetchUserData(id),
+      fetchWorksData()
+    ]);
 
-  if (!user || !worksData) {
+    // 結果を安全に処理
+    const user = userResult.status === 'fulfilled' ? userResult.value : null;
+    const allWorks = worksResult.status === 'fulfilled' ? worksResult.value : [];
+
+    if (!user) {
+      console.warn(`User not found for ID: ${id}`);
+      return {
+        notFound: true,
+      };
+    }
+
+    // 安全な文字列処理
+    const safeString = (value) => {
+      if (typeof value === 'string') return value.trim();
+      if (Array.isArray(value)) return value.join(', ').trim();
+      return '';
+    };
+
+    // ユーザーデータの安全な処理
+    const processedUser = {
+      ...user,
+      username: safeString(user.username),
+      creator: safeString(user.creator),
+      tlink: safeString(user.tlink),
+      ychlink: safeString(user.ychlink),
+    };
+
+    // 作品データの取得とフィルタリング
+    const works = fetchCollaborationWorksData(allWorks, id);
+    const collaborationWorks = fetchCollaborationWorksData(allWorks, id);
+
     return {
-      notFound: true,
+      props: {
+        user: processedUser,
+        works: works || [],
+        collaborationWorks: collaborationWorks || [],
+      },
+      revalidate: 3600, // 1時間ごとに再生成
+    };
+  } catch (error) {
+    console.error('Error in getStaticProps:', error);
+    return {
+      props: {
+        user: null,
+        works: [],
+        collaborationWorks: [],
+        error: 'データの取得に失敗しました',
+      },
+      revalidate: 300, // エラー時は5分後に再試行
     };
   }
-
-  const works = worksData.filter(
-    (work) => work.tlink?.toLowerCase() === id.toLowerCase()
-  );
-  const collaborationWorks = fetchCollaborationWorksData(worksData, id);
-
-  return {
-    props: {
-      user,
-      works,
-      collaborationWorks,
-    },
-  };
 };
