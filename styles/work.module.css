@@ -1,19 +1,23 @@
 @charset "utf-8";
+
 .yf {
   width: 100%;
   aspect-ratio: 16 / 9;
   margin-top: 34px;
 }
+
 .userinfo {
   display: flex;
   margin: 16px 0 20px 0;
 }
+
 .icon {
   width: 40px;
   aspect-ratio: 1 / 1;
   height: 40px;
   border-radius: 50%;
 }
+
 .creator {
   font-weight: 500;
   width: calc(100% - 240px);
@@ -22,11 +26,13 @@
   margin: auto;
   padding-left: 0px;
 }
+
 .creator a {
   color: var(--foreground);
   text-decoration: none;
   margin: auto 0px auto 5px;
 }
+
 .title {
   font-weight: 500;
   font-style: normal;
@@ -36,6 +42,7 @@
   border-bottom: solid 2px var(--foreground);
   text-align: left;
 }
+
 .time {
   font-weight: 500;
   font-style: normal;
@@ -44,47 +51,58 @@
   width: 171px;
   text-align: right;
 }
+
 .contentr {
   width: 90%;
   margin: 50px 5%;
 }
+
 .bf {
   display: flex;
   flex-wrap: wrap;
 }
+
 .s1f {
   width: calc(97% - 350px);
   margin: 0 0.5%;
 }
+
 .s2f {
   width: 350px;
   margin: 24px 1%;
 }
+
 .ss1 {
   display: flex;
   margin: 10px 0;
 }
+
 .ss12 {
   width: 42%;
 }
+
 .ss12 img {
   aspect-ratio: 16 / 9;
 }
+
 .ss13 {
   width: 54%;
   margin: 4px 2%;
 }
+
 .scc {
   margin: 0;
   font-size: 0.8rem;
   max-height: 48px;
   overflow: hidden;
 }
+
 .sc {
   margin: 0;
   opacity: 0.8;
   font-size: 0.6rem;
 }
+
 .table {
   max-width: 100%;
   border-collapse: collapse;
@@ -102,27 +120,36 @@
 }
 
 .table thead {
-  background-color: #000000; /* ヘッダーの背景色 */
-  color: white; /* ヘッダーのテキスト色 */
+  background-color: #000000;
+  /* ヘッダーの背景色 */
+  color: white;
+  /* ヘッダーのテキスト色 */
 }
 
 .table tbody tr:nth-child(even) {
-  background-color: var(--headback); /* 偶数行の背景色 */
+  background-color: var(--headback);
+  /* 偶数行の背景色 */
 }
 
 .table tbody tr:hover {
-  background-color: #ddd; /* ホバー時の背景色 */
+  background-color: #ddd;
+  /* ホバー時の背景色 */
 }
 
 .twitterIcon {
-  color: #1da1f2; /* Twitterアイコンの色 */
-  font-size: 1.2em; /* アイコンのサイズ */
-  transition: color 0.3s ease; /* アイコンの色変更時のトランジション */
+  color: #1da1f2;
+  /* Twitterアイコンの色 */
+  font-size: 1.2em;
+  /* アイコンのサイズ */
+  transition: color 0.3s ease;
+  /* アイコンの色変更時のトランジション */
 }
 
 .twitterIcon:hover {
-  color: #0d95e8; /* ホバー時のTwitterアイコンの色 */
+  color: #0d95e8;
+  /* ホバー時のTwitterアイコンの色 */
 }
+
 .table td img {
   width: 30px;
   height: 30px;
@@ -136,6 +163,7 @@
   display: flex;
   justify-self: start;
 }
+
 .userlis {
   margin: auto 0;
   padding: 2px 5px;
@@ -148,7 +176,8 @@
   gap: 1rem;
   margin: 1rem 0;
 }
-.eventSection{
+
+.eventSection {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -159,6 +188,7 @@
   transition: background-color 0.2s;
   margin: 0;
 }
+
 .eventCard {
   width: 100%;
   display: flex;
@@ -263,6 +293,7 @@
     margin: 10px 2.5%;
   }
 }
+
 @media screen and (max-width: 1000px) {
   .s1f {
     width: 100%;
@@ -274,16 +305,21 @@
     margin: 24px 0;
   }
 }
+
 @media screen and (max-width: 900px) {
   .contentr {
     width: 95%;
     margin: 69px 2.5%;
   }
 }
+
 @media screen and (max-width: 700px) {
+
   .s1ftext p,
   .s1ftext h2,
-  .table ,.userinfo,.eventInfo{
+  .table,
+  .userinfo,
+  .eventInfo {
     width: 93%;
     margin-left: auto;
     margin-right: auto;
@@ -293,14 +329,17 @@
     width: 100%;
     margin: 0;
   }
+
   .s2f {
     width: 93%;
     margin-left: auto;
     margin-right: auto;
   }
+
   .yf {
     margin-top: 0px;
   }
+
   .works h3 {
     display: -webkit-box;
     -webkit-box-orient: vertical;
@@ -310,44 +349,55 @@
     font-size: 0.8rem;
     line-height: 1.1rem;
   }
+
   .s1f p,
-  .s1f div,.eventNavTitle {
+  .s1f div,
+  .eventNavTitle {
     font-size: 0.7rem;
   }
+
   .s1f p div {
     margin: 2px;
   }
+
   .title {
     font-size: 1.2rem;
     padding: 11px 3.5%;
     text-align: left;
   }
+
   .creator {
     font-size: 0.8rem;
     width: 100%;
     margin-left: 5px;
   }
+
   .time {
     padding: 0px 0;
     font-size: 0.5rem;
   }
+
   .icon {
     width: 32px;
     height: 32px;
   }
+
   .contentr {
     width: 100%;
     margin: 55px 0%;
     margin-left: 0px;
   }
-  .eventTitle{
-font-size: 0.8rem;
+
+  .eventTitle {
+    font-size: 0.8rem;
   }
-  .eventDetails p  {
+
+  .eventDetails p {
     width: auto;
     font-size: 0.6rem;
   }
-  .eventNavThumb{
+
+  .eventNavThumb {
     width: 100px;
   }
 
@@ -359,6 +409,7 @@ font-size: 0.8rem;
       position: fixed;
       z-index: 99999;
     }
+
     .bf::before {
       content: "";
       position: relative;
@@ -373,6 +424,7 @@ font-size: 0.8rem;
     width: 98%;
     margin: 1%;
   }
+
   .bf {
     width: 100%;
     display: flex;
@@ -380,6 +432,7 @@ font-size: 0.8rem;
     height: calc(100svh - 175px);
     justify-content: space-around;
   }
+
   .s1f {
     width: calc(155vh + 400px);
     height: calc(100vh - 175px);
@@ -389,6 +442,7 @@ font-size: 0.8rem;
     flex-direction: row-reverse;
     justify-content: space-around;
   }
+
   .s2f {
     width: calc(98% - calc(155vh + 400px));
     max-height: calc(100vh - 175px);
@@ -399,6 +453,7 @@ font-size: 0.8rem;
     display: flex;
     flex-wrap: wrap;
   }
+
   .ss1 {
     width: calc(50% - 10px);
     margin: 10px 5px;
@@ -410,12 +465,14 @@ font-size: 0.8rem;
     max-height: calc(100svh - 75px);
     overflow: auto;
   }
+
   .yf {
     margin: 0;
     width: auto;
     height: auto;
     aspect-ratio: 16 / 9;
   }
+
   .s1ftext::-webkit-scrollbar {
     background: var(--background);
     width: 5px;
@@ -428,35 +485,44 @@ font-size: 0.8rem;
     filter: brightness(50%);
     border-radius: 10px;
   }
+
   .s1ftext::-webkit-scrollbar-thumb:hover {
     background-color: var(--foreground);
   }
+
   .userinfo {
     flex-wrap: wrap;
   }
+
   .creator {
     width: calc(100% - 50px);
   }
+
   .time {
     margin: 10px 0;
     text-align: left;
   }
 
-      .eventNavThumb{
-        width: 100px;
-      }
-      .eventNavigation{
-        display: block;
-      }
-      .eventNavItem{
-        width: auto;
-      }
-  
-}@media screen and (max-width: 500px) {
-  .eventNavigation{
+  .eventNavThumb {
+    width: 100px;
+  }
+
+  .eventNavigation {
     display: block;
   }
-  .eventNavItem{
+
+  .eventNavItem {
+    width: auto;
+  }
+
+}
+
+@media screen and (max-width: 500px) {
+  .eventNavigation {
+    display: block;
+  }
+
+  .eventNavItem {
     width: auto;
   }
 }
