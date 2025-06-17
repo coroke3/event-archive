@@ -11,39 +11,36 @@ import { faUser } from '@fortawesome/free-solid-svg-icons';
 import styles from "../styles/work.module.css";
 
 // メモ化されたコンポーネント
-const WorkCard = React.memo(({ work }) => (
-  <div className={styles.ss1}>
-    <div className={styles.ss12}>
-      <Link href={`/${work.ylink.slice(17, 28)}`}>
-        <Image
-          src={work.smallThumbnail}
-          width={200}
-          height={113}
-          alt={`${work.title} - ${work.creator} | PVSF archive`}
-          style={{ width: '100%', height: 'auto' }}
-        />
-      </Link>
+const WorkCard = React.memo(function WorkCard({ work }) {
+  return (
+    <div className={styles.ss1} key={work.ylink.slice(17, 28)}>
+      <div className={styles.ss12}>
+        <Link href={`/${work.ylink.slice(17, 28)}`}>
+          <img
+            src={work.smallThumbnail}
+            width="100%"
+            alt={`${work.title} - ${work.creator} | PVSF archive`}
+            loading="lazy"
+          />
+        </Link>
+      </div>
+      <div className={styles.ss13}>
+        <p className={styles.scc}>{work.title}</p>
+        <p className={styles.sc}>{work.creator}</p>
+      </div>
     </div>
-    <div className={styles.ss13}>
-      <p className={styles.scc}>{work.title}</p>
-      <p className={styles.sc}>{work.creator}</p>
-    </div>
-  </div>
-));
-WorkCard.displayName = 'WorkCard';
+  );
+});
 
 // メモ化されたユーザーアイコンコンポーネント
-const UserIcon = React.memo(({ work }) => {
-  const iconSrc = useMemo(() => {
-    return work.icon
-      ? `https://lh3.googleusercontent.com/d/${work.icon.slice(33)}`
-      : "https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg";
-  }, [work.icon]);
-
+const UserIcon = React.memo(function UserIcon({ work }) {
   return (
     <Link href={`../user/${work.tlink?.toLowerCase() || ""}`}>
       <Image
-        src={iconSrc}
+        src={work.icon ?
+          `https://lh3.googleusercontent.com/d/${work.icon.slice(33)}` :
+          "https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
+        }
         className={styles.icon}
         alt={`${work.creator || ""}のアイコン`}
         width={50}
@@ -52,11 +49,9 @@ const UserIcon = React.memo(({ work }) => {
     </Link>
   );
 });
-UserIcon.displayName = 'UserIcon';
 
 // メモ化されたメンバーテーブル行コンポーネント
-const MemberTableRow = React.memo(({ username, memberId, memberIconInfo, matchedUser, index }) => {
-  const iconSrc = useMemo(() => memberIconInfo?.icon ? `https://lh3.googleusercontent.com/d/${memberIconInfo.icon.slice(33)}` : null, [memberIconInfo?.icon]);
+const MemberTableRow = React.memo(function MemberTableRow({ username, memberId, memberIconInfo, matchedUser, index }) {
   return (
     <tr>
       <td>{index + 1}</td>
@@ -64,9 +59,15 @@ const MemberTableRow = React.memo(({ username, memberId, memberIconInfo, matched
       <td className={styles.userlink}>
         {matchedUser ? (
           <>
-            {iconSrc ? (
+            {memberIconInfo?.icon ? (
               <Link href={`/user/${matchedUser.username}`} className={styles.userLink}>
-                <Image src={iconSrc} alt={`${matchedUser.username}のアイコン`} width={50} height={50} className={styles.icon} />
+                <Image
+                  src={`https://lh3.googleusercontent.com/d/${memberIconInfo.icon.slice(33)}`}
+                  alt={`${matchedUser.username}のアイコン`}
+                  width={50}
+                  height={50}
+                  className={styles.icon}
+                />
               </Link>
             ) : (
               <Link href={`/user/${matchedUser.username}`} className={styles.userLink}>
@@ -74,88 +75,34 @@ const MemberTableRow = React.memo(({ username, memberId, memberIconInfo, matched
               </Link>
             )}
             <div className={styles.userlis}>
-              <Link href={`/user/${matchedUser.username}`} className={styles.userLink}>/{matchedUser.username}</Link>
+              <Link href={`/user/${matchedUser.username}`} className={styles.userLink}>
+                /{matchedUser.username}
+              </Link>
             </div>
           </>
         ) : memberId ? (
           <div className={styles.userlis}>@{memberId}</div>
-        ) : "-"}
+        ) : (
+          "-"
+        )}
       </td>
       <td>
         {memberId ? (
           <a href={`https://twitter.com/${memberId}`} target="_blank" rel="noopener noreferrer">
             <FontAwesomeIcon icon={faXTwitter} className={styles.twitterIcon} />
           </a>
-        ) : "-"}
+        ) : (
+          "-"
+        )}
       </td>
     </tr>
   );
 });
-MemberTableRow.displayName = 'MemberTableRow';
 
 // authプロパティのデフォルト値を設定
 const defaultAuth = {
   auth: false,
   user: null
-};
-
-// 決定論的なシャッフル関数（シード値を使用）
-function deterministicShuffle(array, seed = 1) {
-  const shuffled = [...array];
-  let currentSeed = seed;
-
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    // 線形合同法を使用して疑似乱数を生成
-    currentSeed = (currentSeed * 9301 + 49297) % 233280;
-    const randomValue = currentSeed / 233280;
-    const j = Math.floor(randomValue * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-
-  return shuffled;
-}
-
-// 安全なリンクコンポーネント
-const SafeLink = ({ href, children, ...props }) => {
-  const validateAndCleanUrl = (url) => {
-    if (!url || typeof url !== 'string') return null;
-
-    // 複数のURLが含まれている場合は最初のものを使用
-    const urls = url.split(/\s+/).filter(u => u.trim().length > 0);
-    if (urls.length > 1) {
-      console.warn(`Multiple URLs found, using first one: ${urls[0]}`);
-      url = urls[0].trim();
-    }
-
-    // 不正な文字を除去（日本語文字も考慮）
-    const cleanUrl = url.replace(/[^\w\-._~:/?#[\]@!$&'()*+,;=%\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '');
-
-    // プロトコルが含まれていない場合は追加
-    if (cleanUrl && !cleanUrl.startsWith('http')) {
-      return `https://${cleanUrl}`;
-    }
-
-    // URLの妥当性を簡単にチェック
-    try {
-      new URL(cleanUrl);
-      return cleanUrl;
-    } catch (error) {
-      console.warn(`Invalid URL detected: ${cleanUrl}`);
-      return null;
-    }
-  };
-
-  const cleanHref = validateAndCleanUrl(href);
-
-  if (!cleanHref) {
-    return <span>{children}</span>;
-  }
-
-  return (
-    <a href={cleanHref} {...props}>
-      {children}
-    </a>
-  );
 };
 
 export default function WorkId({
@@ -169,256 +116,479 @@ export default function WorkId({
   auth,
   events,
   videos,
-  error,
 }) {
-  // エラー状態の処理
-  if (error) {
-    return (
-      <div>
-        <Head>
-          <title>エラー - PVSF Archive</title>
-        </Head>
-        <div className="content">
-          <h1>エラーが発生しました</h1>
-          <p>{error}</p>
-        </div>
-      </div>
-    );
-  }
+  // workDetailsをuseMemoで最適化
+  const workDetails = useMemo(() => {
+    // 安全な文字列チェック関数
+    const safeString = (value) => {
+      if (typeof value === 'string') return value.trim();
+      if (Array.isArray(value)) return value.join(', ').trim();
+      return '';
+    };
 
-  const safeString = (value) => typeof value === 'string' ? value.trim() : Array.isArray(value) ? value.join(', ').trim() : '';
+    if (!work) {
+      return {
+        showComment: false,
+        showIcon: false,
+        showCreator: false,
+        showTwitter: false,
+        showYoutube: false,
+        showMember: false,
+        showMusic: false,
+        showMusicLink: false,
+        showTime: false,
+      };
+    }
 
-  const details = useMemo(() => work ? {
-    comment: safeString(work.comment),
-    creator: safeString(work.creator),
-    tlink: safeString(work.tlink),
-    ylink: safeString(work.ylink),
-    member: safeString(work.member),
-    memberid: safeString(work.memberid),
-    music: safeString(work.music),
-    ymulink: safeString(work.ymulink),
-    time: safeString(work.time),
-  } : {}, [work]);
+    return {
+      showComment: safeString(work.comment) !== "",
+      showIcon: safeString(work.icon) !== "",
+      showCreator: safeString(work.creator) !== "",
+      showTwitter: safeString(work.tlink) !== "",
+      showYoutube: safeString(work.ylink) !== "",
+      showMember: safeString(work.member) !== "" && safeString(work.memberid) !== "",
+      showMusic: safeString(work.music) !== "",
+      showMusicLink: safeString(work.ymulink) !== "",
+      showTime: safeString(work.time) !== "",
+    };
+  }, [work]);
 
+  // メタデータをuseMemoで最適化
+  const metaData = useMemo(() => ({
+    title: `${work.title} - ${work.creator} - オンライン映像イベント / PVSF archive`,
+    description: `PVSFへの出展作品です。  ${work.title} - ${work.creator}`,
+    ogDescription: `PVSF 出展作品  ${work.title} - ${work.creator}  music:${work.music} - ${work.credit}`,
+  }), [work]);
+
+  // 日付フォーマット
   const formattedDate = useMemo(() => {
-    if (!work?.time) return "";
-    const d = new Date(new Date(work.time).getTime() - 9 * 60 * 60 * 1000);
-    return new Intl.DateTimeFormat('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(d);
-  }, [work?.time]);
+    if (!work.time) return "";
+    const originalDate = new Date(work.time);
+    const modifiedDate = new Date(originalDate.getTime() - 9 * 60 * 60 * 1000);
+    return new Intl.DateTimeFormat('ja-JP', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }).format(modifiedDate);
+  }, [work.time]);
 
-  const userIconSrc = work?.icon ? `https://lh3.googleusercontent.com/d/${work.icon.slice(33)}` : "https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg";
+  // YouTube URL
+  const youtubeEmbedUrl = useMemo(() =>
+    work.ylink ? `https://www.youtube.com/embed/${work.ylink.slice(17, 28)}?vq=hd1080&autoplay=1` : null,
+    [work.ylink]
+  );
 
+  // メンバー情報の処理を最適化
   const memberInfo = useMemo(() => {
-    if (!details.member || !details.memberid) return [];
-    const names = work.member.split(/[,、，]/);
-    const ids = work.memberid.split(/[,、，]/);
-    return names.map((username, i) => {
-      const memberId = ids[i]?.trim() || '';
-      const memberIconInfo = matchingIcon?.find(item => item?.memberId?.toLowerCase() === memberId.toLowerCase());
-      const matchedUser = externalData?.find(user => user?.username?.toLowerCase() === memberId.toLowerCase());
+    if (!work?.member || !workDetails.showMember) return [];
+    return work.member.split(/[,、，]/).map((username, index) => {
+      const memberId = work.memberid.split(/[,、，]/)[index]?.trim();
+      const memberIconInfo = matchingIcon.find(
+        item => item.memberId.toLowerCase() === memberId?.toLowerCase()
+      );
+      const matchedUser = externalData.find(
+        user => user.username.toLowerCase() === memberId?.toLowerCase()
+      );
       return { username, memberId, memberIconInfo, matchedUser };
     });
-  }, [details.member, details.memberid, work?.member, work?.memberid, matchingIcon, externalData]);
+  }, [work?.member, work?.memberid, matchingIcon, externalData, workDetails.showMember]);
 
+  // 楽曲情報の処理を最適化
+  const musicInfo = useMemo(() => {
+    if (typeof work?.music !== 'string') return [];
+    return work.music.trim().split(",");
+  }, [work?.music]);
+
+  // イベント情報の処理を最適化
   const eventInfo = useMemo(() => {
     if (!work?.eventid || !events) return [];
+
     return work.eventid.split(',').map(eventId => {
-      const id = eventId.trim();
-      const event = events.find(e => e.eventid === id);
-      return event ? { eventid: id, eventname: event.eventname, explanation: event.explanation, icon: event.icon } : { eventid: id, eventname: id, explanation: "", icon: "" };
+      const trimmedEventId = eventId.trim();
+      const matchedEvent = events.find(e => e.eventid === trimmedEventId);
+
+      return matchedEvent ? {
+        eventid: trimmedEventId,
+        eventname: matchedEvent.eventname,
+        explanation: matchedEvent.explanation,
+        icon: matchedEvent.icon
+      } : {
+        eventid: trimmedEventId,
+        eventname: trimmedEventId,
+        explanation: "",
+        icon: ""
+      };
     });
   }, [work?.eventid, events]);
 
+  // イベント内の前後作品情報の処理を追加
   const eventWorks = useMemo(() => {
     if (!work?.eventid || !videos) return [];
+
+    // 各イベントIDに対して前後の作品を取得
     return work.eventid.split(',').map(eventId => {
-      const id = eventId.trim();
-      const eventVideos = videos.filter(v => v.eventid?.split(',').some(e => e.trim() === id)).sort((a, b) => new Date(a.time) - new Date(b.time));
-      const idx = eventVideos.findIndex(v => v.ylink === work.ylink);
-      let prev = null, next = null;
-      if (idx !== -1) {
-        for (let i = idx - 1; i >= 0; i--) if (eventVideos[i]) { prev = eventVideos[i]; break; }
-        for (let i = idx + 1; i < eventVideos.length; i++) if (eventVideos[i]) { next = eventVideos[i]; break; }
+      const trimmedEventId = eventId.trim();
+
+      // イベントに属する全作品を取得し、時系列順にソート
+      const eventVideos = videos
+        .filter(v => v.eventid?.split(',').some(e => e.trim() === trimmedEventId))
+        .sort((a, b) => new Date(a.time) - new Date(b.time));
+
+      // 現在の作品のインデックスを取得
+      const currentIndex = eventVideos.findIndex(v => v.ylink === work.ylink);
+
+      // 前後の作品を探す
+      let prevWork = null;
+      let nextWork = null;
+
+      if (currentIndex !== -1) {
+        // 前の作品を探す
+        for (let i = currentIndex - 1; i >= 0; i--) {
+          if (eventVideos[i]) {
+            prevWork = eventVideos[i];
+            break;
+          }
+        }
+
+        // 次の作品を探す
+        for (let i = currentIndex + 1; i < eventVideos.length; i++) {
+          if (eventVideos[i]) {
+            nextWork = eventVideos[i];
+            break;
+          }
+        }
       }
-      return { prevWork: prev, nextWork: next };
+
+      return {
+        eventId: trimmedEventId,
+        prevWork,
+        nextWork
+      };
     });
   }, [work?.eventid, work?.ylink, videos]);
-
-  // メタデータ（最適化）
-  const metaData = useMemo(() => ({
-    title: `${work?.title || ''} - ${work?.creator || ''} - EventArchives`,
-    description: `  ${work?.title || ''} - ${work?.creator || ''}`,
-    ogDescription: `EventArchives  ${work?.title || ''} - ${work?.creator || ''}  music:${work?.music || ''} - ${work?.credit || ''}`,
-  }), [work?.title, work?.creator, work?.music, work?.credit]);
-
-  if (!work) {
-    return <div>作品が見つかりません</div>;
-  }
 
   return (
     <div>
       <Head>
-        <title>{metaData.title}</title>
-        <meta name="description" content={metaData.description} />
-        <meta property="og:title" content={metaData.title} />
-        <meta property="og:description" content={metaData.ogDescription} />
-        <meta property="og:image" content={work?.largeThumbnail || ""} />
-        <meta property="og:url" content={`https://pvsf-archive.vercel.app/${work?.ylink?.slice(17, 28) || ""}`} />
+        <title>{`${work.title} - ${work.creator} - EventArchives`}</title>
+        <meta
+          name="description"
+          content={`  ${work.title} - ${work.creator}`}
+        />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={metaData.title} />
-        <meta name="twitter:description" content={metaData.ogDescription} />
-        <meta name="twitter:image" content={work?.largeThumbnail || ""} />
+        <meta name="twitter:site" content="@pvscreeningfes" />
+        <meta name="twitter:creator" content="@coroke3" />
+        <meta property="og:url" content="event" />
+        <meta
+          property="og:title"
+          content={`${work.title} - ${work.creator} / EventArchives`}
+        />
+        <meta
+          property="og:description"
+          content={`EventArchives  ${work.title} - ${work.creator}  music:${work.music} - ${work.credit}`}
+        />
+        <meta property="og:image" content={work.largeThumbnail} />
       </Head>
 
-      <div className="content">
-        {/* 作品情報 */}
-        <div className={styles.workInfo}>
-          <div className={styles.workThumbnail}>
-            {work?.largeThumbnail && (
-              <Image
-                src={work.largeThumbnail}
-                alt={`${work?.title || ''} - ${work?.creator || ''}`}
-                width={640}
-                height={360}
-                priority
-              />
+      <div className={styles.contentr}>
+        <div className={styles.bf}>
+          <div className={styles.s1f}>
+            {work.ylink && youtubeEmbedUrl && (
+              <iframe
+                src={youtubeEmbedUrl}
+                title="YouTube video player"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                className={styles.yf}
+              ></iframe>
             )}
-          </div>
+            <div className={styles.s1ftext}>
+              <h1 className={styles.title}>{work.title}</h1>
+              <div className={styles.userinfo}>
+                {workDetails.showIcon ? (
+                  <Link href={`../user/${work.tlink?.toLowerCase() || ""}`}>
+                    <Image
+                      src={work?.icon
+                        ? `https://lh3.googleusercontent.com/d/${work.icon.slice(33)}`
+                        : "https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
+                      }
+                      className={styles.icon}
+                      alt={`${work.creator}のアイコン`}
+                      width={50}
+                      height={50}
+                    />
+                  </Link>
+                ) : (
+                  <Link href={`../user/${work.tlink?.toLowerCase() || ""}`}>
+                    <Image
+                      src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
+                      alt="アイコン"
+                      className={styles.icon}
+                      width={50}
+                      height={50}
+                    />
+                  </Link>
+                )}
 
-          <div className={styles.workDetails}>
-            <h1>{work?.title || 'タイトル不明'}</h1>
-            <div className={styles.creatorInfo}>
-              <UserIcon work={work} />
-              <div className={styles.creatorText}>
-                <p className={styles.creatorName}>{work?.creator || '作者不明'}</p>
-                <div className={styles.socialLinks}>
-                  {work?.tlink && (
-                    <SafeLink
-                      href={`https://twitter.com/${work.tlink}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={styles.socialLink}
-                    >
-                      <FontAwesomeIcon icon={faXTwitter} />
-                    </SafeLink>
-                  )}
-                  {work?.ychlink && (
-                    <SafeLink
-                      href={work.ychlink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={styles.socialLink}
-                    >
-                      <FontAwesomeIcon icon={faYoutube} />
-                    </SafeLink>
-                  )}
-                </div>
+                {workDetails.showCreator && (
+                  <h3 className={styles.creator}>
+                    <Link href={`../user/${work.tlink?.toLowerCase() || ""}`}>
+                      {work.creator}{" "}
+                    </Link>
+                    {workDetails.showYoutube && (
+                      <a
+                        href={`${work.ylink}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <FontAwesomeIcon icon={faYoutube} />
+                      </a>
+                    )}
+                    {workDetails.showTwitter && (
+                      <a
+                        href={`https://twitter.com/${work.tlink}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <FontAwesomeIcon icon={faXTwitter} />
+                      </a>
+                    )}
+                  </h3>
+                )}
+                {workDetails.showTime && (
+                  <p className={styles.time}>{formattedDate}</p>
+                )}
               </div>
-            </div>
-
-            {/* 作品詳細情報 */}
-            <div className={styles.workMeta}>
-              {formattedDate && (
-                <p><strong>投稿日時:</strong> {formattedDate}</p>
-              )}
-              {details.music && (
-                <p><strong>使用楽曲:</strong> {details.music}</p>
-              )}
-              {work?.ymulink && (
-                <p>
-                  <strong>楽曲リンク:</strong>{' '}
-                  <SafeLink
-                    href={work.ymulink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {work.ymulink}
-                  </SafeLink>
-                </p>
-              )}
-              {details.comment && (
-                <div className={styles.comment}>
-                  <strong>コメント:</strong>
-                  <p>{details.comment}</p>
-                </div>
-              )}
-            </div>
-
-            {/* メンバー情報 */}
-            {memberInfo.length > 0 && (
-              <div className={styles.memberSection}>
-                <h3>メンバー</h3>
-                <table className={styles.memberTable}>
-                  <thead>
-                    <tr>
-                      <th>No.</th>
-                      <th>名前</th>
-                      <th>プロフィール</th>
-                      <th>Twitter</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {memberInfo.map((member, index) => (
-                      <MemberTableRow
-                        key={index}
-                        username={member.username}
-                        memberId={member.memberId}
-                        memberIconInfo={member.memberIconInfo}
-                        matchedUser={member.matchedUser}
-                        index={index}
-                      />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* イベント情報 */}
-            {eventInfo.length > 0 && (
-              <div className={styles.eventSection}>
-                <h3>関連イベント</h3>
+              <div className={styles.eventInfo}>
                 {eventInfo.map((event, index) => (
-                  <div key={index} className={styles.eventItem}>
-                    <Link href={`/event/${event.eventid}`}>
-                      <div className={styles.eventLink}>
-                        {event.icon && (
+                  <div key={index} className={styles.eventSection}>
+
+                    <div className={styles.eventCard}>
+
+                      {event.icon && (
+                        <Link href={`../../event/${event.eventid}`}>
                           <Image
                             src={`https://lh3.googleusercontent.com/d/${event.icon.slice(33)}`}
-                            alt={event.eventname}
-                            width={50}
-                            height={50}
+                            alt={`${event.eventname}のアイコン`}
                             className={styles.eventIcon}
+                            width={40}
+                            height={40}
                           />
-                        )}
-                        <div>
-                          <h4>{event.eventname}</h4>
-                          {event.explanation && <p>{event.explanation}</p>}
-                        </div>
+                        </Link>
+                      )}
+                      <div className={styles.eventDetails}>
+                        <Link href={`../../event/${event.eventid}`}>
+                          <h4 className={styles.eventTitle}>{event.eventname}</h4>
+                          {event.explanation && (
+                            <p className={styles.eventExplanation}>{event.explanation}</p>
+                          )}</Link>
                       </div>
-                    </Link>
+
+
+                    </div>
+
+                    {/* イベント内の前後作品 */}
+                    <div className={styles.eventNavigation}>
+                      {eventWorks[index]?.prevWork && (
+                        <Link href={`/${eventWorks[index].prevWork.ylink.slice(17, 28)}`} className={styles.eventNavItem}>
+                          <div className={styles.eventNavThumb}>
+                            <img
+                              src={eventWorks[index].prevWork.smallThumbnail}
+                              alt={`前の作品: ${eventWorks[index].prevWork.title}`}
+                              width={160}
+                              height={90}
+                            />
+                          </div>
+                          <div className={styles.eventNavInfo}>
+                            <span className={styles.eventNavLabel}>前の作品</span>
+                            <span className={styles.eventNavTitle}>{eventWorks[index].prevWork.title}</span>
+                          </div>
+                        </Link>
+                      )}
+                      {eventWorks[index]?.nextWork && (
+                        <Link href={`/${eventWorks[index].nextWork.ylink.slice(17, 28)}`} className={styles.eventNavItem}>
+                          <div className={styles.eventNavThumb}>
+                            <img
+                              src={eventWorks[index].nextWork.smallThumbnail}
+                              alt={`次の作品: ${eventWorks[index].nextWork.title}`}
+                              width={160}
+                              height={90}
+                            />
+                          </div>
+                          <div className={styles.eventNavInfo}>
+                            <span className={styles.eventNavLabel}>次の作品</span>
+                            <span className={styles.eventNavTitle}>{eventWorks[index].nextWork.title}</span>
+                          </div>
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-        </div>
 
-        {/* 関連作品 */}
-        {(previousWorks.length > 0 || nextWorks.length > 0) && (
-          <div className={styles.relatedWorks}>
-            <h2>関連作品</h2>
-            <div className={styles.worksGrid}>
-              {previousWorks.concat(nextWorks).map((relatedWork) => (
-                <WorkCard key={relatedWork.ylink} work={relatedWork} />
-              ))}
+              {workDetails.showMusic && (
+                <p
+                  dangerouslySetInnerHTML={{
+                    __html: `楽曲:${work.music} - ${work.credit}<br> `,
+                  }}
+                />
+              )}
+              {workDetails.showMusicLink && (
+                <p>
+                  <Link href={work.ymulink}>楽曲リンク＞</Link>
+                </p>
+              )}
+              {workDetails.showComment && (
+                <p>
+                  <div
+                    dangerouslySetInnerHTML={{ __html: `${work.comment}` }}
+                  />
+                </p>
+              )}
+              {workDetails.showMember && work?.member && (
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>No</th>
+                      <th>Name</th>
+                      <th>ID</th>
+                      <th>LINK</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {work.member.split(/[,、，]/).map((username, index) => {
+                      const memberId = work.memberid
+                        ?.split(/[,、，]/)
+                        ?.[index]
+                        ?.trim() || '';
+
+                      // プロパティから渡されたmatchingIconを使用
+                      const memberIconInfo = matchingIcon?.find(
+                        (item) =>
+                          item?.memberId?.toLowerCase() ===
+                          memberId?.toLowerCase()
+                      );
+
+                      // 外部データからユーザー情報を検索
+                      const matchedUser = externalData?.find(
+                        (user) =>
+                          user?.username?.toLowerCase() ===
+                          memberId?.toLowerCase()
+                      );
+
+                      return (
+                        <tr key={index}>
+                          <td>{index + 1}</td>
+                          <td>{username?.trim() || ''}</td>
+                          <td className={styles.userlink}>
+                            {matchedUser ? (
+                              <>
+                                {memberIconInfo?.icon ? (
+                                  <Link
+                                    href={`/user/${matchedUser.username}`}
+                                    className={styles.userLink}
+                                  >
+                                    <Image
+                                      src={`https://lh3.googleusercontent.com/d/${memberIconInfo.icon.slice(33)}`}
+                                      alt={`${matchedUser.username}のアイコン`}
+                                      width={50}
+                                      height={50}
+                                      className={styles.icon}
+                                    />
+                                  </Link>
+                                ) : (
+                                  <Link
+                                    href={`/user/${matchedUser.username}`}
+                                    className={styles.userLink}
+                                  >
+                                    <FontAwesomeIcon icon={faUser} />
+                                  </Link>
+                                )}
+                                <div className={styles.userlis}>
+                                  <Link
+                                    href={`/user/${matchedUser.username}`}
+                                    className={styles.userLink}
+                                  >
+                                    /{matchedUser.username}
+                                  </Link>
+                                </div>
+                              </>
+                            ) : memberId ? (
+                              <div className={styles.userlis}>@{memberId}</div>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
+                          <td>
+                            {memberId ? (
+                              <a
+                                href={`https://twitter.com/${memberId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <FontAwesomeIcon
+                                  icon={faXTwitter}
+                                  className={styles.twitterIcon}
+                                />
+                              </a>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
-        )}
+          <div className={styles.s2f}>
+            {previousWorks.map((prevWork) => (
+              <div className={styles.ss1} key={prevWork.ylink.slice(17, 28)}>
+                <div className={styles.ss12}>
+                  <Link href={`/${prevWork.ylink.slice(17, 28)}`}>
+                    <img
+                      src={prevWork.smallThumbnail}
+                      width={`100%`}
+                      alt={`${prevWork.title} - ${prevWork.creator} | PVSF archive`}
+                    />
+                  </Link>
+                </div>
+                <div className={styles.ss13}>
+                  <p className={styles.scc}>{prevWork.title}</p>
+                  <p className={styles.sc}>{prevWork.creator}</p>
+                </div>
+              </div>
+            ))}
+            {nextWorks.map((nextWork) => (
+              <div className={styles.ss1} key={nextWork.ylink.slice(17, 28)}>
+                <div className={styles.ss12}>
+                  <Link href={`/${nextWork.ylink.slice(17, 28)}`}>
+                    <img
+                      src={nextWork.smallThumbnail}
+                      width={`100%`}
+                      alt={`${nextWork.title} - ${nextWork.creator} | PVSF archive`}
+                    />
+                  </Link>
+                </div>
+                <div className={styles.ss13}>
+                  <p className={styles.scc}>{nextWork.title}</p>
+                  <p className={styles.sc}>{nextWork.creator}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
-
 // イベントデータを取得する関数
 async function fetchEventData(eventId) {
   const eventRes = await fetch(
@@ -442,11 +612,19 @@ async function fetchEventData(eventId) {
 function getMemberIcons(memberIds, publicData2) {
   const matchingIcon = [];
   for (const memberId of memberIds) {
-    const memberWorks = publicData2.filter(w => w.tlink.toLowerCase() === memberId.toLowerCase());
+    const memberWorks = publicData2.filter(
+      (w) => w.tlink.toLowerCase() === memberId.toLowerCase()
+    );
+
     if (memberWorks.length > 0) {
-      const prioritizedWorks = memberWorks.filter(w => w.type === "個人");
-      const latestWork = prioritizedWorks.length > 0 ? prioritizedWorks[0] : memberWorks[0];
-      matchingIcon.push({ memberId, icon: latestWork.icon });
+      const prioritizedWorks = memberWorks.filter((w) => w.type === "個人");
+      const latestWork =
+        prioritizedWorks.length > 0 ? prioritizedWorks[0] : memberWorks[0];
+
+      matchingIcon.push({
+        memberId,
+        icon: latestWork.icon,
+      });
     }
   }
   return matchingIcon;
@@ -454,49 +632,236 @@ function getMemberIcons(memberIds, publicData2) {
 
 // getRelatedWorks関数を修正
 function getRelatedWorks(work, publicData, currentIndex) {
-  const safeCompare = (a, b) => a && b && typeof a === 'string' && typeof b === 'string' && a.toLowerCase() === b.toLowerCase();
-  const uniqueWorks = (works) => Array.from(new Set(works.map(w => w.ylink))).map(ylink => works.find(w => w.ylink === ylink));
-  const getRandomWorks = (works, count, seed = 1) => works.length <= count ? works : deterministicShuffle(works, seed).slice(0, count);
+  // 安全な文字列比較関数
+  const safeCompare = (a, b) => {
+    if (!a || !b) return false;
+    if (typeof a !== 'string' || typeof b !== 'string') return false;
+    return a.toLowerCase() === b.toLowerCase();
+  };
+
+  // ヘルパー関数
+  const uniqueWorks = (works) => (
+    Array.from(new Set(works.map(w => w.ylink)))
+      .map(ylink => works.find(w => w.ylink === ylink))
+  );
+
+  const getRandomWorks = (works, count) => (
+    works.length <= count ? works :
+      works.sort(() => 0.5 - Math.random()).slice(0, count)
+  );
+
+  // 共通のフィルター条件
   const baseFilter = w => w.ylink !== work.ylink;
   const memberIds = work.memberid?.split(',').map(id => id.trim()).filter(Boolean) || [];
   const workTime = new Date(work.time);
+  const worksPerUser = publicData.length <= 25 ? 2 : 1;
 
+  // privateな動画の場合は、同じクリエイターの公開動画を優先的に表示
+  if (work.status === "private") {
+    const categorizedWorks = publicData.reduce((acc, w) => {
+      if (!baseFilter(w)) return acc;
+
+      // ①.tlink一致（同じクリエイター）
+      if (w.tlink === work.tlink) {
+        acc.tlinkWorks.push(w);
+      }
+
+      // ②.memberidにtlink一致
+      if (w.memberid?.split(',').map(id => id.trim()).includes(work.tlink)) {
+        acc.memberidWorks.push({
+          ...w,
+          timeDiff: Math.abs(new Date(w.time) - workTime)
+        });
+      }
+
+      // ④⑤.memberid関連
+      if (memberIds.some(id => w.tlink === id)) {
+        acc.memberTlinkWorks.push(w);
+      } else if (memberIds.some(id => w.memberid?.includes(id)) && w.tlink !== work.tlink) {
+        acc.memberRelatedWorks.push(w);
+      }
+
+      // ⑥⑦.music/credit一致
+      if (safeCompare(w.music, work.music)) {
+        acc.musicWorks.push(w);
+      }
+      if (safeCompare(w.credit, work.credit)) {
+        acc.creditWorks.push(w);
+      }
+
+      // ⑨.deterministicScore
+      if (w.deterministicScore) {
+        acc.scoreWorks.push(w);
+      }
+
+      return acc;
+    }, {
+      tlinkWorks: [],
+      memberidWorks: [],
+      memberTlinkWorks: [],
+      memberRelatedWorks: [],
+      musicWorks: [],
+      creditWorks: [],
+      scoreWorks: []
+    });
+
+    // 各カテゴリの作品を処理（privateの場合は同じクリエイターの作品を優先）
+    const processedWorks = {
+      // ①前後の作品（同じクリエイターを優先）
+      tlinkWorks: categorizedWorks.tlinkWorks
+        .sort((a, b) => Math.abs(new Date(a.time) - workTime) -
+          Math.abs(new Date(b.time) - workTime))
+        .slice(0, 4),
+
+      // ②時系列の近い作品
+      memberidWorks: categorizedWorks.memberidWorks
+        .sort((a, b) => a.timeDiff - b.timeDiff)
+        .slice(0, 2),
+
+      // ④⑤memberid関連
+      memberTlinkWorks: getRandomWorks(categorizedWorks.memberTlinkWorks, worksPerUser * memberIds.length),
+      memberRelatedWorks: getRandomWorks(categorizedWorks.memberRelatedWorks, worksPerUser * memberIds.length),
+
+      // ⑥⑦music/credit一致
+      musicWorks: getRandomWorks(categorizedWorks.musicWorks, 2),
+      creditWorks: getRandomWorks(categorizedWorks.creditWorks, 2),
+
+      // ⑧ランダム
+      randomWorks: getRandomWorks(publicData.filter(baseFilter), 2),
+
+      // ⑨スコア上位
+      scoreWorks: getRandomWorks(
+        categorizedWorks.scoreWorks
+          .sort((a, b) => b.deterministicScore - a.deterministicScore)
+          .slice(0, 50),
+        2
+      )
+    };
+
+    // 結果の結合と重複除去（privateの場合は同じクリエイターの作品を優先）
+    const uniqueAllWorks = uniqueWorks([
+      ...processedWorks.tlinkWorks,
+      ...processedWorks.memberidWorks,
+      ...processedWorks.memberTlinkWorks,
+      ...processedWorks.memberRelatedWorks,
+      ...processedWorks.musicWorks,
+      ...processedWorks.creditWorks,
+      ...processedWorks.randomWorks,
+      ...processedWorks.scoreWorks
+    ]);
+
+    const midPoint = Math.floor(uniqueAllWorks.length / 2);
+    return {
+      previousWorks: uniqueAllWorks.slice(0, midPoint),
+      nextWorks: uniqueAllWorks.slice(midPoint)
+    };
+  }
+
+  // 通常の公開動画の場合は既存のロジックを使用
   const categorizedWorks = publicData.reduce((acc, w) => {
     if (!baseFilter(w)) return acc;
-    if (w.tlink === work.tlink) acc.tlink.push(w);
-    if (w.memberid?.split(',').map(id => id.trim()).includes(work.tlink)) acc.memberid.push({ ...w, timeDiff: Math.abs(new Date(w.time) - workTime) });
-    if (memberIds.some(id => w.tlink === id)) acc.memberTlink.push(w);
-    else if (memberIds.some(id => w.memberid?.includes(id)) && w.tlink !== work.tlink) acc.memberRelated.push(w);
-    if (safeCompare(w.music, work.music)) acc.music.push(w);
-    if (safeCompare(w.credit, work.credit)) acc.credit.push(w);
-    if (w.deterministicScore) acc.score.push(w);
-    return acc;
-  }, { tlink: [], memberid: [], memberTlink: [], memberRelated: [], music: [], credit: [], score: [] });
 
-  const processedWorks = work.status === "private" ? {
-    tlink: categorizedWorks.tlink.sort((a, b) => Math.abs(new Date(a.time) - workTime) - Math.abs(new Date(b.time) - workTime)).slice(0, 4),
-    memberid: categorizedWorks.memberid.sort((a, b) => a.timeDiff - b.timeDiff).slice(0, 2),
-    memberTlink: getRandomWorks(categorizedWorks.memberTlink, memberIds.length, 111),
-    memberRelated: getRandomWorks(categorizedWorks.memberRelated, memberIds.length, 222),
-    music: getRandomWorks(categorizedWorks.music, 2, 333),
-    credit: getRandomWorks(categorizedWorks.credit, 2, 444),
-    random: getRandomWorks(publicData.filter(baseFilter), 2, 555),
-    score: getRandomWorks(categorizedWorks.score.sort((a, b) => b.deterministicScore - a.deterministicScore).slice(0, 50), 2, 666)
-  } : {
-    tlink: categorizedWorks.tlink.sort((a, b) => Math.abs(currentIndex - publicData.indexOf(a)) - Math.abs(currentIndex - publicData.indexOf(b))).slice(0, 2),
-    memberid: categorizedWorks.memberid.sort((a, b) => a.timeDiff - b.timeDiff).slice(0, 2),
-    surrounding: [...publicData.slice(Math.max(0, currentIndex - 6), currentIndex), ...publicData.slice(currentIndex + 1, currentIndex + 7)],
-    memberTlink: getRandomWorks(categorizedWorks.memberTlink, memberIds.length, 777),
-    memberRelated: getRandomWorks(categorizedWorks.memberRelated, memberIds.length, 888),
-    music: getRandomWorks(categorizedWorks.music, 4, 999),
-    credit: getRandomWorks(categorizedWorks.credit, 4, 1111),
-    random: getRandomWorks(publicData.filter(baseFilter), 2, 1222),
-    score: getRandomWorks(categorizedWorks.score.sort((a, b) => b.deterministicScore - a.deterministicScore).slice(0, 50), 2, 1333)
+    // ①.tlink一致
+    if (w.tlink === work.tlink) {
+      acc.tlinkWorks.push(w);
+    }
+
+    // ②.memberidにtlink一致
+    if (w.memberid?.split(',').map(id => id.trim()).includes(work.tlink)) {
+      acc.memberidWorks.push({
+        ...w,
+        timeDiff: Math.abs(new Date(w.time) - workTime)
+      });
+    }
+
+    // ④⑤.memberid関連
+    if (memberIds.some(id => w.tlink === id)) {
+      acc.memberTlinkWorks.push(w);
+    } else if (memberIds.some(id => w.memberid?.includes(id)) && w.tlink !== work.tlink) {
+      acc.memberRelatedWorks.push(w);
+    }
+
+    // ⑥⑦.music/credit一致
+    if (safeCompare(w.music, work.music)) {
+      acc.musicWorks.push(w);
+    }
+    if (safeCompare(w.credit, work.credit)) {
+      acc.creditWorks.push(w);
+    }
+
+    // ⑨.deterministicScore
+    if (w.deterministicScore) {
+      acc.scoreWorks.push(w);
+    }
+
+    return acc;
+  }, {
+    tlinkWorks: [],
+    memberidWorks: [],
+    memberTlinkWorks: [],
+    memberRelatedWorks: [],
+    musicWorks: [],
+    creditWorks: [],
+    scoreWorks: []
+  });
+
+  // 各カテゴリの作品を処理
+  const processedWorks = {
+    // ①前後の作品
+    tlinkWorks: categorizedWorks.tlinkWorks
+      .sort((a, b) => Math.abs(currentIndex - publicData.indexOf(a)) -
+        Math.abs(currentIndex - publicData.indexOf(b)))
+      .slice(0, 2),
+
+    // ②時系列の近い作品
+    memberidWorks: categorizedWorks.memberidWorks
+      .sort((a, b) => a.timeDiff - b.timeDiff)
+      .slice(0, 2),
+
+    // ③前後6作品
+    surroundingWorks: [
+      ...publicData.slice(Math.max(0, currentIndex - 6), currentIndex),
+      ...publicData.slice(currentIndex + 1, currentIndex + 7)
+    ],
+
+    // ④⑤memberid関連
+    memberTlinkWorks: getRandomWorks(categorizedWorks.memberTlinkWorks, worksPerUser * memberIds.length),
+    memberRelatedWorks: getRandomWorks(categorizedWorks.memberRelatedWorks, worksPerUser * memberIds.length),
+
+    // ⑥⑦music/credit一致
+    musicWorks: getRandomWorks(categorizedWorks.musicWorks, 4),
+    creditWorks: getRandomWorks(categorizedWorks.creditWorks, 4),
+
+    // ⑧ランダム
+    randomWorks: getRandomWorks(publicData.filter(baseFilter), 2),
+
+    // ⑨スコア上位
+    scoreWorks: getRandomWorks(
+      categorizedWorks.scoreWorks
+        .sort((a, b) => b.deterministicScore - a.deterministicScore)
+        .slice(0, 50),
+      2
+    )
   };
 
-  const allWorks = uniqueWorks(Object.values(processedWorks).flat());
-  const mid = Math.floor(allWorks.length / 2);
-  return { previousWorks: allWorks.slice(0, mid), nextWorks: allWorks.slice(mid) };
+  // 結果の結合と重複除去
+  const uniqueAllWorks = uniqueWorks([
+    ...processedWorks.tlinkWorks,
+    ...processedWorks.memberidWorks,
+    ...processedWorks.surroundingWorks,
+    ...processedWorks.memberTlinkWorks,
+    ...processedWorks.memberRelatedWorks,
+    ...processedWorks.musicWorks,
+    ...processedWorks.creditWorks,
+    ...processedWorks.randomWorks,
+    ...processedWorks.scoreWorks
+  ]);
+
+  const midPoint = Math.floor(uniqueAllWorks.length / 2);
+  return {
+    previousWorks: uniqueAllWorks.slice(0, midPoint),
+    nextWorks: uniqueAllWorks.slice(midPoint)
+  };
 }
 
 // musicプロパティの型チェックを追加
@@ -509,247 +874,126 @@ const processMusic = (work) => {
 
 // getStaticPropsの修正
 export async function getStaticProps({ params }) {
-  const fetchData = async (url, timeout = 30000) => {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-      const response = await fetch(url, {
-        signal: controller.signal,
-        headers: {
-          'Cache-Control': 'no-cache',
-          'User-Agent': 'Mozilla/5.0 (compatible; PVSF-Archive/1.0)',
-        },
-        cache: 'no-store',
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        console.error(`HTTP Error: ${response.status} ${response.statusText} for ${url}`);
-        return { error: true, status: response.status, statusText: response.statusText };
-      }
-
-      const text = await response.text();
-      if (!text || text.trim() === '') {
-        console.error(`Empty response from ${url}`);
-        return { error: true, message: 'Empty response' };
-      }
-
-      try {
-        return JSON.parse(text);
-      } catch (parseError) {
-        console.error(`JSON Parse Error for ${url}:`, parseError.message);
-        console.error('Response text:', text.substring(0, 200));
-        return { error: true, message: 'Invalid JSON response' };
-      }
-    } catch (error) {
-      if (error.name === 'AbortError') {
-        console.error(`Request timeout for ${url}`);
-        return { error: true, message: 'Request timeout' };
-      }
-      console.error(`Fetch error for ${url}:`, error.message);
-      return { error: true, message: error.message };
-    }
-  };
-
   try {
-    const id = params.id;
+    // 再試行ロジックを追加
+    const fetchWithRetry = async (url, retries = 3) => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          const res = await fetch(url, {
+            timeout: 30000,
+            headers: {
+              'Cache-Control': 'public, max-age=3600'
+            }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            return data || null; // データが無い場合はnullを返す
+          }
+        } catch (err) {
+          if (i === retries - 1) throw err;
+          await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+        }
+      }
+      return null; // 全ての再試行が失敗した場合
+    };
 
-    // 並列でデータを取得（エラーハンドリング付き）
-    const [videosResult, usersResult, eventsResult] = await Promise.allSettled([
-      fetchData("https://pvsf-cash.vercel.app/api/videos"),
-      fetchData("https://pvsf-cash.vercel.app/api/users"),
-      fetchData("https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec")
+    // 並列でデータを取得し、デフォルト値を設定
+    const [videos, users, events] = await Promise.all([
+      fetchWithRetry("https://pvsf-cash.vercel.app/api/videos"),
+      fetchWithRetry("https://pvsf-cash.vercel.app/api/users"),
+      fetchWithRetry("https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec")
     ]);
 
-    // 結果を安全に処理
-    const videos = videosResult.status === 'fulfilled' && !videosResult.value?.error
-      ? videosResult.value
-      : [];
-
-    const externalData = usersResult.status === 'fulfilled' && !usersResult.value?.error
-      ? usersResult.value
-      : [];
-
-    const events = eventsResult.status === 'fulfilled' && !eventsResult.value?.error
-      ? eventsResult.value
-      : [];
-
-    // 作品を検索
-    const work = videos.find((video) => video.ylink?.slice(17, 28) === id);
-
-    if (!work) {
-      console.warn(`Work not found for ID: ${id}`);
-      return {
-        notFound: true,
-      };
+    if (!videos) {
+      throw new Error('Failed to fetch videos data');
     }
 
-    // 安全な文字列処理
-    const safeString = (value) => {
-      if (typeof value === 'string') return value.trim();
-      if (Array.isArray(value)) return value.join(', ').trim();
-      return '';
-    };
+    // publicDataの定義を変更（関連動画用）
+    const publicData = videos.filter(w => w.status !== "private");
 
-    // URLの検証と修正
-    const validateUrl = (url) => {
-      if (!url || typeof url !== 'string') return '';
+    // workの検索時はprivateフィルターを削除
+    const work = videos.find(w => w.ylink.slice(17, 28) === params.id);
 
-      // 複数のURLが含まれている場合は最初のものを使用
-      const urls = url.split(/\s+/).filter(u => u.trim().length > 0);
-      if (urls.length > 1) {
-        console.warn(`Multiple URLs found, using first one: ${urls[0]}`);
-        return urls[0].trim();
-      }
+    if (!work) {
+      console.error(`Work not found for ID: ${params.id}`);
+      return { notFound: true };
+    }
 
-      // 不正な文字を除去
-      const cleanUrl = url.replace(/[^\w\-._~:/?#[\]@!$&'()*+,;=%]/g, '');
+    // 関連動画の取得時にはpublicDataを使用（privateを除外）
+    const currentIndex = publicData.findIndex(w => w.ylink.slice(17, 28) === params.id);
+    const { previousWorks, nextWorks } = getRelatedWorks(work, publicData, currentIndex);
+    const memberIds = work.memberid?.split(',').map(id => id.trim()).filter(Boolean) || [];
+    const matchingIcon = getMemberIcons(memberIds, publicData);
 
-      // プロトコルが含まれていない場合は追加
-      if (cleanUrl && !cleanUrl.startsWith('http')) {
-        return `https://${cleanUrl}`;
-      }
-
-      return cleanUrl;
-    };
-
-    // 作品データの安全な処理
-    const processedWork = {
-      ...work,
-      title: safeString(work.title),
-      creator: safeString(work.creator),
-      comment: safeString(work.comment),
-      member: safeString(work.member),
-      memberid: safeString(work.memberid),
-      music: safeString(work.music),
-      ymulink: validateUrl(work.ymulink),
-      tlink: safeString(work.tlink),
-      ychlink: validateUrl(work.ychlink),
-      credit: safeString(work.credit),
-    };
-
-    const { previousWorks, nextWorks } = getRelatedWorks(processedWork, videos, videos.indexOf(work));
-    const matchingIcon = getMemberIcons(processedWork.memberid, externalData);
+    // eventsのnullチェックを追加
+    const eventInfo = events && Array.isArray(events)
+      ? events.find(e => e.eventid === work.eventid) || { eventname: "", icon: "" }
+      : { eventname: "", icon: "" };
 
     return {
       props: {
-        work: processedWork,
+        work,
+        externalData: users || [],
+        matchingIcon,
         previousWorks: previousWorks || [],
         nextWorks: nextWorks || [],
-        externalData: externalData || [],
-        matchingIcon: matchingIcon || [],
         events: events || [],
-        videos: videos || [],
-      },
-      revalidate: 3600, // 1時間ごとに再生成
+        auth: { auth: false, user: null },
+        videos
+      }
     };
+
   } catch (error) {
-    console.error('Error in getStaticProps:', error);
-    return {
-      props: {
-        work: null,
-        previousWorks: [],
-        nextWorks: [],
-        externalData: [],
-        matchingIcon: [],
-        events: [],
-        videos: [],
-        error: 'データの取得に失敗しました',
-      },
-      revalidate: 300, // エラー時は5分後に再試行
-    };
+    console.error(`Error in getStaticProps for ID ${params.id}:`, error);
+    throw error;
   }
 }
 
 // getStaticPathsの修正
 export async function getStaticPaths() {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60秒のタイムアウト
-
-    const response = await fetch("https://pvsf-cash.vercel.app/api/videos", {
-      signal: controller.signal,
+    const res = await fetch("https://pvsf-cash.vercel.app/api/videos", {
+      timeout: 30000,
       headers: {
-        'Cache-Control': 'no-cache',
-        'User-Agent': 'Mozilla/5.0 (compatible; PVSF-Archive/1.0)',
-      },
-      cache: 'no-store',
+        'Cache-Control': 'public, max-age=3600'
+      }
     });
 
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      console.error(`Failed to fetch videos for getStaticPaths: ${response.status} ${response.statusText}`);
-      return {
-        paths: [],
-        fallback: 'blocking', // フォールバックを有効にしてランタイムで生成
-      };
+    if (!res.ok) {
+      throw new Error(`Failed to fetch videos: ${res.status}`);
     }
 
-    const text = await response.text();
-    if (!text || text.trim() === '') {
-      console.error('Empty response from videos API in getStaticPaths');
-      return {
-        paths: [],
-        fallback: 'blocking',
-      };
-    }
+    const works = await res.json();
 
-    let videos;
-    try {
-      videos = JSON.parse(text);
-    } catch (parseError) {
-      console.error('JSON Parse Error in getStaticPaths:', parseError.message);
-      console.error('Response text:', text.substring(0, 200));
-      return {
-        paths: [],
-        fallback: 'blocking',
-      };
-    }
-
-    if (!Array.isArray(videos)) {
-      console.error('Videos data is not an array in getStaticPaths');
-      return {
-        paths: [],
-        fallback: 'blocking',
-      };
-    }
-
-    // パスを安全に生成
-    const paths = videos
-      .filter(video => video?.ylink && typeof video.ylink === 'string')
-      .map(video => {
+    // privateフィルターを削除
+    const uniquePaths = new Set();
+    const paths = works
+      .filter(work => {
         try {
-          const id = video.ylink.slice(17, 28);
-          if (id && id.length === 11) { // YouTube IDの長さをチェック
-            return { params: { id } };
-          }
-          return null;
-        } catch (error) {
-          console.warn(`Invalid video ylink: ${video.ylink}`);
-          return null;
+          if (!work || !work.ylink) return false;
+
+          const id = work.ylink.slice(17, 28);
+          if (uniquePaths.has(id)) return false;
+
+          uniquePaths.add(id);
+          return true;
+        } catch (e) {
+          console.error(`Invalid work data:`, work);
+          return false;
         }
       })
-      .filter(Boolean); // nullを除去
+      .map(work => ({
+        params: { id: work.ylink.slice(17, 28) }
+      }));
 
-    console.log(`Generated ${paths.length} static paths out of ${videos.length} videos`);
+    console.log(`Generated ${paths.length} unique static paths`);
+    return { paths, fallback: false };
 
-    return {
-      paths: paths.slice(0, 100), // 最初の100個のパスのみ事前生成
-      fallback: 'blocking', // 残りはオンデマンドで生成
-    };
   } catch (error) {
-    if (error.name === 'AbortError') {
-      console.error('getStaticPaths request timeout');
-    } else {
-      console.error('Error in getStaticPaths:', error);
-    }
-
+    console.error('Error in getStaticPaths:', error);
     return {
       paths: [],
-      fallback: 'blocking', // エラー時もフォールバックを有効に
+      fallback: false
     };
   }
 }

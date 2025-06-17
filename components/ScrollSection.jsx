@@ -9,13 +9,11 @@ export default function ScrollSection({ children, title, viewMoreLink, reverseSc
     const [isScrolling, setIsScrolling] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
-    const [isClient, setIsClient] = useState(false);
     const scrollingRef = useRef(false);
     const autoScrollRef = useRef(null);
 
-    // クライアントサイドの初期化
+    // ウィンドウサイズの監視
     useEffect(() => {
-        setIsClient(true);
         const checkMobile = () => {
             setIsMobile(window.innerWidth <= 768);
         };
@@ -29,11 +27,7 @@ export default function ScrollSection({ children, title, viewMoreLink, reverseSc
     const content = useMemo(() => {
         const items = Array.isArray(children) ? children : [children];
 
-        // サーバーサイドレンダリング時はPC版のレイアウトを使用
-        if (!isClient || !isMobile) {
-            // PC時は従来通り
-            return [...items, ...items, ...items];
-        } else {
+        if (isMobile) {
             // モバイル時は2行に分けて配置
             const rows = [[], []];
             items.forEach((item, index) => {
@@ -41,8 +35,11 @@ export default function ScrollSection({ children, title, viewMoreLink, reverseSc
             });
             // 各行を3回繰り返す
             return [...rows[0], ...rows[0], ...rows[0], ...rows[1], ...rows[1], ...rows[1]];
+        } else {
+            // PC時は従来通り
+            return [...items, ...items, ...items];
         }
-    }, [children, isMobile, isClient]);
+    }, [children, isMobile]);
 
     // スクロール位置の監視と調整
     const handleScroll = useCallback(() => {
@@ -52,7 +49,7 @@ export default function ScrollSection({ children, title, viewMoreLink, reverseSc
         const { scrollLeft, scrollWidth } = container;
         const contentWidth = scrollWidth / 3;
 
-        if (isClient && isMobile) {
+        if (isMobile) {
             // モバイル時のスクロール位置調整
             if (scrollLeft <= contentWidth * 0.05) {
                 container.scrollLeft = contentWidth;
@@ -67,7 +64,7 @@ export default function ScrollSection({ children, title, viewMoreLink, reverseSc
                 container.scrollLeft = contentWidth + (scrollLeft % contentWidth);
             }
         }
-    }, [isMobile, isClient]);
+    }, [isMobile]);
 
     // スクロール量を計算
     const calculateScrollAmount = useCallback(() => {
@@ -77,14 +74,14 @@ export default function ScrollSection({ children, title, viewMoreLink, reverseSc
         const itemWidth = container.firstElementChild?.offsetWidth || 0;
         const gap = 24;
 
-        if (isClient && isMobile) {
+        if (isMobile) {
             // モバイル時は1アイテム分（2行分）
             return itemWidth + gap;
         } else {
             // PC時は1.5アイテム分
             return (itemWidth + gap) * 1.5;
         }
-    }, [isMobile, isClient]);
+    }, [isMobile]);
 
     // スムーズスクロール
     const smoothScroll = useCallback((targetScroll, duration = 300) => {
