@@ -39,7 +39,7 @@ const nextConfig = {
         pathname: '/**',
       }
     ]
-    
+
   },
   webpack: (config, { isServer }) => {
     if (isServer) {
