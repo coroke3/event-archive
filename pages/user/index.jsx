@@ -20,8 +20,9 @@ const fetchUsersData = async () => {
   }
 
   const usersData = await res.json();
-  const uniqueUsers = {};
 
+  // 重複排除
+  const uniqueUsers = {};
   usersData.forEach((user) => {
     if (!uniqueUsers[user.username]) {
       uniqueUsers[user.username] = user;
@@ -125,39 +126,26 @@ const getLatestWorkByTlink = (icons, tlink) => {
   return null;
 };
 
-export default function UserPage({ users = [], icons = [] }) {
+export default function UserPage({ users = [] }) {
   const [sortOption, setSortOption] = useState("totalWorks");
 
-  // ソート処理で使用している合計作品数を計算
+  // ソート処理
   const sortedUsers = [...users].sort((a, b) => {
     if (sortOption === "name") {
-      const aLatestWork = getLatestWorkByTlink(icons, a.username);
-      const bLatestWork = getLatestWorkByTlink(icons, b.username);
-      const aCreatorName = aLatestWork ? aLatestWork.creator : "不明";
-      const bCreatorName = bLatestWork ? bLatestWork.creator : "不明";
-      return aCreatorName.localeCompare(bCreatorName); // creatorNameに基づくソート
+      const aCreatorName = a.creatorName || "不明";
+      const bCreatorName = b.creatorName || "不明";
+      return aCreatorName.localeCompare(bCreatorName);
     }
     if (sortOption === "totalWorks") {
-      a.totalWorks = icons.filter(
-        (icon) =>
-          (icon.tlink &&
-            icon.tlink.toLowerCase() === a.username.toLowerCase()) ||
-          (icon.memberid &&
-            icon.memberid.toLowerCase().includes(a.username.toLowerCase()))
-      ).length;
-      b.totalWorks = icons.filter(
-        (icon) =>
-          (icon.tlink &&
-            icon.tlink.toLowerCase() === b.username.toLowerCase()) ||
-          (icon.memberid &&
-            icon.memberid.toLowerCase().includes(b.username.toLowerCase()))
-      ).length;
-      return b.totalWorks - a.totalWorks; // 合計作品数の降順
+      const aTotalWorks = (a.iylink?.length || 0) + (a.cylink?.length || 0);
+      const bTotalWorks = (b.iylink?.length || 0) + (b.cylink?.length || 0);
+      return bTotalWorks - aTotalWorks; // 合計作品数の降順
     }
     if (sortOption === "latestWork") {
-      const aLatestWork = new Date(a.latestWork);
-      const bLatestWork = new Date(b.latestWork);
-      return bLatestWork - aLatestWork;
+      // 最新作品順は新しいAPIでは実装困難なため、現在は作品数順にフォールバック
+      const aTotalWorks = (a.iylink?.length || 0) + (a.cylink?.length || 0);
+      const bTotalWorks = (b.iylink?.length || 0) + (b.cylink?.length || 0);
+      return bTotalWorks - aTotalWorks;
     }
     return 0;
   });
@@ -185,42 +173,18 @@ export default function UserPage({ users = [], icons = [] }) {
         <div className={styles.userlist}>
           {sortedUsers.length > 0 ? (
             sortedUsers.map((user) => {
-              const latestWork = getLatestWorkByTlink(icons, user.username);
-              const creatorName = latestWork ? latestWork.creator : "不明";
-
-              const matchingWorksCount1 = icons.filter(
-                (icon) =>
-                  icon.tlink &&
-                  icon.tlink.toLowerCase() === user.username.toLowerCase()
-              );
-
-              const matchingWorksCount2 = icons.filter(
-                (icon) =>
-                  icon.memberid &&
-                  icon.memberid
-                    .toLowerCase()
-                    .includes(user.username.toLowerCase())
-              );
-
-              const uniqueWorks = [
-                ...matchingWorksCount1,
-                ...matchingWorksCount2,
-              ].filter(
-                (work, index, self) =>
-                  index === self.findIndex((w) => w.icon === work.icon)
-              );
-
-              const matchingWorksCount3 = uniqueWorks.length;
+              const creatorName = user.creatorName || "不明";
+              const individualWorks = user.iylink?.length || 0;
+              const collaborationWorks = user.cylink?.length || 0;
+              const totalWorks = individualWorks + collaborationWorks;
 
               return (
                 <div className={styles.users} key={user.username}>
                   <Link href={`/user/${user.username}`} passHref>
                     <div className={styles.userbox}>
-                      {latestWork && latestWork.icon ? (
+                      {user.icon ? (
                         <Image
-                          src={`https://lh3.googleusercontent.com/d/${latestWork.icon.slice(
-                            33
-                          )}`}
+                          src={`https://lh3.googleusercontent.com/d/${user.icon.slice(33)}`}
                           className={styles.iconuse}
                           alt={`${user.username}のアイコン`}
                           width={50}
@@ -236,19 +200,19 @@ export default function UserPage({ users = [], icons = [] }) {
                         />
                       )}
                       <div className={styles.namebox}>
-                        <h4>{creatorName}</h4> {/* ここでcreatorNameを表示 */}
+                        <h4>{creatorName}</h4>
                         <p className="id">@{user.username}</p>
                       </div>
                     </div>
                     <div className={styles.countb}>
                       <div className={styles.counts}>
-                        <p>個人 {matchingWorksCount1.length}</p>
+                        <p>個人 {individualWorks}</p>
                       </div>
                       <div className={styles.counts}>
-                        <p>合作 {matchingWorksCount2.length}</p>
+                        <p>合作 {collaborationWorks}</p>
                       </div>
                       <div className={styles.counts}>
-                        <p>合計 {user.totalWorks}</p>
+                        <p>合計 {totalWorks}</p>
                       </div>
                     </div>
                   </Link>
@@ -267,7 +231,6 @@ export default function UserPage({ users = [], icons = [] }) {
 
 export const getStaticProps = async () => {
   const users = await fetchUsersData();
-  const icons = await fetchUserIcons();
   return {
     props: {
       users,

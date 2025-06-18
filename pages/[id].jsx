@@ -51,7 +51,7 @@ const UserIcon = React.memo(function UserIcon({ work }) {
 });
 
 // メモ化されたメンバーテーブル行コンポーネント
-const MemberTableRow = React.memo(function MemberTableRow({ username, memberId, memberIconInfo, matchedUser, index }) {
+const MemberTableRow = React.memo(function MemberTableRow({ username, memberId, matchedUser, index }) {
   return (
     <tr>
       <td>{index + 1}</td>
@@ -59,10 +59,10 @@ const MemberTableRow = React.memo(function MemberTableRow({ username, memberId, 
       <td className={styles.userlink}>
         {matchedUser ? (
           <>
-            {memberIconInfo?.icon ? (
+            {matchedUser.icon ? (
               <Link href={`/user/${matchedUser.username}`} className={styles.userLink}>
                 <Image
-                  src={`https://lh3.googleusercontent.com/d/${memberIconInfo.icon.slice(33)}`}
+                  src={`https://lh3.googleusercontent.com/d/${matchedUser.icon.slice(33)}`}
                   alt={`${matchedUser.username}のアイコン`}
                   width={50}
                   height={50}
@@ -245,18 +245,29 @@ export default function WorkId({
   icon,
   eventname,
   externalData,
-  matchingIcon,
   auth = { auth: false, user: null },
   events,
   videos,
 }) {
+  // workが存在しない場合の早期リターン
+  if (!work) {
+    return (
+      <div>
+        <Head>
+          <title>作品が見つかりません - EventArchives</title>
+          <meta name="description" content="指定された作品が見つかりませんでした。" />
+        </Head>
+        <div className={styles.contentr}>
+          <h1>作品が見つかりません</h1>
+          <p>指定された作品が見つかりませんでした。</p>
+        </div>
+      </div>
+    );
+  }
+
   // workDetailsをuseMemoで最適化
   const workDetails = useMemo(() => {
     const safe = (v) => (typeof v === 'string' ? v.trim() : Array.isArray(v) ? v.join(', ').trim() : '') !== "";
-
-    if (!work) {
-      return Object.fromEntries(['Comment', 'Icon', 'Creator', 'Twitter', 'Youtube', 'Member', 'Music', 'MusicLink', 'Time'].map(k => [`show${k}`, false]));
-    }
 
     return {
       showComment: safe(work.comment),
@@ -273,9 +284,9 @@ export default function WorkId({
 
   // メタデータをuseMemoで最適化
   const metaData = useMemo(() => ({
-    title: `${work.title} - ${work.creator} - EventArchives`,
-    description: `PVSFへの出展作品です。  ${work.title} - ${work.creator}`,
-    ogDescription: `EventArchives  ${work.title} - ${work.creator}  music:${work.music} - ${work.credit}`,
+    title: `${work?.title || '作品'} - ${work?.creator || 'クリエイター'} - EventArchives`,
+    description: `PVSFへの出展作品です。  ${work?.title || '作品'} - ${work?.creator || 'クリエイター'}`,
+    ogDescription: `EventArchives  ${work?.title || '作品'} - ${work?.creator || 'クリエイター'}  music:${work?.music || ''} - ${work?.credit || ''}`,
   }), [work]);
 
   // YouTube URL
@@ -289,15 +300,12 @@ export default function WorkId({
     if (!work?.member || !workDetails.showMember) return [];
     return work.member.split(/[,、，]/).map((username, index) => {
       const memberId = work.memberid.split(/[,、，]/)[index]?.trim();
-      const memberIconInfo = matchingIcon.find(
-        item => item.memberId.toLowerCase() === memberId?.toLowerCase()
-      );
       const matchedUser = externalData.find(
         user => user.username.toLowerCase() === memberId?.toLowerCase()
       );
-      return { username, memberId, memberIconInfo, matchedUser };
+      return { username, memberId, matchedUser };
     });
-  }, [work?.member, work?.memberid, matchingIcon, externalData, workDetails.showMember]);
+  }, [work?.member, work?.memberid, externalData, workDetails.showMember]);
 
   // イベント情報の処理を最適化
   const eventInfo = useMemo(() => {
@@ -387,13 +395,13 @@ export default function WorkId({
           property="og:description"
           content={metaData.ogDescription}
         />
-        <meta property="og:image" content={work.largeThumbnail} />
+        <meta property="og:image" content={work?.largeThumbnail || ""} />
       </Head>
 
       <div className={styles.contentr}>
         <div className={styles.bf}>
           <div className={styles.s1f}>
-            {work.ylink && youtubeEmbedUrl && (
+            {work?.ylink && youtubeEmbedUrl && (
               <iframe
                 src={youtubeEmbedUrl}
                 title="YouTube video player"
@@ -404,7 +412,7 @@ export default function WorkId({
               ></iframe>
             )}
             <div className={styles.s1ftext}>
-              <h1 className={styles.title}>{work.title}</h1>
+              <h1 className={styles.title}>{work?.title || '作品名不明'}</h1>
               <CreatorInfo work={work} workDetails={workDetails} />
               <div className={styles.eventInfo}>
                 {eventInfo.map((event, index) => (
@@ -417,13 +425,13 @@ export default function WorkId({
               )}
               {workDetails.showMusicLink && (
                 <p>
-                  <Link href={work.ymulink}>楽曲リンク＞</Link>
+                  <Link href={work?.ymulink || "#"}>楽曲リンク＞</Link>
                 </p>
               )}
               {workDetails.showComment && (
                 <p>
                   <div
-                    dangerouslySetInnerHTML={{ __html: `${work.comment}` }}
+                    dangerouslySetInnerHTML={{ __html: `${work?.comment || ""}` }}
                   />
                 </p>
               )}
@@ -438,12 +446,11 @@ export default function WorkId({
                     </tr>
                   </thead>
                   <tbody>
-                    {memberInfo.map(({ username, memberId, memberIconInfo, matchedUser }, index) => (
+                    {memberInfo.map(({ username, memberId, matchedUser }, index) => (
                       <MemberTableRow
                         key={index}
                         username={username}
                         memberId={memberId}
-                        memberIconInfo={memberIconInfo}
                         matchedUser={matchedUser}
                         index={index}
                       />
@@ -483,28 +490,6 @@ async function fetchEventData(eventId) {
     eventname: eventInfo?.eventname || "Unknown Event",
     icon: eventInfo?.icon || "",
   };
-}
-
-// メンバーのアイコンを取得する関数
-function getMemberIcons(memberIds, publicData2) {
-  const matchingIcon = [];
-  for (const memberId of memberIds) {
-    const memberWorks = publicData2.filter(
-      (w) => w.tlink.toLowerCase() === memberId.toLowerCase()
-    );
-
-    if (memberWorks.length > 0) {
-      const prioritizedWorks = memberWorks.filter((w) => w.type === "個人");
-      const latestWork =
-        prioritizedWorks.length > 0 ? prioritizedWorks[0] : memberWorks[0];
-
-      matchingIcon.push({
-        memberId,
-        icon: latestWork.icon,
-      });
-    }
-  }
-  return matchingIcon;
 }
 
 // getRelatedWorks関数を修正
@@ -651,14 +636,11 @@ export async function getStaticProps({ params }) {
 
     const currentIndex = publicData.findIndex(w => w.ylink.slice(17, 28) === params.id);
     const { previousWorks, nextWorks } = getRelatedWorks(work, publicData, currentIndex);
-    const memberIds = work.memberid?.split(',').map(id => id.trim()).filter(Boolean) || [];
-    const matchingIcon = getMemberIcons(memberIds, publicData);
 
     return {
       props: {
         work,
         externalData: users || [],
-        matchingIcon,
         previousWorks: previousWorks || [],
         nextWorks: nextWorks || [],
         events: events || [],
