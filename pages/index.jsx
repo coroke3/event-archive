@@ -341,7 +341,6 @@ export const getStaticProps = async () => {
         users,
         events
       },
-      revalidate: 86400, // 1日ごとに再生成
     };
   } catch (error) {
     console.error('Error fetching data:', error);
@@ -351,7 +350,6 @@ export const getStaticProps = async () => {
         users: [],
         events: []
       },
-      revalidate: 3600, // エラー時は1時間後に再試行
     };
   }
 };

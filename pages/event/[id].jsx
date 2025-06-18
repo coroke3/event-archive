@@ -444,7 +444,6 @@ export const getStaticProps = async ({ params }) => {
         works: eventWorks,
         errorMessage: errorMessage.trim(),
       },
-      revalidate: 3600, // 1時間ごとに再生成
     };
   } catch (error) {
     console.error('Error in getStaticProps:', error);
@@ -454,7 +453,6 @@ export const getStaticProps = async ({ params }) => {
         works: [],
         errorMessage: `予期しないエラーが発生しました: ${error.message}`,
       },
-      revalidate: 300, // エラー時は5分後に再試行
     };
   }
 };

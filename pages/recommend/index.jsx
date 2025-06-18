@@ -194,8 +194,9 @@ export const getStaticProps = async () => {
   const work = await res.json();
 
   return {
-    props: { work },
-    revalidate: 172800, // 2日ごとに再生成
+    props: {
+      work,
+    },
   };
 };
 

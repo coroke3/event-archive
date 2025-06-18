@@ -677,7 +677,6 @@ export const getStaticProps = async ({ params }) => {
         works: works || [],
         collaborationWorks: collaborationWorks || [],
       },
-      revalidate: 3600, // 1時間ごとに再生成
     };
   } catch (error) {
     console.error('Error in getStaticProps:', error);
