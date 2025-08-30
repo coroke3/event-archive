@@ -571,7 +571,7 @@ export const getStaticPaths = async () => {
       console.error(`Failed to fetch users for getStaticPaths: ${response.status} ${response.statusText}`);
       return {
         paths: [],
-        fallback: 'blocking',
+        fallback: false,
       };
     }
 
@@ -580,7 +580,7 @@ export const getStaticPaths = async () => {
       console.error('Empty response from users API in getStaticPaths');
       return {
         paths: [],
-        fallback: 'blocking',
+        fallback: false,
       };
     }
 
@@ -592,7 +592,7 @@ export const getStaticPaths = async () => {
       console.error('Response text:', text.substring(0, 200));
       return {
         paths: [],
-        fallback: 'blocking',
+        fallback: false,
       };
     }
 
@@ -600,7 +600,7 @@ export const getStaticPaths = async () => {
       console.error('Users data is not an array in getStaticPaths');
       return {
         paths: [],
-        fallback: 'blocking',
+        fallback: false,
       };
     }
 
@@ -614,7 +614,7 @@ export const getStaticPaths = async () => {
 
     return {
       paths,
-      fallback: 'blocking',
+      fallback: false,
     };
   } catch (error) {
     if (error.name === 'AbortError') {
@@ -625,7 +625,7 @@ export const getStaticPaths = async () => {
 
     return {
       paths: [],
-      fallback: 'blocking',
+      fallback: false,
     };
   }
 };
@@ -687,7 +687,7 @@ export const getStaticProps = async ({ params }) => {
         collaborationWorks: [],
         error: 'データの取得に失敗しました',
       },
-      revalidate: 300, // エラー時は5分後に再試行
+
     };
   }
 };
