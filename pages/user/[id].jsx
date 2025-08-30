@@ -11,6 +11,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXTwitter, faYoutube } from "@fortawesome/free-brands-svg-icons";
 import { faLock, faLink } from "@fortawesome/free-solid-svg-icons";
 
+// Edge Runtime設定
+export const runtime = 'edge';
+
 const fetchUserData = async (username) => {
   try {
     const controller = new AbortController();
