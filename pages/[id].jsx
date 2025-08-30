@@ -115,6 +115,7 @@ const EventNavItem = React.memo(function EventNavItem({ work, label }) {
       </div>
       <div className={styles.eventNavInfo}>
         <span className={styles.eventNavLabel}>{label}</span>
+        <span className={styles.eventNavTitle}>{work.title}</span>
       </div>
     </Link>
   );
