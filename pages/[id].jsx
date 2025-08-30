@@ -249,24 +249,9 @@ export default function WorkId({
   events,
   videos,
 }) {
-  // workが存在しない場合の早期リターン
-  if (!work) {
-    return (
-      <div>
-        <Head>
-          <title>作品が見つかりません - EventArchives</title>
-          <meta name="description" content="指定された作品が見つかりませんでした。" />
-        </Head>
-        <div className={styles.contentr}>
-          <h1>作品が見つかりません</h1>
-          <p>指定された作品が見つかりませんでした。</p>
-        </div>
-      </div>
-    );
-  }
-
   // workDetailsをuseMemoで最適化
   const workDetails = useMemo(() => {
+    if (!work) return {};
     const safe = (v) => (typeof v === 'string' ? v.trim() : Array.isArray(v) ? v.join(', ').trim() : '') !== "";
 
     return {
@@ -291,8 +276,8 @@ export default function WorkId({
 
   // YouTube URL
   const youtubeEmbedUrl = useMemo(() =>
-    work.ylink ? `https://www.youtube.com/embed/${work.ylink.slice(17, 28)}?vq=hd1080&autoplay=1` : null,
-    [work.ylink]
+    work?.ylink ? `https://www.youtube.com/embed/${work.ylink.slice(17, 28)}?vq=hd1080&autoplay=1` : null,
+    [work?.ylink]
   );
 
   // メンバー情報の処理を最適化
@@ -374,6 +359,22 @@ export default function WorkId({
       };
     });
   }, [work?.eventid, work?.ylink, videos]);
+
+  // workが存在しない場合の早期リターン
+  if (!work) {
+    return (
+      <div>
+        <Head>
+          <title>作品が見つかりません - EventArchives</title>
+          <meta name="description" content="指定された作品が見つかりませんでした。" />
+        </Head>
+        <div className={styles.contentr}>
+          <h1>作品が見つかりません</h1>
+          <p>指定された作品が見つかりませんでした。</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
