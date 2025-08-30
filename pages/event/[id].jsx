@@ -312,7 +312,7 @@ export const getStaticPaths = async () => {
       console.error(`Failed to fetch events for getStaticPaths: ${response.status} ${response.statusText}`);
       return {
         paths: [],
-        fallback: 'blocking',
+        fallback: false,
       };
     }
 
@@ -355,7 +355,7 @@ export const getStaticPaths = async () => {
 
     return {
       paths,
-      fallback: 'blocking',
+      fallback: false,
     };
   } catch (error) {
     if (error.name === 'AbortError') {
