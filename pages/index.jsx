@@ -315,23 +315,82 @@ export default function Home({ videos, users, events }) {
 // データ取得
 export const getStaticProps = async () => {
   try {
-    // 並列でデータを取得
-    const [videosRes, usersRes, eventsRes] = await Promise.all([
-      fetch('https://pvsf-cash.vercel.app/api/videos', {
-        headers: { 'Cache-Control': 'no-cache' }
-      }),
-      fetch('https://pvsf-cash.vercel.app/api/users', {
-        headers: { 'Cache-Control': 'no-cache' }
-      }),
-      fetch('https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec', {
-        headers: { 'Cache-Control': 'no-cache' }
-      })
+    const fetchWithRetry = async (url, retries = 3) => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30000);
+          
+          const res = await fetch(url, { 
+            signal: controller.signal,
+            headers: { 
+              'Cache-Control': 'public, max-age=3600',
+              'User-Agent': 'Mozilla/5.0 (compatible; PVSF-Archive/1.0)'
+            } 
+          });
+          
+          clearTimeout(timeoutId);
+          
+          if (res.ok) {
+            const text = await res.text();
+            if (!text || text.trim() === '') {
+              throw new Error('Empty response');
+            }
+            return JSON.parse(text);
+          }
+        } catch (err) {
+          if (i === retries - 1) throw err;
+          await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+        }
+      }
+      return null;
+    };
+
+    // 並列でデータを取得（エラーハンドリング付き）
+    const [videosResult, usersResult, eventsResult] = await Promise.allSettled([
+      fetchWithRetry('https://pvsf-cash.vercel.app/api/videos'),
+      fetchWithRetry('https://pvsf-cash.vercel.app/api/users'),
+      fetchWithRetry('https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec')
     ]);
 
-    // データの取得と変換
-    const videos = videosRes.ok ? await videosRes.json() : [];
-    const users = usersRes.ok ? await usersRes.json() : [];
-    const events = eventsRes.ok ? await eventsRes.json() : [];
+    // 結果を安全に処理
+    const videos = videosResult.status === 'fulfilled' ? videosResult.value : [];
+    const users = usersResult.status === 'fulfilled' ? usersResult.value : [];
+    const events = eventsResult.status === 'fulfilled' ? eventsResult.value : [];
+
+    // データの検証
+    if (!Array.isArray(videos)) {
+      console.error('Videos data is not an array');
+      return {
+        props: {
+          videos: [],
+          users: users || [],
+          events: events || []
+        },
+      };
+    }
+
+    if (!Array.isArray(users)) {
+      console.error('Users data is not an array');
+      return {
+        props: {
+          videos: videos || [],
+          users: [],
+          events: events || []
+        },
+      };
+    }
+
+    if (!Array.isArray(events)) {
+      console.error('Events data is not an array');
+      return {
+        props: {
+          videos: videos || [],
+          users: users || [],
+          events: []
+        },
+      };
+    }
 
     console.log(`Fetched ${videos.length} videos, ${users.length} users, and ${events.length} events`);
 
