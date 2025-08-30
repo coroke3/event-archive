@@ -99,13 +99,104 @@ const MemberTableRow = React.memo(function MemberTableRow({ username, memberId, 
   );
 });
 
-// メモ化されたクリエーター情報コンポーネント
+// メモ化されたイベントナビゲーションアイテムコンポーネント
+const EventNavItem = React.memo(function EventNavItem({ work, label }) {
+  if (!work) return null;
+
+  return (
+    <Link href={`/${work.ylink.slice(17, 28)}`} className={styles.eventNavItem}>
+      <div className={styles.eventNavThumb}>
+        <img
+          src={work.smallThumbnail}
+          alt={`${label}: ${work.title}`}
+          width={160}
+          height={90}
+        />
+      </div>
+      <div className={styles.eventNavInfo}>
+        <span className={styles.eventNavLabel}>{label}</span>
+      </div>
+    </Link>
+  );
+});
+
+// メモ化されたイベントカードコンポーネント
+const EventCard = React.memo(function EventCard({ event, eventWorks, index }) {
+  return (
+    <div className={styles.eventSection}>
+      <div className={styles.eventCard}>
+        {event.icon && (
+          <Link href={`../../event/${event.eventid}`}>
+            <Image
+              src={`https://lh3.googleusercontent.com/d/${event.icon.slice(33)}`}
+              alt={`${event.eventname}のアイコン`}
+              className={styles.eventIcon}
+              width={40}
+              height={40}
+            />
+          </Link>
+        )}
+        <div className={styles.eventDetails}>
+          <Link href={`../../event/${event.eventid}`}>
+            <h4 className={styles.eventTitle}>{event.eventname}</h4>
+            {event.explanation && (
+              <p className={styles.eventExplanation}>{event.explanation}</p>
+            )}
+          </Link>
+        </div>
+      </div>
+
+      {/* イベント内の前後作品 */}
+      <div className={styles.eventNavigation}>
+        <EventNavItem work={eventWorks[index]?.prevWork} label="前の作品" />
+        <EventNavItem work={eventWorks[index]?.nextWork} label="次の作品" />
+      </div>
+    </div>
+  );
+});
+
+// メモ化された楽曲表示コンポーネント
+const MusicDisplay = React.memo(function MusicDisplay({ work }) {
+  if (!work.music || typeof work.music !== 'string') return null;
+
+  return (
+    <p
+      dangerouslySetInnerHTML={{
+        __html: `楽曲:${work.music} - ${work.credit}<br> `,
+      }}
+    />
+  );
+});
+
+// メモ化されたクリエイター情報コンポーネント
 const CreatorInfo = React.memo(function CreatorInfo({ work, workDetails }) {
   return (
-    <div className={styles.creatorInfo}>
-      {workDetails.showIcon && work.icon && (
-        <UserIcon work={work} />
+    <div className={styles.userinfo}>
+      {workDetails.showIcon ? (
+        <Link href={`../user/${work.tlink?.toLowerCase() || ""}`}>
+          <Image
+            src={work?.icon
+              ? `https://lh3.googleusercontent.com/d/${work.icon.slice(33)}`
+              : "https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
+            }
+            className={styles.icon}
+            alt={`${work.creator}のアイコン`}
+            width={50}
+            height={50}
+          />
+        </Link>
+      ) : (
+        <Link href={`../user/${work.tlink?.toLowerCase() || ""}`}>
+          <Image
+            src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
+            alt="アイコン"
+            className={styles.icon}
+            width={50}
+            height={50}
+          />
+        </Link>
       )}
+
       {workDetails.showCreator && (
         <h3 className={styles.creator}>
           <Link href={`../user/${work.tlink?.toLowerCase() || ""}`}>
@@ -142,50 +233,6 @@ const CreatorInfo = React.memo(function CreatorInfo({ work, workDetails }) {
           hour12: false
         }).format(new Date(new Date(work.time).getTime() - 9 * 60 * 60 * 1000))}</p>
       )}
-    </div>
-  );
-});
-
-// メモ化されたイベントカードコンポーネント
-const EventCard = React.memo(function EventCard({ event, eventWorks, index }) {
-  return (
-    <div key={index} className={styles.eventCard}>
-      <h3>{event.eventname}</h3>
-      {event.explanation && <p>{event.explanation}</p>}
-      {event.icon && (
-        <Image
-          src={`https://lh3.googleusercontent.com/d/${event.icon.slice(33)}`}
-          alt={`${event.eventname}のアイコン`}
-          width={50}
-          height={50}
-          className={styles.eventIcon}
-        />
-      )}
-      {eventWorks.length > 0 && (
-        <div className={styles.eventNavigation}>
-          {eventWorks[index]?.prevWork && (
-            <Link href={`/${eventWorks[index].prevWork.ylink.slice(17, 28)}`}>
-              前の作品: {eventWorks[index].prevWork.title}
-            </Link>
-          )}
-          {eventWorks[index]?.nextWork && (
-            <Link href={`/${eventWorks[index].nextWork.ylink.slice(17, 28)}`}>
-              次の作品: {eventWorks[index].nextWork.title}
-            </Link>
-          )}
-        </div>
-      )}
-    </div>
-  );
-});
-
-// メモ化された音楽表示コンポーネント
-const MusicDisplay = React.memo(function MusicDisplay({ work }) {
-  return (
-    <div className={styles.musicInfo}>
-      <h3>使用楽曲</h3>
-      <p>{work.music}</p>
-      {work.credit && <p>クレジット: {work.credit}</p>}
     </div>
   );
 });
@@ -426,144 +473,275 @@ export default function WorkId({
     </div>
   );
 }
+// イベントデータを取得する関数
+async function fetchEventData(eventId) {
+  const eventRes = await fetch(
+    `https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec?eventid=${eventId}`
+  );
 
-// データ取得関数
-const fetchVideosList = async () => {
-  try {
-    const res = await fetch("https://api.example.com/videos", {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; PVSF-Archive/1.0)",
-      },
-    });
-
-    if (!res.ok) {
-      throw new Error(`作品一覧の取得に失敗しました (${res.status} ${res.statusText})`);
-    }
-
-    const data = await res.json();
-    return data;
-  } catch (error) {
-    console.error("作品一覧取得エラー:", error);
-    throw error;
+  if (!eventRes.ok) {
+    throw new Error("イベント情報の取得に失敗しました");
   }
-};
 
-const fetchVideoData = async (id) => {
-  try {
-    const res = await fetch(`https://api.example.com/videos/${id}`, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; PVSF-Archive/1.0)",
-      },
-    });
+  const eventData = await eventRes.json();
+  const eventInfo = eventData.find((event) => event.eventid === eventId);
 
-    if (!res.ok) {
-      throw new Error(`作品詳細の取得に失敗しました (${res.status} ${res.statusText})`);
+  return {
+    eventname: eventInfo?.eventname || "Unknown Event",
+    icon: eventInfo?.icon || "",
+  };
+}
+
+// getRelatedWorks関数を修正
+function getRelatedWorks(work, publicData, currentIndex) {
+  const safeCompare = (a, b) => a && b && typeof a === 'string' && typeof b === 'string' && a.toLowerCase() === b.toLowerCase();
+
+  const uniqueWorks = (works) => Array.from(new Set(works.map(w => w.ylink))).map(ylink => works.find(w => w.ylink === ylink));
+
+  const getRandomWorks = (works, count) => works.length <= count ? works : works.sort(() => 0.5 - Math.random()).slice(0, count);
+
+  const baseFilter = w => w.ylink !== work.ylink;
+  const memberIds = work.memberid?.split(',').map(id => id.trim()).filter(Boolean) || [];
+  const workTime = new Date(work.time);
+  const worksPerUser = publicData.length <= 25 ? 2 : 1;
+
+  const categorizedWorks = publicData.reduce((acc, w) => {
+    if (!baseFilter(w)) return acc;
+
+    if (w.tlink === work.tlink) {
+      acc.tlinkWorks.push(w);
     }
 
-    const data = await res.json();
-    return data;
-  } catch (error) {
-    console.error("作品詳細取得エラー:", error);
-    throw error;
-  }
-};
-
-// getStaticPathsの実装
-export async function getStaticPaths() {
-  try {
-    // APIからすべての作品IDを取得
-    const videos = await fetchVideosList();
-    
-    if (!Array.isArray(videos)) {
-      console.error('Videos data is not an array in getStaticPaths');
-      return {
-        paths: [],
-        fallback: false,
-      };
+    if (w.memberid?.split(',').map(id => id.trim()).includes(work.tlink)) {
+      acc.memberidWorks.push({
+        ...w,
+        timeDiff: Math.abs(new Date(w.time) - workTime)
+      });
     }
 
-    // 各作品IDに対してパスを生成
-    const paths = videos
-      .filter(video => video?.id && typeof video.id === 'string')
-      .map(video => ({
-        params: { id: video.id.trim() }
-      }));
+    if (memberIds.some(id => w.tlink === id)) {
+      acc.memberTlinkWorks.push(w);
+    } else if (memberIds.some(id => w.memberid?.includes(id)) && w.tlink !== work.tlink) {
+      acc.memberRelatedWorks.push(w);
+    }
 
-    console.log(`Generated ${paths.length} video static paths out of ${videos.length} videos`);
+    if (safeCompare(w.music, work.music)) {
+      acc.musicWorks.push(w);
+    }
+    if (safeCompare(w.credit, work.credit)) {
+      acc.creditWorks.push(w);
+    }
+
+    if (w.deterministicScore) {
+      acc.scoreWorks.push(w);
+    }
+
+    return acc;
+  }, {
+    tlinkWorks: [],
+    memberidWorks: [],
+    memberTlinkWorks: [],
+    memberRelatedWorks: [],
+    musicWorks: [],
+    creditWorks: [],
+    scoreWorks: []
+  });
+
+  const isPrivate = work.status === "private";
+  const processedWorks = {
+    tlinkWorks: isPrivate
+      ? categorizedWorks.tlinkWorks
+        .sort((a, b) => Math.abs(new Date(a.time) - workTime) - Math.abs(new Date(b.time) - workTime))
+        .slice(0, 4)
+      : categorizedWorks.tlinkWorks
+        .sort((a, b) => Math.abs(currentIndex - publicData.indexOf(a)) - Math.abs(currentIndex - publicData.indexOf(b)))
+        .slice(0, 2),
+
+    memberidWorks: categorizedWorks.memberidWorks
+      .sort((a, b) => a.timeDiff - b.timeDiff)
+      .slice(0, 2),
+
+    surroundingWorks: isPrivate ? [] : [
+      ...publicData.slice(Math.max(0, currentIndex - 6), currentIndex),
+      ...publicData.slice(currentIndex + 1, currentIndex + 7)
+    ],
+
+    memberTlinkWorks: getRandomWorks(categorizedWorks.memberTlinkWorks, worksPerUser * memberIds.length),
+    memberRelatedWorks: getRandomWorks(categorizedWorks.memberRelatedWorks, worksPerUser * memberIds.length),
+
+    musicWorks: getRandomWorks(categorizedWorks.musicWorks, isPrivate ? 2 : 4),
+    creditWorks: getRandomWorks(categorizedWorks.creditWorks, isPrivate ? 2 : 4),
+
+    randomWorks: getRandomWorks(publicData.filter(baseFilter), 2),
+
+    scoreWorks: getRandomWorks(
+      categorizedWorks.scoreWorks
+        .sort((a, b) => b.deterministicScore - a.deterministicScore)
+        .slice(0, 50),
+      2
+    )
+  };
+
+  const uniqueAllWorks = uniqueWorks([
+    ...processedWorks.tlinkWorks,
+    ...processedWorks.memberidWorks,
+    ...processedWorks.surroundingWorks,
+    ...processedWorks.memberTlinkWorks,
+    ...processedWorks.memberRelatedWorks,
+    ...processedWorks.musicWorks,
+    ...processedWorks.creditWorks,
+    ...processedWorks.randomWorks,
+    ...processedWorks.scoreWorks
+  ]);
+
+  const midPoint = Math.floor(uniqueAllWorks.length / 2);
+  return {
+    previousWorks: uniqueAllWorks.slice(0, midPoint),
+    nextWorks: uniqueAllWorks.slice(midPoint)
+  };
+}
+
+// getStaticPropsの修正
+export async function getStaticProps({ params }) {
+  try {
+    const fetchWithRetry = async (url, retries = 3) => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30000);
+          
+          const res = await fetch(url, { 
+            signal: controller.signal,
+            headers: { 
+              'Cache-Control': 'public, max-age=3600',
+              'User-Agent': 'Mozilla/5.0 (compatible; PVSF-Archive/1.0)'
+            } 
+          });
+          
+          clearTimeout(timeoutId);
+          
+          if (res.ok) {
+            const text = await res.text();
+            if (!text || text.trim() === '') {
+              throw new Error('Empty response');
+            }
+            return JSON.parse(text);
+          }
+        } catch (err) {
+          if (i === retries - 1) throw err;
+          await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+        }
+      }
+      return null;
+    };
+
+    const [videos, users, events] = await Promise.allSettled([
+      fetchWithRetry("https://pvsf-cash.vercel.app/api/videos"),
+      fetchWithRetry("https://pvsf-cash.vercel.app/api/users"),
+      fetchWithRetry("https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec")
+    ]);
+
+    // 結果を安全に処理
+    const videosData = videos.status === 'fulfilled' ? videos.value : [];
+    const usersData = users.status === 'fulfilled' ? users.value : [];
+    const eventsData = events.status === 'fulfilled' ? events.value : [];
+
+    if (!Array.isArray(videosData) || videosData.length === 0) {
+      console.error('Failed to fetch videos data or data is empty');
+      return { notFound: true };
+    }
+
+    const publicData = videosData.filter(w => w.status !== "private");
+    const work = videosData.find(w => w.ylink.slice(17, 28) === params.id);
+
+    if (!work) {
+      console.error(`Work not found for ID: ${params.id}`);
+      return { notFound: true };
+    }
+
+    const currentIndex = publicData.findIndex(w => w.ylink.slice(17, 28) === params.id);
+    const { previousWorks, nextWorks } = getRelatedWorks(work, publicData, currentIndex);
 
     return {
-      paths,
-      fallback: false,
+      props: {
+        work,
+        externalData: usersData || [],
+        previousWorks: previousWorks || [],
+        nextWorks: nextWorks || [],
+        events: eventsData || [],
+        videos: videosData
+      }
     };
+
   } catch (error) {
-    console.error('Error in getStaticPaths for videos:', error);
-    return {
-      paths: [],
-      fallback: false,
-    };
+    console.error(`Error in getStaticProps for ID ${params.id}:`, error);
+    return { notFound: true };
   }
 }
 
-// getStaticPropsの実装
-export async function getStaticProps({ params }) {
+// getStaticPathsの修正
+export async function getStaticPaths() {
   try {
-    const videoId = params.id;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+    
+    const res = await fetch("https://pvsf-cash.vercel.app/api/videos", { 
+      signal: controller.signal,
+      headers: { 
+        'Cache-Control': 'public, max-age=3600',
+        'User-Agent': 'Mozilla/5.0 (compatible; PVSF-Archive/1.0)'
+      } 
+    });
+    
+    clearTimeout(timeoutId);
 
-    // APIから作品詳細データを取得
-    const videoData = await fetchVideoData(videoId);
-
-    if (!videoData) {
-      console.warn(`Video not found for ID: ${videoId}`);
-      return {
-        notFound: true,
-      };
+    if (!res.ok) {
+      console.error(`Failed to fetch videos: ${res.status} ${res.statusText}`);
+      return { paths: [], fallback: false };
     }
 
-    // 安全な文字列処理
-    const safeString = (value) => {
-      if (typeof value === 'string') return value.trim();
-      if (Array.isArray(value)) return value.join(', ').trim();
-      return '';
-    };
+    const text = await res.text();
+    if (!text || text.trim() === '') {
+      console.error('Empty response from videos API');
+      return { paths: [], fallback: false };
+    }
 
-    // 作品データの安全な処理
-    const processedWork = {
-      ...videoData,
-      title: safeString(videoData.title),
-      creator: safeString(videoData.creator),
-      comment: safeString(videoData.comment),
-      music: safeString(videoData.music),
-      credit: safeString(videoData.credit),
-      member: safeString(videoData.member),
-      memberid: safeString(videoData.memberid),
-    };
+    let works;
+    try {
+      works = JSON.parse(text);
+    } catch (parseError) {
+      console.error('JSON Parse Error in getStaticPaths:', parseError.message);
+      return { paths: [], fallback: false };
+    }
 
-    // 関連作品データはvideoDataに含まれていると仮定
-    const previousWorks = videoData.previousWorks || [];
-    const nextWorks = videoData.nextWorks || [];
+    if (!Array.isArray(works)) {
+      console.error('Works data is not an array in getStaticPaths');
+      return { paths: [], fallback: false };
+    }
 
-    return {
-      props: {
-        work: processedWork,
-        previousWorks: previousWorks,
-        nextWorks: nextWorks,
-        externalData: [],
-        events: [],
-        videos: [],
-      },
-    };
+    const uniquePaths = new Set();
+    const paths = works
+      .filter(work => {
+        try {
+          if (!work || !work.ylink) return false;
+
+          const id = work.ylink.slice(17, 28);
+          if (uniquePaths.has(id)) return false;
+
+          uniquePaths.add(id);
+          return true;
+        } catch (e) {
+          console.error(`Invalid work data:`, work);
+          return false;
+        }
+      })
+      .map(work => ({ params: { id: work.ylink.slice(17, 28) } }));
+
+    console.log(`Generated ${paths.length} unique static paths out of ${works.length} works`);
+    return { paths, fallback: false };
+
   } catch (error) {
-    console.error('Error in getStaticProps:', error);
-    return {
-      props: {
-        work: null,
-        previousWorks: [],
-        nextWorks: [],
-        externalData: [],
-        events: [],
-        videos: [],
-        error: `予期しないエラーが発生しました: ${error.message}`,
-      },
-    };
+    console.error('Error in getStaticPaths:', error);
+    return { paths: [], fallback: false };
   }
 }

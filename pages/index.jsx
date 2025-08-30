@@ -10,23 +10,6 @@ import ScrollSection from "../components/ScrollSection";
 
 // メインコンポーネント
 export default function Home({ videos, users, events }) {
-  // データが存在しない場合の早期リターン
-  if (!videos || !Array.isArray(videos) || videos.length === 0) {
-    return (
-      <div className={styles.homeContainer}>
-        <Head>
-          <title>EventArchives - 映像イベントアーカイブ</title>
-          <meta name="description" content="PVSFへの出展作品アーカイブ" />
-        </Head>
-        <div className={styles.errorContainer}>
-          <h1>データを読み込み中...</h1>
-          <p>作品データの取得に時間がかかっています。しばらくお待ちください。</p>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
   // ②おすすめ動画（videoScoreの上位30作品をランダムに並び替え）
   const recommendedVideos = useMemo(() => {
     return [...videos]
@@ -335,70 +318,29 @@ export const getStaticProps = async () => {
     // 並列でデータを取得
     const [videosRes, usersRes, eventsRes] = await Promise.all([
       fetch('https://pvsf-cash.vercel.app/api/videos', {
-        headers: { 
-          'Cache-Control': 'public, max-age=3600',
-          'User-Agent': 'Mozilla/5.0 (compatible; PVSF-Archive/1.0)'
-        }
+        headers: { 'Cache-Control': 'no-cache' }
       }),
       fetch('https://pvsf-cash.vercel.app/api/users', {
-        headers: { 
-          'Cache-Control': 'public, max-age=3600',
-          'User-Agent': 'Mozilla/5.0 (compatible; PVSF-Archive/1.0)'
-        }
+        headers: { 'Cache-Control': 'no-cache' }
       }),
       fetch('https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec', {
-        headers: { 
-          'Cache-Control': 'public, max-age=3600',
-          'User-Agent': 'Mozilla/5.0 (compatible; PVSF-Archive/1.0)'
-        }
+        headers: { 'Cache-Control': 'no-cache' }
       })
     ]);
 
-    // データの取得と変換（エラーハンドリング付き）
-    let videos = [];
-    let users = [];
-    let events = [];
-
-    if (videosRes.ok) {
-      try {
-        videos = await videosRes.json();
-      } catch (error) {
-        console.error('Error parsing videos JSON:', error);
-      }
-    } else {
-      console.error('Failed to fetch videos:', videosRes.status, videosRes.statusText);
-    }
-
-    if (usersRes.ok) {
-      try {
-        users = await usersRes.json();
-      } catch (error) {
-        console.error('Error parsing users JSON:', error);
-      }
-    } else {
-      console.error('Failed to fetch users:', usersRes.status, usersRes.statusText);
-    }
-
-    if (eventsRes.ok) {
-      try {
-        events = await eventsRes.json();
-      } catch (error) {
-        console.error('Error parsing events JSON:', error);
-      }
-    } else {
-      console.error('Failed to fetch events:', eventsRes.status, eventsRes.statusText);
-    }
+    // データの取得と変換
+    const videos = videosRes.ok ? await videosRes.json() : [];
+    const users = usersRes.ok ? await usersRes.json() : [];
+    const events = eventsRes.ok ? await eventsRes.json() : [];
 
     console.log(`Fetched ${videos.length} videos, ${users.length} users, and ${events.length} events`);
 
     return {
       props: {
-        videos: videos || [],
-        users: users || [],
-        events: events || []
+        videos,
+        users,
+        events
       },
-      // 1時間ごとに再生成
-      revalidate: 3600,
     };
   } catch (error) {
     console.error('Error fetching data:', error);
@@ -408,8 +350,6 @@ export const getStaticProps = async () => {
         users: [],
         events: []
       },
-      // エラー時は5分後に再試行
-      revalidate: 300,
     };
   }
 };
