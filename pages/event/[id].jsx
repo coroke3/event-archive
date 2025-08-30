@@ -9,9 +9,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faLock, faLink, faGlobe } from "@fortawesome/free-solid-svg-icons";
 import { faXTwitter, faYoutube } from "@fortawesome/free-brands-svg-icons";
 
-// Edge Runtime設定
-export const runtime = 'edge';
-
 // データ取得関数（イベント）
 const fetchEventsData = async () => {
   try {

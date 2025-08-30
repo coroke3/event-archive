@@ -10,9 +10,6 @@ import {
 import { faUser } from '@fortawesome/free-solid-svg-icons';
 import styles from "../styles/work.module.css";
 
-// Edge Runtime設定
-export const runtime = 'edge';
-
 // メモ化されたコンポーネント
 const WorkCard = React.memo(function WorkCard({ work }) {
   return (
