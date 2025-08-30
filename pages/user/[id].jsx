@@ -118,7 +118,23 @@ const fetchUserData = async (username) => {
           personalWorks.length > 0 ? personalWorks[0] : matchedWorksByTlink[0];
         user.largeThumbnail = firstWork.largeThumbnail || "";
       } else {
-        user.largeThumbnail = "";
+        // .tlinkで一致する作品がない場合、memberidで関連する作品を探す
+        for (const work of allWorksData) {
+          if (work.memberid) {
+            const memberIds = work.memberid.split(",");
+            if (memberIds.some(memberId => memberId.trim().toLowerCase() === username.toLowerCase())) {
+              if (work.largeThumbnail) {
+                user.largeThumbnail = work.largeThumbnail;
+                break;
+              }
+            }
+          }
+        }
+        
+        // まだ背景画像がない場合は空文字を設定
+        if (!user.largeThumbnail) {
+          user.largeThumbnail = "";
+        }
       }
 
       // .tlink の代入
@@ -249,7 +265,7 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
               </a>
             )}
           </div>
-          {user.largeThumbnail && (
+          {user.largeThumbnail && user.largeThumbnail.trim() !== "" && (
             <Image
               src={user.largeThumbnail}
               alt={`${user.creator}の作品`}
@@ -262,7 +278,7 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
 
         <div className={styles.uwork}>
           <div className="work">
-            {/* 通常の作品（PVSFSummary以外）を表示 */}
+            {/* .tlinkが一致する作品（PVSFSummary以外）を表示 */}
             {Array.isArray(works) && works.filter(work =>
               !work.eventid?.split(',').some(id => id.includes('PVSFSummary'))
             ).length > 0 ? (
@@ -341,7 +357,7 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
             )}
           </div>
 
-          {/* 参加作品セクション（PVSFSummary以外）*/}
+          {/* .memberidが一致する作品セクション（PVSFSummary以外）*/}
           <div className="work">
             <h2>参加した作品等</h2>
             {collaborationWorks.filter(work =>
@@ -480,70 +496,7 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
               </div>
             )}
 
-          {/* PVSFSummary作品セクション（参加作品）*/}
-          {collaborationWorks.filter(work =>
-            work.eventid?.split(',').some(id => id.includes('PVSFSummary'))
-          ).length > 0 && (
-              <div className={styles.summarySection}>
-                <h2 className={styles.summaryTitle}>その他の動画</h2>
-                <div className={styles.summaryWorks}>
-                  {collaborationWorks.filter(work =>
-                    work.eventid?.split(',').some(id => id.includes('PVSFSummary'))
-                  ).map((work) => (
-                    <div
-                      className={`works ${styles.summaryWork} ${work.status === "private" ? "private" : ""} ${work.status === "unlisted" ? "unlisted" : ""}`}
-                      key={work.ylink}
-                    >
-                      <Link href={`../${work.ylink.slice(17, 28)}`}>
-                        <Image
-                          src={work.largeThumbnail}
-                          alt={`${work.title} - ${work.creator} | PVSF archive`}
-                          className="samune"
-                          width={640}
-                          height={360}
-                        />
-                      </Link>
-                      <h3>{work.title}</h3>
-                      <div className="subtitle">
-                        <div className="insubtitle">
-                          {work.icon ? (
-                            <Image
-                              src={`https://lh3.googleusercontent.com/d/${work.icon.slice(33)}`}
-                              className={styles.sicon}
-                              alt={`${work.creator}のアイコン`}
-                              width={50}
-                              height={50}
-                            />
-                          ) : (
-                            <Image
-                              src="https://i.gyazo.com/07a85b996890313b80971d8d2dbf4a4c.jpg"
-                              alt={`アイコン`}
-                              className="icon"
-                              width={50}
-                              height={50}
-                            />
-                          )}
-                          <p>{work.creator}</p>
-                        </div>
-                        <p className="status">
-                          {work.status === "public" ? null : work.status === "unlisted" ? (
-                            <span className="inunlisted">
-                              <FontAwesomeIcon icon={faLink} />
-                              限定公開
-                            </span>
-                          ) : (
-                            <span className="inprivate">
-                              <FontAwesomeIcon icon={faLock} />
-                              非公開
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+
         </div>
       </div>
       <Footer />
@@ -651,6 +604,41 @@ export const getStaticProps = async ({ params }) => {
       };
     }
 
+    // ユーザーの背景画像を取得する処理を改善
+    if (!user.largeThumbnail && allWorks.length > 0) {
+      // .tlinkが一致する作品をフィルタリング
+      const matchedWorksByTlink = allWorks.filter((work) => 
+        work.tlink?.toLowerCase() === id.toLowerCase()
+      );
+
+      if (matchedWorksByTlink.length > 0) {
+        // 個人作品を優先、なければ最初の作品を使用
+        const personalWorks = matchedWorksByTlink.filter(
+          (work) => work.type === "個人"
+        );
+        const firstWork = personalWorks.length > 0 ? personalWorks[0] : matchedWorksByTlink[0];
+        
+        if (firstWork.largeThumbnail) {
+          user.largeThumbnail = firstWork.largeThumbnail;
+        }
+      }
+
+      // まだ背景画像がない場合、memberidで関連する作品を探す
+      if (!user.largeThumbnail) {
+        for (const work of allWorks) {
+          if (work.memberid) {
+            const memberIds = work.memberid.split(",");
+            if (memberIds.some(memberId => memberId.trim().toLowerCase() === id.toLowerCase())) {
+              if (work.largeThumbnail) {
+                user.largeThumbnail = work.largeThumbnail;
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+
     // 安全な文字列処理
     const safeString = (value) => {
       if (typeof value === 'string') return value.trim();
@@ -665,11 +653,25 @@ export const getStaticProps = async ({ params }) => {
       creator: safeString(user.creator),
       tlink: safeString(user.tlink),
       ychlink: safeString(user.ychlink),
+      largeThumbnail: user.largeThumbnail || "",
     };
 
     // 作品データの取得とフィルタリング
-    const works = fetchCollaborationWorksData(allWorks, id);
-    const collaborationWorks = fetchCollaborationWorksData(allWorks, id);
+    // 1つ目のworkセクション: .tlinkが一致する作品
+    const works = allWorks.filter((work) => 
+      work.tlink?.toLowerCase() === id.toLowerCase()
+    );
+    
+    // 2つ目のworkセクション: .memberidが一致する作品
+    const collaborationWorks = allWorks.filter((work) => {
+      if (work.memberid) {
+        const memberIds = work.memberid.split(",");
+        return memberIds.some(
+          (memberId) => memberId.trim().toLowerCase() === id.toLowerCase()
+        );
+      }
+      return false;
+    });
 
     return {
       props: {
@@ -687,7 +689,6 @@ export const getStaticProps = async ({ params }) => {
         collaborationWorks: [],
         error: 'データの取得に失敗しました',
       },
-
     };
   }
 };
