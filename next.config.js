@@ -1,7 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "standalone",
+  output: "export",
+  trailingSlash: true,
+  distDir: 'out',
+  assetPrefix: process.env.NODE_ENV === 'production' ? '' : '',
+  basePath: '',
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',

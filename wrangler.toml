@@ -1,0 +1,9 @@
+name = "pvsf-archive"
+compatibility_date = "2024-01-01"
+
+[env.production]
+route = "pvsf.jp/*"
+
+[[env.production.routes]]
+pattern = "pvsf.jp/*"
+zone_name = "pvsf.jp" 

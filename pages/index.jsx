@@ -320,17 +320,17 @@ export const getStaticProps = async () => {
         try {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 30000);
-          
-          const res = await fetch(url, { 
+
+          const res = await fetch(url, {
             signal: controller.signal,
-            headers: { 
+            headers: {
               'Cache-Control': 'public, max-age=3600',
               'User-Agent': 'Mozilla/5.0 (compatible; PVSF-Archive/1.0)'
-            } 
+            }
           });
-          
+
           clearTimeout(timeoutId);
-          
+
           if (res.ok) {
             const text = await res.text();
             if (!text || text.trim() === '') {
@@ -339,6 +339,7 @@ export const getStaticProps = async () => {
             return JSON.parse(text);
           }
         } catch (err) {
+          console.warn(`Fetch attempt ${i + 1} failed for ${url}:`, err.message);
           if (i === retries - 1) throw err;
           await new Promise(r => setTimeout(r, 1000 * (i + 1)));
         }
@@ -348,52 +349,30 @@ export const getStaticProps = async () => {
 
     // 並列でデータを取得（エラーハンドリング付き）
     const [videosResult, usersResult, eventsResult] = await Promise.allSettled([
-      fetchWithRetry('https://pvsf-cash.vercel.app/api/videos'),
-      fetchWithRetry('https://pvsf-cash.vercel.app/api/users'),
-      fetchWithRetry('https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec')
+      fetchWithRetry('https://pvsf-cash.vercel.app/api/videos').catch(() => []),
+      fetchWithRetry('https://pvsf-cash.vercel.app/api/users').catch(() => []),
+      fetchWithRetry('https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec').catch(() => [])
     ]);
 
     // 結果を安全に処理
-    const videos = videosResult.status === 'fulfilled' ? videosResult.value : [];
-    const users = usersResult.status === 'fulfilled' ? usersResult.value : [];
-    const events = eventsResult.status === 'fulfilled' ? eventsResult.value : [];
+    const videos = videosResult.status === 'fulfilled' && Array.isArray(videosResult.value) ? videosResult.value : [];
+    const users = usersResult.status === 'fulfilled' && Array.isArray(usersResult.value) ? usersResult.value : [];
+    const events = eventsResult.status === 'fulfilled' && Array.isArray(eventsResult.value) ? eventsResult.value : [];
 
-    // データの検証
-    if (!Array.isArray(videos)) {
-      console.error('Videos data is not an array');
-      return {
-        props: {
-          videos: [],
-          users: users || [],
-          events: events || []
-        },
-      };
+    // データの検証とログ出力
+    if (videosResult.status === 'rejected') {
+      console.warn('Failed to fetch videos:', videosResult.reason);
     }
-
-    if (!Array.isArray(users)) {
-      console.error('Users data is not an array');
-      return {
-        props: {
-          videos: videos || [],
-          users: [],
-          events: events || []
-        },
-      };
+    if (usersResult.status === 'rejected') {
+      console.warn('Failed to fetch users:', usersResult.reason);
     }
-
-    if (!Array.isArray(events)) {
-      console.error('Events data is not an array');
-      return {
-        props: {
-          videos: videos || [],
-          users: users || [],
-          events: []
-        },
-      };
+    if (eventsResult.status === 'rejected') {
+      console.warn('Failed to fetch events:', eventsResult.reason);
     }
 
     console.log(`Fetched ${videos.length} videos, ${users.length} users, and ${events.length} events`);
 
+    // データが取得できなくても、空の配列でページを生成
     return {
       props: {
         videos,
@@ -402,7 +381,9 @@ export const getStaticProps = async () => {
       },
     };
   } catch (error) {
-    console.error('Error fetching data:', error);
+    console.error('Critical error in getStaticProps:', error);
+
+    // 完全にエラーが発生した場合でも、空のデータでページを生成
     return {
       props: {
         videos: [],
