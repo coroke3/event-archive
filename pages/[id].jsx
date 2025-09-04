@@ -260,7 +260,7 @@ export default function WorkId({
       showCreator: safe(work.creator),
       showTwitter: safe(work.tlink),
       showYoutube: safe(work.ylink),
-      showMember: safe(work.member) && safe(work.memberid),
+      showMember: safe(work.member), // memberidの条件を削除
       showMusic: safe(work.music),
       showMusicLink: safe(work.ymulink),
       showTime: safe(work.time),
@@ -284,10 +284,16 @@ export default function WorkId({
   const memberInfo = useMemo(() => {
     if (!work?.member || !workDetails.showMember) return [];
     return work.member.split(/[,、，]/).map((username, index) => {
-      const memberId = work.memberid.split(/[,、，]/)[index]?.trim();
-      const matchedUser = externalData.find(
-        user => user.username.toLowerCase() === memberId?.toLowerCase()
-      );
+      // memberidが存在する場合のみ取得、存在しない場合はundefined
+      const memberId = work.memberid ? 
+        work.memberid.split(/[,、，]/)[index]?.trim() : 
+        undefined;
+      
+      // memberIdが存在する場合のみユーザー検索
+      const matchedUser = memberId ? 
+        externalData.find(user => user.username.toLowerCase() === memberId.toLowerCase()) : 
+        null;
+      
       return { username, memberId, matchedUser };
     });
   }, [work?.member, work?.memberid, externalData, workDetails.showMember]);
