@@ -46,28 +46,31 @@ export default function Home({ videos, users, events }) {
       }
     });
 
-    // 2. 4作品以上のクリエイター（個人作品で判定）
-    const frequentCreators = Object.keys(creatorCounts2)
-      .filter(tlink => creatorCounts2[tlink] >= 4)
+    // 2. 個人作品1作品以上のクリエイター
+    const personalCreators = Object.keys(creatorCounts2)
+      .filter(tlink => creatorCounts2[tlink] >= 1)
       .map(tlink => getCreatorInfo(tlink, videos, users));
 
-    // 3. videoScore上位作品のクリエイター（2作品以上）
-    const topScoredVideos = [...videos]
-      .filter(video => video.status !== "private")
-      .sort((a, b) => (b.videoScore || 0) - (a.videoScore || 0))
-      .slice(0, 30);
-
-    const topCreators = [...new Set(topScoredVideos
-      .map(video => video.tlink?.toLowerCase())
-      .filter(Boolean))]
-      .filter(tlink => creatorCounts[tlink] >= 2)
+    // 3. 合作のみで2作品以上のクリエイター
+    const collaborationOnlyCreators = Object.keys(creatorCounts)
+      .filter(tlink =>
+        !creatorCounts2[tlink] && // 個人作品がない
+        creatorCounts[tlink] >= 2  // 合作参加2作品以上
+      )
       .map(tlink => getCreatorInfo(tlink, videos, users));
 
-    // 4. 両方のリストからランダムに選出
-    return [
-      ...shuffleArray(frequentCreators).slice(0, 20),
-      ...shuffleArray(topCreators).slice(0, 20)
+    // 4. 全クリエイターを結合してランダムに選出
+    const allCreators = [
+      ...personalCreators,
+      ...collaborationOnlyCreators
     ];
+
+    // 重複排除
+    const uniqueCreators = allCreators.filter((creator, index, self) =>
+      index === self.findIndex(c => c.tlink === creator.tlink)
+    );
+
+    return shuffleArray(uniqueCreators).slice(0, 40);
   }, [videos, users]);
 
   // ④直近3イベントの作品
