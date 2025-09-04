@@ -127,34 +127,28 @@ const getLatestWorkByTlink = (icons, tlink) => {
 };
 
 export default function UserPage({ users = [] }) {
-  const [sortOption, setSortOption] = useState("creatorScore");
+  const [sortOption, setSortOption] = useState("totalWorks");
 
   // ソート処理
   const sortedUsers = [...users].sort((a, b) => {
-    if (sortOption === "creatorScore") {
-      // creatorScore順（降順）
-      const aScore = a.creatorScore || 0;
-      const bScore = b.creatorScore || 0;
-      return bScore - aScore;
+    if (sortOption === "name") {
+      const aCreatorName = a.creatorName || "不明";
+      const bCreatorName = b.creatorName || "不明";
+      return aCreatorName.localeCompare(bCreatorName);
     }
     if (sortOption === "totalWorks") {
       const aTotalWorks = (a.iylink?.length || 0) + (a.cylink?.length || 0);
       const bTotalWorks = (b.iylink?.length || 0) + (b.cylink?.length || 0);
       return bTotalWorks - aTotalWorks; // 合計作品数の降順
     }
-    if (sortOption === "name") {
-      const aCreatorName = a.creatorName || "不明";
-      const bCreatorName = b.creatorName || "不明";
-      return aCreatorName.localeCompare(bCreatorName);
+    if (sortOption === "latestWork") {
+      // 最新作品順は新しいAPIでは実装困難なため、現在は作品数順にフォールバック
+      const aTotalWorks = (a.iylink?.length || 0) + (a.cylink?.length || 0);
+      const bTotalWorks = (b.iylink?.length || 0) + (b.cylink?.length || 0);
+      return bTotalWorks - aTotalWorks;
     }
     return 0;
   });
-
-  const sortOptions = [
-    { value: "creatorScore", label: "デフォルト" },
-    { value: "totalWorks", label: "合計作品数順" },
-    { value: "name", label: "名前順" }
-  ];
 
   return (
     <div>
@@ -168,24 +162,14 @@ export default function UserPage({ users = [] }) {
       <div className="content">
         <h1 className="entitle">CREATOR</h1>
         <h1 className="jatitle">クリエイター一覧</h1>
-        
-        {/* 改善された並び替えUI */}
-        <div className={styles.sortContainer}>
-          <div className={styles.sortButtons}>
-            {sortOptions.map((option) => (
-              <button
-                key={option.value}
-                className={`${styles.sortButton} ${
-                  sortOption === option.value ? styles.sortButtonActive : ""
-                }`}
-                onClick={() => setSortOption(option.value)}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
+        <select className={styles.select}
+          value={sortOption}
+          onChange={(e) => setSortOption(e.target.value)}
+        >
+          <option value="name">名前順</option>
+          <option value="totalWorks">合計作品数順</option>
+          <option value="latestWork">最新の作品順</option>
+        </select>
         <div className={styles.userlist}>
           {sortedUsers.length > 0 ? (
             sortedUsers.map((user) => {
