@@ -15,7 +15,6 @@ const fetchUserData = async (username) => {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
-
     const res = await fetch("https://pvsf-cash.vercel.app/api/users", {
       signal: controller.signal,
       headers: {
@@ -24,151 +23,19 @@ const fetchUserData = async (username) => {
       },
       cache: "no-store",
     });
-
     clearTimeout(timeoutId);
-
-    if (!res.ok) {
-      console.error(`Failed to fetch user data: ${res.status} ${res.statusText}`);
-      return null;
-    }
-
-    const text = await res.text();
-    if (!text || text.trim() === '') {
-      console.error('Empty response from user API');
-      return null;
-    }
-
-    let usersData;
-    try {
-      usersData = JSON.parse(text);
-    } catch (parseError) {
-      console.error('JSON Parse Error for user data:', parseError.message);
-      console.error('Response text:', text.substring(0, 200));
-      return null;
-    }
-
-    const user = Array.isArray(usersData) ? usersData.find((user) => user.username === username) : null;
-
-    if (user) {
-      // 全ての作品データを取得
-      const allWorksData = await fetchWorksData();
-
-      // .tlinkが一致する作品をフィルタリング
-      const matchedWorksByTlink = Array.isArray(allWorksData)
-        ? allWorksData.filter((work) => work.tlink?.toLowerCase() === username.toLowerCase())
-        : [];
-
-      // .icon の取得
-      if (matchedWorksByTlink.length > 0) {
-        const personalWorks = matchedWorksByTlink.filter(
-          (work) => work.type === "個人"
-        );
-        const firstWork =
-          personalWorks.length > 0 ? personalWorks[0] : matchedWorksByTlink[0];
-        user.icon = firstWork.icon || "";
-      } else {
-        user.icon = "";
-      }
-
-      // .creator の取得
-      if (matchedWorksByTlink.length > 0) {
-        const personalWorks = matchedWorksByTlink.filter(
-          (work) => work.type === "個人"
-        );
-        const firstWork =
-          personalWorks.length > 0 ? personalWorks[0] : matchedWorksByTlink[0];
-        if (firstWork.type === "個人") {
-          user.creator = firstWork.creator;
-        }
-      }
-
-      if (!user.creator) {
-        // .creator が未設定の場合、.memberid と .member を使って最新の一致を探す
-        let latestWork = null;
-        for (const work of allWorksData) {
-          if (work.memberid) {
-            const memberIds = work.memberid.split(",");
-            const memberNames = work.member.split(",");
-
-            const matchedMemberIndex = memberIds.findIndex(
-              (memberId) =>
-                memberId.trim().toLowerCase() === username.toLowerCase()
-            );
-
-            if (matchedMemberIndex !== -1) {
-              latestWork = work; // 最新作を更新
-              user.creator = memberNames[matchedMemberIndex].trim();
-              break; // 最初に見つかった一致を優先
-            }
-          }
-        }
-
-        // 最新作が見つかっていない場合、ユーザー名を使用
-        if (!user.creator && latestWork) {
-          user.creator = username;
-        }
-      }
-
-      // .largeThumbnail の取得
-      if (matchedWorksByTlink.length > 0) {
-        const personalWorks = matchedWorksByTlink.filter(
-          (work) => work.type === "個人"
-        );
-        const firstWork =
-          personalWorks.length > 0 ? personalWorks[0] : matchedWorksByTlink[0];
-        user.largeThumbnail = firstWork.largeThumbnail || "";
-      } else {
-        // .tlinkで一致する作品がない場合、memberidで関連する作品を探す
-        for (const work of allWorksData) {
-          if (work.memberid) {
-            const memberIds = work.memberid.split(",");
-            if (memberIds.some(memberId => memberId.trim().toLowerCase() === username.toLowerCase())) {
-              if (work.largeThumbnail) {
-                user.largeThumbnail = work.largeThumbnail;
-                break;
-              }
-            }
-          }
-        }
-        
-        // まだ背景画像がない場合は空文字を設定
-        if (!user.largeThumbnail) {
-          user.largeThumbnail = "";
-        }
-      }
-
-      // .tlink の代入
-      user.tlink = username;
-
-      // .ychlink の取得
-      if (matchedWorksByTlink.length > 0) {
-        const personalWorks = matchedWorksByTlink.filter(
-          (work) => work.type === "個人"
-        );
-        const firstWork =
-          personalWorks.length > 0 ? personalWorks[0] : matchedWorksByTlink[0];
-        user.ychlink = firstWork.ychlink || "";
-      } else {
-        user.ychlink = "";
-      }
-    }
-
-    return user;
-  } catch (error) {
-    if (error.name === 'AbortError') {
-      console.error('User data fetch timeout');
-      return null;
-    }
-    console.error('Error fetching user data:', error);
+    if (!res.ok) return null;
+    const usersData = await res.json();
+    return Array.isArray(usersData) ? usersData.find((user) => user.username === username) : null;
+  } catch {
     return null;
   }
 };
 
-const fetchWorksData = async () => {
+const fetchWorksData = async (ids) => {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
-
     const res = await fetch("https://pvsf-cash.vercel.app/api/videos", {
       signal: controller.signal,
       headers: {
@@ -177,33 +44,14 @@ const fetchWorksData = async () => {
       },
       cache: "no-store",
     });
-
     clearTimeout(timeoutId);
-
-    if (!res.ok) {
-      console.error(`Failed to fetch works data: ${res.status} ${res.statusText}`);
-      return [];
-    }
-
-    const text = await res.text();
-    if (!text || text.trim() === '') {
-      console.error('Empty response from works API');
-      return [];
-    }
-
-    try {
-      return JSON.parse(text);
-    } catch (parseError) {
-      console.error('JSON Parse Error for works data:', parseError.message);
-      console.error('Response text:', text.substring(0, 200));
-      return [];
-    }
-  } catch (error) {
-    if (error.name === 'AbortError') {
-      console.error('Works data fetch timeout');
-      return [];
-    }
-    console.error('Error fetching works data:', error);
+    if (!res.ok) return [];
+    const allWorks = await res.json();
+    // idリストが空なら空配列
+    if (!ids || ids.length === 0) return [];
+    // ylinkのID部分（11桁）で一致する作品のみ返す
+    return allWorks.filter(work => ids.includes(work.ylink.slice(17, 28)));
+  } catch {
     return [];
   }
 };
@@ -586,93 +434,32 @@ export const getStaticPaths = async () => {
 export const getStaticProps = async ({ params }) => {
   try {
     const { id } = params;
-
-    // データを取得（エラーハンドリング付き）
-    const [userResult, worksResult] = await Promise.allSettled([
-      fetchUserData(id),
-      fetchWorksData()
-    ]);
-
-    // 結果を安全に処理
-    const user = userResult.status === 'fulfilled' ? userResult.value : null;
-    const allWorks = worksResult.status === 'fulfilled' ? worksResult.value : [];
-
+    // 1. ユーザーAPIからユーザー情報を取得
+    const user = await fetchUserData(id);
     if (!user) {
-      console.warn(`User not found for ID: ${id}`);
-      return {
-        notFound: true,
-      };
+      return { notFound: true };
     }
-
-    // ユーザーの背景画像を取得する処理を改善
-    if (!user.largeThumbnail && allWorks.length > 0) {
-      // .tlinkが一致する作品をフィルタリング
-      const matchedWorksByTlink = allWorks.filter((work) => 
-        work.tlink?.toLowerCase() === id.toLowerCase()
-      );
-
-      if (matchedWorksByTlink.length > 0) {
-        // 個人作品を優先、なければ最初の作品を使用
-        const personalWorks = matchedWorksByTlink.filter(
-          (work) => work.type === "個人"
-        );
-        const firstWork = personalWorks.length > 0 ? personalWorks[0] : matchedWorksByTlink[0];
-        
-        if (firstWork.largeThumbnail) {
-          user.largeThumbnail = firstWork.largeThumbnail;
-        }
-      }
-
-      // まだ背景画像がない場合、memberidで関連する作品を探す
-      if (!user.largeThumbnail) {
-        for (const work of allWorks) {
-          if (work.memberid) {
-            const memberIds = work.memberid.split(",");
-            if (memberIds.some(memberId => memberId.trim().toLowerCase() === id.toLowerCase())) {
-              if (work.largeThumbnail) {
-                user.largeThumbnail = work.largeThumbnail;
-                break;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // 安全な文字列処理
+    // 2. iylink/cylinkから必要な動画IDリストを作成
+    const iyIds = Array.isArray(user.iylink) ? user.iylink : [];
+    const cyIds = Array.isArray(user.cylink) ? user.cylink : [];
+    // 3. 必要な作品詳細のみ動画APIから取得
+    const works = iyIds.length > 0 ? await fetchWorksData(iyIds) : [];
+    const collaborationWorks = cyIds.length > 0 ? await fetchWorksData(cyIds) : [];
+    // 4. ユーザー情報の整形
     const safeString = (value) => {
       if (typeof value === 'string') return value.trim();
       if (Array.isArray(value)) return value.join(', ').trim();
       return '';
     };
-
-    // ユーザーデータの安全な処理
     const processedUser = {
       ...user,
       username: safeString(user.username),
-      creator: safeString(user.creator),
-      tlink: safeString(user.tlink),
+      creator: safeString(user.creatorName || user.creator),
+      tlink: safeString(user.tlink || user.username),
       ychlink: safeString(user.ychlink),
-      largeThumbnail: user.largeThumbnail || "",
+      largeThumbnail: user.largeThumbnail || (works[0]?.largeThumbnail || ""),
+      icon: user.icon || (works[0]?.icon || ""),
     };
-
-    // 作品データの取得とフィルタリング
-    // 1つ目のworkセクション: .tlinkが一致する作品
-    const works = allWorks.filter((work) => 
-      work.tlink?.toLowerCase() === id.toLowerCase()
-    );
-    
-    // 2つ目のworkセクション: .memberidが一致する作品
-    const collaborationWorks = allWorks.filter((work) => {
-      if (work.memberid) {
-        const memberIds = work.memberid.split(",");
-        return memberIds.some(
-          (memberId) => memberId.trim().toLowerCase() === id.toLowerCase()
-        );
-      }
-      return false;
-    });
-
     return {
       props: {
         user: processedUser,
@@ -681,7 +468,6 @@ export const getStaticProps = async ({ params }) => {
       },
     };
   } catch (error) {
-    console.error('Error in getStaticProps:', error);
     return {
       props: {
         user: null,
