@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://pvsf.jp
+
+# Sitemaps
+Sitemap: https://pvsf.jp/sitemap.xml
