@@ -10,45 +10,23 @@ import {
 import { faUser } from '@fortawesome/free-solid-svg-icons';
 import styles from "../styles/work.module.css";
 
-// メモ化されたコンポーネント（アナリティクス対応）
-const WorkCard = React.memo(function WorkCard({ work, trendingData = [] }) {
-  // アナリティクスデータを取得
-  const analyticsInfo = useMemo(() => {
-    if (!trendingData || trendingData.length === 0) return null;
-
-    const videoIdMatch = work.ylink?.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
-    if (!videoIdMatch) return null;
-
-    return trendingData.find(item => item.videoId === videoIdMatch[1]);
-  }, [work.ylink, trendingData]);
-
+// メモ化されたコンポーネント（Cloudflare Pages対応）
+const WorkCard = React.memo(function WorkCard({ work }) {
   return (
     <div className={styles.ss1} key={work.ylink.slice(17, 28)}>
       <div className={styles.ss12}>
         <Link href={`/${work.ylink.slice(17, 28)}`}>
-          <div className={styles.thumbnailWrapper}>
-            <img
-              src={work.smallThumbnail}
-              width="100%"
-              alt={`${work.title} - ${work.creator} | PVSF archive`}
-              loading="lazy"
-            />
-            {analyticsInfo && (
-              <div className={styles.trendingBadgeSmall}>
-                🔥 {analyticsInfo.pageViews}
-              </div>
-            )}
-          </div>
+          <img
+            src={work.smallThumbnail}
+            width="100%"
+            alt={`${work.title} - ${work.creator} | PVSF archive`}
+            loading="lazy"
+          />
         </Link>
       </div>
       <div className={styles.ss13}>
         <p className={styles.scc}>{work.title}</p>
         <p className={styles.sc}>{work.creator}</p>
-        {analyticsInfo && (
-          <p className={styles.analyticsInfo}>
-            👀 {analyticsInfo.pageViews} views • 📈 トレンド
-          </p>
-        )}
       </div>
     </div>
   );
@@ -270,7 +248,6 @@ export default function WorkId({
   auth = { auth: false, user: null },
   events,
   videos,
-  trendingData = [],
 }) {
   // workDetailsをuseMemoで最適化
   const workDetails = useMemo(() => {
@@ -303,34 +280,23 @@ export default function WorkId({
     [work?.ylink]
   );
 
-  // 現在の作品のアナリティクス情報（デバッグ用モックデータ付き）
+  // 現在の作品のアナリティクス情報（Cloudflare Pages対応版）
   const currentWorkAnalytics = useMemo(() => {
-    if (!work?.ylink) return null;
+    if (!work?.ylink || typeof window === 'undefined') return null;
 
-    const videoIdMatch = work.ylink.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
-    if (!videoIdMatch) return null;
-
-    const videoId = videoIdMatch[1];
-
-    // 実際のアナリティクスデータを確認
-    let analytics = trendingData?.find(item => item.videoId === videoId);
-
-    // デバッグ用：データがない場合の超リアルなモックデータ（開発環境のみ）
-    if (!analytics && process.env.NODE_ENV === 'development') {
-      // 作品のスコアに基づいて控えめなモックデータを生成
+    // 開発環境のみモックデータを生成
+    if (process.env.NODE_ENV === 'development') {
       const baseScore = work.videoScore || 50;
-      // 超現実的な数字：5-60ビュー程度（ニッチサイト想定）
       const multiplier = Math.max(0.2, (baseScore / 150)); // 0.2-0.7の範囲
-      analytics = {
-        videoId: videoId,
+      return {
         pageViews: Math.floor(8 + multiplier * 35 + Math.random() * 25), // 8-68の範囲
         sessions: Math.floor(5 + multiplier * 20 + Math.random() * 15), // 5-40の範囲  
         avgDuration: Math.floor(60 + Math.random() * 200) // 60-260秒
       };
     }
 
-    return analytics;
-  }, [work?.ylink, work?.videoScore, trendingData]);
+    return null; // 本番環境では非表示
+  }, [work?.ylink, work?.videoScore]);
 
   // メンバー情報の処理を最適化
   const memberInfo = useMemo(() => {
@@ -539,10 +505,10 @@ export default function WorkId({
           </div>
           <div className={styles.s2f}>
             {previousWorks.map((prevWork) => (
-              <WorkCard key={prevWork.ylink.slice(17, 28)} work={prevWork} trendingData={trendingData} />
+              <WorkCard key={prevWork.ylink.slice(17, 28)} work={prevWork} />
             ))}
             {nextWorks.map((nextWork) => (
-              <WorkCard key={nextWork.ylink.slice(17, 28)} work={nextWork} trendingData={trendingData} />
+              <WorkCard key={nextWork.ylink.slice(17, 28)} work={nextWork} />
             ))}
           </div>
         </div>
@@ -569,28 +535,17 @@ async function fetchEventData(eventId) {
   };
 }
 
-// getRelatedWorks関数を修正（アナリティクスデータ対応）
-function getRelatedWorks(work, publicData, currentIndex, trendingData = []) {
+// getRelatedWorks関数を修正（Cloudflare Pages対応）
+function getRelatedWorks(work, publicData, currentIndex) {
   const safeCompare = (a, b) => a && b && typeof a === 'string' && typeof b === 'string' && a.toLowerCase() === b.toLowerCase();
 
   const uniqueWorks = (works) => Array.from(new Set(works.map(w => w.ylink))).map(ylink => works.find(w => w.ylink === ylink));
 
-  // アナリティクスデータを活用する関数
-  const getAnalyticsScore = (videoWork) => {
-    if (!trendingData || trendingData.length === 0) return 0;
-
-    const videoIdMatch = videoWork.ylink?.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
-    if (!videoIdMatch) return 0;
-
-    const analytics = trendingData.find(item => item.videoId === videoIdMatch[1]);
-    return analytics ? (analytics.pageViews || 0) + (analytics.sessions || 0) * 2 : 0;
-  };
-
-  // 人気度を考慮したソート関数
+  // 人気度を考慮したソート関数（Cloudflare Pages対応）
   const sortByPopularity = (works) => {
     return works.sort((a, b) => {
-      const scoreA = getAnalyticsScore(a) + (a.videoScore || 0) * 10;
-      const scoreB = getAnalyticsScore(b) + (b.videoScore || 0) * 10;
+      const scoreA = (a.videoScore || 0);
+      const scoreB = (b.videoScore || 0);
       return scoreB - scoreA;
     });
   };
@@ -645,14 +600,6 @@ function getRelatedWorks(work, publicData, currentIndex, trendingData = []) {
   });
 
   const isPrivate = work.status === "private";
-  // トレンド作品を追加
-  const trendingWorks = trendingData.length > 0 ?
-    publicData.filter(w => {
-      if (!baseFilter(w)) return false;
-      const videoIdMatch = w.ylink?.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
-      return videoIdMatch && trendingData.some(item => item.videoId === videoIdMatch[1]);
-    }).slice(0, 4) : [];
-
   const processedWorks = {
     tlinkWorks: isPrivate
       ? sortByPopularity(categorizedWorks.tlinkWorks)
@@ -678,8 +625,6 @@ function getRelatedWorks(work, publicData, currentIndex, trendingData = []) {
     creditWorks: sortByPopularity(categorizedWorks.creditWorks)
       .slice(0, isPrivate ? 2 : 3),
 
-    trendingWorks: trendingWorks,
-
     randomWorks: sortByPopularity(publicData.filter(baseFilter))
       .slice(0, 2),
 
@@ -693,7 +638,6 @@ function getRelatedWorks(work, publicData, currentIndex, trendingData = []) {
   const uniqueAllWorks = uniqueWorks([
     ...processedWorks.tlinkWorks,
     ...processedWorks.memberidWorks,
-    ...processedWorks.trendingWorks,
     ...processedWorks.surroundingWorks,
     ...processedWorks.memberTlinkWorks,
     ...processedWorks.memberRelatedWorks,
@@ -744,21 +688,16 @@ export async function getStaticProps({ params }) {
       return null;
     };
 
-    // アナリティクス関数を動的インポート
-    const { getTrendingVideosData } = await import('../libs/analytics');
-
-    const [videos, users, events, trendingResult] = await Promise.allSettled([
+    const [videos, users, events] = await Promise.allSettled([
       fetchWithRetry("https://pvsf-cash.vercel.app/api/videos"),
       fetchWithRetry("https://pvsf-cash.vercel.app/api/users"),
-      fetchWithRetry("https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec"),
-      getTrendingVideosData().catch(() => [])
+      fetchWithRetry("https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec")
     ]);
 
     // 結果を安全に処理
     const videosData = videos.status === 'fulfilled' ? videos.value : [];
     const usersData = users.status === 'fulfilled' ? users.value : [];
     const eventsData = events.status === 'fulfilled' ? events.value : [];
-    const trendingData = trendingResult.status === 'fulfilled' && Array.isArray(trendingResult.value) ? trendingResult.value : [];
 
     if (!Array.isArray(videosData) || videosData.length === 0) {
       console.error('Failed to fetch videos data or data is empty');
@@ -774,7 +713,7 @@ export async function getStaticProps({ params }) {
     }
 
     const currentIndex = publicData.findIndex(w => w.ylink.slice(17, 28) === params.id);
-    const { previousWorks, nextWorks } = getRelatedWorks(work, publicData, currentIndex, trendingData);
+    const { previousWorks, nextWorks } = getRelatedWorks(work, publicData, currentIndex);
 
     return {
       props: {
@@ -783,8 +722,7 @@ export async function getStaticProps({ params }) {
         previousWorks: previousWorks || [],
         nextWorks: nextWorks || [],
         events: eventsData || [],
-        videos: videosData,
-        trendingData: trendingData || []
+        videos: videosData
       }
     };
 
