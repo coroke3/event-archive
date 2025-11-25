@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "prebuild": "node scripts/cache-data.js",
     "dev": "next dev",
     "build": "next build",
     "build:static": "next build",

@@ -9,6 +9,7 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 import { faUser } from '@fortawesome/free-solid-svg-icons';
 import styles from "../styles/work.module.css";
+import { loadBuildData } from "../lib/buildData";
 
 // メモ化されたコンポーネント（Cloudflare Pages対応）
 const WorkCard = React.memo(function WorkCard({ work }) {
@@ -657,6 +658,38 @@ function getRelatedWorks(work, publicData, currentIndex) {
 // getStaticPropsの修正
 export async function getStaticProps({ params }) {
   try {
+    const cachedData = loadBuildData();
+    if (cachedData) {
+      const videosData = Array.isArray(cachedData.videos) ? cachedData.videos : [];
+      const usersData = Array.isArray(cachedData.users) ? cachedData.users : [];
+      const eventsData = Array.isArray(cachedData.events) ? cachedData.events : [];
+
+      if (!Array.isArray(videosData) || videosData.length === 0) {
+        return { notFound: true };
+      }
+
+      const publicData = videosData.filter(w => w.status !== "private");
+      const work = videosData.find(w => w.ylink.slice(17, 28) === params.id);
+
+      if (!work) {
+        return { notFound: true };
+      }
+
+      const currentIndex = publicData.findIndex(w => w.ylink.slice(17, 28) === params.id);
+      const { previousWorks, nextWorks } = getRelatedWorks(work, publicData, currentIndex);
+
+      return {
+        props: {
+          work,
+          externalData: usersData || [],
+          previousWorks: previousWorks || [],
+          nextWorks: nextWorks || [],
+          events: eventsData || [],
+          videos: videosData
+        }
+      };
+    }
+
     const fetchWithRetry = async (url, retries = 3) => {
       for (let i = 0; i < retries; i++) {
         try {
@@ -735,6 +768,21 @@ export async function getStaticProps({ params }) {
 // getStaticPathsの修正
 export async function getStaticPaths() {
   try {
+    const cachedData = loadBuildData();
+    if (cachedData?.videos && Array.isArray(cachedData.videos)) {
+      const uniquePaths = new Set();
+      const paths = cachedData.videos
+        .filter(work => {
+          if (!work || !work.ylink) return false;
+          const id = work.ylink.slice(17, 28);
+          if (uniquePaths.has(id)) return false;
+          uniquePaths.add(id);
+          return true;
+        })
+        .map(work => ({ params: { id: work.ylink.slice(17, 28) } }));
+      return { paths, fallback: false };
+    }
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000);
 

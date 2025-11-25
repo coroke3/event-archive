@@ -7,6 +7,7 @@ import Head from "next/head";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowRight } from "@fortawesome/free-solid-svg-icons";
 import ScrollSection from "../components/ScrollSection";
+import { loadBuildData } from "../lib/buildData";
 
 // メインコンポーネント
 export default function Home({ videos, users, events }) {
@@ -320,6 +321,17 @@ export default function Home({ videos, users, events }) {
 // データ取得
 export const getStaticProps = async () => {
   try {
+    const cachedData = loadBuildData();
+    if (cachedData) {
+      return {
+        props: {
+          videos: Array.isArray(cachedData.videos) ? cachedData.videos : [],
+          users: Array.isArray(cachedData.users) ? cachedData.users : [],
+          events: Array.isArray(cachedData.events) ? cachedData.events : []
+        },
+      };
+    }
+
     const fetchWithRetry = async (url, retries = 3) => {
       for (let i = 0; i < retries; i++) {
         try {
