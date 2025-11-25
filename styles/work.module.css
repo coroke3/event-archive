@@ -534,12 +534,10 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 8px 0 16px 0;
-  padding: 8px 0;
+
   font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
   font-size: 0.85rem;
   color: var(--text-secondary, #666);
-  border-bottom: 1px solid var(--border-color, #e5e5e5);
   opacity: 0.8;
 }
 
