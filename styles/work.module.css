@@ -282,6 +282,7 @@
   font-weight: 500;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -344,6 +345,7 @@
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     overflow: hidden;
     white-space: normal;
     font-size: 0.8rem;
@@ -524,5 +526,110 @@
 
   .eventNavItem {
     width: auto;
+  }
+}
+
+/* モノクロ・モダン・コンパクトなアナリティクス表示 */
+.analyticsCompact {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 16px 0;
+  padding: 8px 0;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #666);
+  border-bottom: 1px solid var(--border-color, #e5e5e5);
+  opacity: 0.8;
+}
+
+.analyticsMetric {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.analyticsNumber {
+  font-weight: 600;
+  color: var(--text-primary, #333);
+  font-size: 0.9rem;
+}
+
+.analyticsUnit {
+  font-size: 0.75rem;
+  color: var(--text-tertiary, #999);
+  font-weight: 400;
+  text-transform: lowercase;
+}
+
+.analyticsDivider {
+  color: var(--border-color, #ddd);
+  font-weight: 300;
+  margin: 0 2px;
+}
+
+.trendingBadgeSmall {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 0.6rem;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(255, 107, 107, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.thumbnailWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.analyticsInfo {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #666);
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ダークモード対応 */
+[data-theme="dark"] .analyticsCompact {
+  border-color: var(--border-color, #444);
+}
+
+[data-theme="dark"] .analyticsNumber {
+  color: var(--text-primary, #e5e5e5);
+}
+
+[data-theme="dark"] .analyticsDivider {
+  color: var(--border-color, #555);
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .analyticsDisplay {
+    padding: 12px;
+    gap: 16px;
+  }
+
+  .analyticsItem {
+    min-width: 100px;
+  }
+
+  .popularityBadge {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    margin-left: 8px;
+  }
+
+  .trendingBadgeSmall {
+    font-size: 0.5rem;
+    padding: 1px 4px;
+    top: 4px;
+    right: 4px;
   }
 }

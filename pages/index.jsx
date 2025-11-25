@@ -9,7 +9,7 @@ import { faArrowRight } from "@fortawesome/free-solid-svg-icons";
 import ScrollSection from "../components/ScrollSection";
 
 // メインコンポーネント
-export default function Home({ videos, users, events }) {
+export default function Home({ videos, users, events, trendingData }) {
   // ②おすすめ動画（videoScoreの上位30作品をランダムに並び替え）
   const recommendedVideos = useMemo(() => {
     return [...videos]
@@ -18,6 +18,7 @@ export default function Home({ videos, users, events }) {
       .slice(0, 40)
       .sort(() => 0.5 - Math.random()); // ランダムに並び替え
   }, [videos]);
+
 
   // ③4作品以上のクリエイターをランダムで20人
   const popularCreators = useMemo(() => {
@@ -177,6 +178,7 @@ export default function Home({ videos, users, events }) {
           </div>
         ))}
       </ScrollSection>
+
 
       {/* ③人気クリエイター */}
       <ScrollSection
@@ -350,17 +352,22 @@ export const getStaticProps = async () => {
       return null;
     };
 
+    // アナリティクス関数を動的インポート
+    const { getTrendingVideosData } = await import('../libs/analytics');
+
     // 並列でデータを取得（エラーハンドリング付き）
-    const [videosResult, usersResult, eventsResult] = await Promise.allSettled([
+    const [videosResult, usersResult, eventsResult, trendingResult] = await Promise.allSettled([
       fetchWithRetry('https://pvsf-cash.vercel.app/api/videos').catch(() => []),
       fetchWithRetry('https://pvsf-cash.vercel.app/api/users').catch(() => []),
-      fetchWithRetry('https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec').catch(() => [])
+      fetchWithRetry('https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec').catch(() => []),
+      getTrendingVideosData().catch(() => [])
     ]);
 
     // 結果を安全に処理
     const videos = videosResult.status === 'fulfilled' && Array.isArray(videosResult.value) ? videosResult.value : [];
     const users = usersResult.status === 'fulfilled' && Array.isArray(usersResult.value) ? usersResult.value : [];
     const events = eventsResult.status === 'fulfilled' && Array.isArray(eventsResult.value) ? eventsResult.value : [];
+    const trendingData = trendingResult.status === 'fulfilled' && Array.isArray(trendingResult.value) ? trendingResult.value : [];
 
     // データの検証とログ出力
     if (videosResult.status === 'rejected') {
@@ -372,15 +379,19 @@ export const getStaticProps = async () => {
     if (eventsResult.status === 'rejected') {
       console.warn('Failed to fetch events:', eventsResult.reason);
     }
+    if (trendingResult.status === 'rejected') {
+      console.warn('Failed to fetch trending data:', trendingResult.reason);
+    }
 
-    console.log(`Fetched ${videos.length} videos, ${users.length} users, and ${events.length} events`);
+    console.log(`Fetched ${videos.length} videos, ${users.length} users, ${events.length} events, and ${trendingData.length} trending items`);
 
     // データが取得できなくても、空の配列でページを生成
     return {
       props: {
         videos,
         users,
-        events
+        events,
+        trendingData
       },
     };
   } catch (error) {
@@ -391,7 +402,8 @@ export const getStaticProps = async () => {
       props: {
         videos: [],
         users: [],
-        events: []
+        events: [],
+        trendingData: []
       },
     };
   }

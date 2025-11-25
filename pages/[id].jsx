@@ -10,23 +10,45 @@ import {
 import { faUser } from '@fortawesome/free-solid-svg-icons';
 import styles from "../styles/work.module.css";
 
-// メモ化されたコンポーネント
-const WorkCard = React.memo(function WorkCard({ work }) {
+// メモ化されたコンポーネント（アナリティクス対応）
+const WorkCard = React.memo(function WorkCard({ work, trendingData = [] }) {
+  // アナリティクスデータを取得
+  const analyticsInfo = useMemo(() => {
+    if (!trendingData || trendingData.length === 0) return null;
+
+    const videoIdMatch = work.ylink?.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+    if (!videoIdMatch) return null;
+
+    return trendingData.find(item => item.videoId === videoIdMatch[1]);
+  }, [work.ylink, trendingData]);
+
   return (
     <div className={styles.ss1} key={work.ylink.slice(17, 28)}>
       <div className={styles.ss12}>
         <Link href={`/${work.ylink.slice(17, 28)}`}>
-          <img
-            src={work.smallThumbnail}
-            width="100%"
-            alt={`${work.title} - ${work.creator} | PVSF archive`}
-            loading="lazy"
-          />
+          <div className={styles.thumbnailWrapper}>
+            <img
+              src={work.smallThumbnail}
+              width="100%"
+              alt={`${work.title} - ${work.creator} | PVSF archive`}
+              loading="lazy"
+            />
+            {analyticsInfo && (
+              <div className={styles.trendingBadgeSmall}>
+                🔥 {analyticsInfo.pageViews}
+              </div>
+            )}
+          </div>
         </Link>
       </div>
       <div className={styles.ss13}>
         <p className={styles.scc}>{work.title}</p>
         <p className={styles.sc}>{work.creator}</p>
+        {analyticsInfo && (
+          <p className={styles.analyticsInfo}>
+            👀 {analyticsInfo.pageViews} views • 📈 トレンド
+          </p>
+        )}
       </div>
     </div>
   );
@@ -248,6 +270,7 @@ export default function WorkId({
   auth = { auth: false, user: null },
   events,
   videos,
+  trendingData = [],
 }) {
   // workDetailsをuseMemoで最適化
   const workDetails = useMemo(() => {
@@ -280,20 +303,49 @@ export default function WorkId({
     [work?.ylink]
   );
 
+  // 現在の作品のアナリティクス情報（デバッグ用モックデータ付き）
+  const currentWorkAnalytics = useMemo(() => {
+    if (!work?.ylink) return null;
+
+    const videoIdMatch = work.ylink.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+    if (!videoIdMatch) return null;
+
+    const videoId = videoIdMatch[1];
+
+    // 実際のアナリティクスデータを確認
+    let analytics = trendingData?.find(item => item.videoId === videoId);
+
+    // デバッグ用：データがない場合の超リアルなモックデータ（開発環境のみ）
+    if (!analytics && process.env.NODE_ENV === 'development') {
+      // 作品のスコアに基づいて控えめなモックデータを生成
+      const baseScore = work.videoScore || 50;
+      // 超現実的な数字：5-60ビュー程度（ニッチサイト想定）
+      const multiplier = Math.max(0.2, (baseScore / 150)); // 0.2-0.7の範囲
+      analytics = {
+        videoId: videoId,
+        pageViews: Math.floor(8 + multiplier * 35 + Math.random() * 25), // 8-68の範囲
+        sessions: Math.floor(5 + multiplier * 20 + Math.random() * 15), // 5-40の範囲  
+        avgDuration: Math.floor(60 + Math.random() * 200) // 60-260秒
+      };
+    }
+
+    return analytics;
+  }, [work?.ylink, work?.videoScore, trendingData]);
+
   // メンバー情報の処理を最適化
   const memberInfo = useMemo(() => {
     if (!work?.member || !workDetails.showMember) return [];
     return work.member.split(/[,、，]/).map((username, index) => {
       // memberidが存在する場合のみ取得、存在しない場合はundefined
-      const memberId = work.memberid ? 
-        work.memberid.split(/[,、，]/)[index]?.trim() : 
+      const memberId = work.memberid ?
+        work.memberid.split(/[,、，]/)[index]?.trim() :
         undefined;
-      
+
       // memberIdが存在する場合のみユーザー検索
-      const matchedUser = memberId ? 
-        externalData.find(user => user.username.toLowerCase() === memberId.toLowerCase()) : 
+      const matchedUser = memberId ?
+        externalData.find(user => user.username.toLowerCase() === memberId.toLowerCase()) :
         null;
-      
+
       return { username, memberId, matchedUser };
     });
   }, [work?.member, work?.memberid, externalData, workDetails.showMember]);
@@ -420,6 +472,24 @@ export default function WorkId({
             )}
             <div className={styles.s1ftext}>
               <h1 className={styles.title}>{work?.title || '作品名不明'}</h1>
+              {currentWorkAnalytics && (
+                <div className={styles.analyticsCompact}>
+                  <span className={styles.analyticsMetric}>
+                    <span className={styles.analyticsNumber}>{currentWorkAnalytics.pageViews.toLocaleString()}</span>
+                    <span className={styles.analyticsUnit}>views</span>
+                  </span>
+                  <span className={styles.analyticsDivider}>•</span>
+                  <span className={styles.analyticsMetric}>
+                    <span className={styles.analyticsNumber}>{currentWorkAnalytics.sessions.toLocaleString()}</span>
+                    <span className={styles.analyticsUnit}>sessions</span>
+                  </span>
+                  <span className={styles.analyticsDivider}>•</span>
+                  <span className={styles.analyticsMetric}>
+                    <span className={styles.analyticsNumber}>{Math.round(currentWorkAnalytics.avgDuration)}</span>
+                    <span className={styles.analyticsUnit}>sec avg</span>
+                  </span>
+                </div>
+              )}
               <CreatorInfo work={work} workDetails={workDetails} />
               <div className={styles.eventInfo}>
                 {eventInfo.map((event, index) => (
@@ -469,10 +539,10 @@ export default function WorkId({
           </div>
           <div className={styles.s2f}>
             {previousWorks.map((prevWork) => (
-              <WorkCard key={prevWork.ylink.slice(17, 28)} work={prevWork} />
+              <WorkCard key={prevWork.ylink.slice(17, 28)} work={prevWork} trendingData={trendingData} />
             ))}
             {nextWorks.map((nextWork) => (
-              <WorkCard key={nextWork.ylink.slice(17, 28)} work={nextWork} />
+              <WorkCard key={nextWork.ylink.slice(17, 28)} work={nextWork} trendingData={trendingData} />
             ))}
           </div>
         </div>
@@ -499,11 +569,31 @@ async function fetchEventData(eventId) {
   };
 }
 
-// getRelatedWorks関数を修正
-function getRelatedWorks(work, publicData, currentIndex) {
+// getRelatedWorks関数を修正（アナリティクスデータ対応）
+function getRelatedWorks(work, publicData, currentIndex, trendingData = []) {
   const safeCompare = (a, b) => a && b && typeof a === 'string' && typeof b === 'string' && a.toLowerCase() === b.toLowerCase();
 
   const uniqueWorks = (works) => Array.from(new Set(works.map(w => w.ylink))).map(ylink => works.find(w => w.ylink === ylink));
+
+  // アナリティクスデータを活用する関数
+  const getAnalyticsScore = (videoWork) => {
+    if (!trendingData || trendingData.length === 0) return 0;
+
+    const videoIdMatch = videoWork.ylink?.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+    if (!videoIdMatch) return 0;
+
+    const analytics = trendingData.find(item => item.videoId === videoIdMatch[1]);
+    return analytics ? (analytics.pageViews || 0) + (analytics.sessions || 0) * 2 : 0;
+  };
+
+  // 人気度を考慮したソート関数
+  const sortByPopularity = (works) => {
+    return works.sort((a, b) => {
+      const scoreA = getAnalyticsScore(a) + (a.videoScore || 0) * 10;
+      const scoreB = getAnalyticsScore(b) + (b.videoScore || 0) * 10;
+      return scoreB - scoreA;
+    });
+  };
 
   const getRandomWorks = (works, count) => works.length <= count ? works : works.sort(() => 0.5 - Math.random()).slice(0, count);
 
@@ -555,43 +645,55 @@ function getRelatedWorks(work, publicData, currentIndex) {
   });
 
   const isPrivate = work.status === "private";
+  // トレンド作品を追加
+  const trendingWorks = trendingData.length > 0 ?
+    publicData.filter(w => {
+      if (!baseFilter(w)) return false;
+      const videoIdMatch = w.ylink?.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+      return videoIdMatch && trendingData.some(item => item.videoId === videoIdMatch[1]);
+    }).slice(0, 4) : [];
+
   const processedWorks = {
     tlinkWorks: isPrivate
-      ? categorizedWorks.tlinkWorks
-        .sort((a, b) => Math.abs(new Date(a.time) - workTime) - Math.abs(new Date(b.time) - workTime))
+      ? sortByPopularity(categorizedWorks.tlinkWorks)
         .slice(0, 4)
-      : categorizedWorks.tlinkWorks
-        .sort((a, b) => Math.abs(currentIndex - publicData.indexOf(a)) - Math.abs(currentIndex - publicData.indexOf(b)))
-        .slice(0, 2),
+      : sortByPopularity(categorizedWorks.tlinkWorks)
+        .slice(0, 3),
 
-    memberidWorks: categorizedWorks.memberidWorks
-      .sort((a, b) => a.timeDiff - b.timeDiff)
+    memberidWorks: sortByPopularity(categorizedWorks.memberidWorks)
       .slice(0, 2),
 
     surroundingWorks: isPrivate ? [] : [
-      ...publicData.slice(Math.max(0, currentIndex - 6), currentIndex),
-      ...publicData.slice(currentIndex + 1, currentIndex + 7)
+      ...publicData.slice(Math.max(0, currentIndex - 3), currentIndex),
+      ...publicData.slice(currentIndex + 1, currentIndex + 4)
     ],
 
-    memberTlinkWorks: getRandomWorks(categorizedWorks.memberTlinkWorks, worksPerUser * memberIds.length),
-    memberRelatedWorks: getRandomWorks(categorizedWorks.memberRelatedWorks, worksPerUser * memberIds.length),
+    memberTlinkWorks: sortByPopularity(categorizedWorks.memberTlinkWorks)
+      .slice(0, worksPerUser * memberIds.length),
+    memberRelatedWorks: sortByPopularity(categorizedWorks.memberRelatedWorks)
+      .slice(0, worksPerUser * memberIds.length),
 
-    musicWorks: getRandomWorks(categorizedWorks.musicWorks, isPrivate ? 2 : 4),
-    creditWorks: getRandomWorks(categorizedWorks.creditWorks, isPrivate ? 2 : 4),
+    musicWorks: sortByPopularity(categorizedWorks.musicWorks)
+      .slice(0, isPrivate ? 2 : 3),
+    creditWorks: sortByPopularity(categorizedWorks.creditWorks)
+      .slice(0, isPrivate ? 2 : 3),
 
-    randomWorks: getRandomWorks(publicData.filter(baseFilter), 2),
+    trendingWorks: trendingWorks,
 
-    scoreWorks: getRandomWorks(
+    randomWorks: sortByPopularity(publicData.filter(baseFilter))
+      .slice(0, 2),
+
+    scoreWorks: sortByPopularity(
       categorizedWorks.scoreWorks
         .sort((a, b) => b.deterministicScore - a.deterministicScore)
-        .slice(0, 50),
-      2
-    )
+        .slice(0, 50)
+    ).slice(0, 2)
   };
 
   const uniqueAllWorks = uniqueWorks([
     ...processedWorks.tlinkWorks,
     ...processedWorks.memberidWorks,
+    ...processedWorks.trendingWorks,
     ...processedWorks.surroundingWorks,
     ...processedWorks.memberTlinkWorks,
     ...processedWorks.memberRelatedWorks,
@@ -616,17 +718,17 @@ export async function getStaticProps({ params }) {
         try {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 30000);
-          
-          const res = await fetch(url, { 
+
+          const res = await fetch(url, {
             signal: controller.signal,
-            headers: { 
+            headers: {
               'Cache-Control': 'public, max-age=3600',
               'User-Agent': 'Mozilla/5.0 (compatible; PVSF-Archive/1.0)'
-            } 
+            }
           });
-          
+
           clearTimeout(timeoutId);
-          
+
           if (res.ok) {
             const text = await res.text();
             if (!text || text.trim() === '') {
@@ -642,16 +744,21 @@ export async function getStaticProps({ params }) {
       return null;
     };
 
-    const [videos, users, events] = await Promise.allSettled([
+    // アナリティクス関数を動的インポート
+    const { getTrendingVideosData } = await import('../libs/analytics');
+
+    const [videos, users, events, trendingResult] = await Promise.allSettled([
       fetchWithRetry("https://pvsf-cash.vercel.app/api/videos"),
       fetchWithRetry("https://pvsf-cash.vercel.app/api/users"),
-      fetchWithRetry("https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec")
+      fetchWithRetry("https://script.google.com/macros/s/AKfycbybjT6iEZWbfCIzTvU1ALVxp1sa_zS_pGJh5_p_SBsJgLtmzcmqsIDRtFkJ9B8Yko6tyA/exec"),
+      getTrendingVideosData().catch(() => [])
     ]);
 
     // 結果を安全に処理
     const videosData = videos.status === 'fulfilled' ? videos.value : [];
     const usersData = users.status === 'fulfilled' ? users.value : [];
     const eventsData = events.status === 'fulfilled' ? events.value : [];
+    const trendingData = trendingResult.status === 'fulfilled' && Array.isArray(trendingResult.value) ? trendingResult.value : [];
 
     if (!Array.isArray(videosData) || videosData.length === 0) {
       console.error('Failed to fetch videos data or data is empty');
@@ -667,7 +774,7 @@ export async function getStaticProps({ params }) {
     }
 
     const currentIndex = publicData.findIndex(w => w.ylink.slice(17, 28) === params.id);
-    const { previousWorks, nextWorks } = getRelatedWorks(work, publicData, currentIndex);
+    const { previousWorks, nextWorks } = getRelatedWorks(work, publicData, currentIndex, trendingData);
 
     return {
       props: {
@@ -676,7 +783,8 @@ export async function getStaticProps({ params }) {
         previousWorks: previousWorks || [],
         nextWorks: nextWorks || [],
         events: eventsData || [],
-        videos: videosData
+        videos: videosData,
+        trendingData: trendingData || []
       }
     };
 
@@ -691,15 +799,15 @@ export async function getStaticPaths() {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000);
-    
-    const res = await fetch("https://pvsf-cash.vercel.app/api/videos", { 
+
+    const res = await fetch("https://pvsf-cash.vercel.app/api/videos", {
       signal: controller.signal,
-      headers: { 
+      headers: {
         'Cache-Control': 'public, max-age=3600',
         'User-Agent': 'Mozilla/5.0 (compatible; PVSF-Archive/1.0)'
-      } 
+      }
     });
-    
+
     clearTimeout(timeoutId);
 
     if (!res.ok) {
