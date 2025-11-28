@@ -1,17 +1,9 @@
-import { useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 
 function Error({ statusCode }) {
-  useEffect(() => {
-    // エラーをログに記録
-    if (statusCode) {
-      console.error(`Error ${statusCode}: An error occurred on the server`);
-    }
-  }, [statusCode]);
-
   return (
     <>
       <Head>
@@ -39,8 +31,8 @@ function Error({ statusCode }) {
           {statusCode === 404
             ? "ページが見つかりませんでした"
             : statusCode === 500
-            ? "サーバーエラーが発生しました"
-            : "予期しないエラーが発生しました"}
+              ? "サーバーエラーが発生しました"
+              : "予期しないエラーが発生しました"}
         </p>
         <Link href="/" style={{
           padding: "0.75rem 1.5rem",

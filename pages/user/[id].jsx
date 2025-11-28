@@ -72,11 +72,11 @@ export default function UserWorksPage({ user, works, collaborationWorks }) {
     <div>
       <Head>
         <title>
-          {user ? `${user.username}の作品 - EventArchives` : "作品一覧"}
+          {user ? `${user.creator}(@${user.username})の作品 - EventArchives` : "作品一覧"}
         </title>
         <meta
           name="description"
-          content={user ? `${user.username}の作品一覧です。` : "作品一覧です。"}
+          content={user ? `${user.creator}(@${user.username})の作品一覧です。` : "作品一覧です。"}
         />
       </Head>
       <div className={styles.content}>
